@@ -16,7 +16,7 @@ export default function HomePage() {
         <div className="flex justify-between items-center mb-8">
           <div>
             <h1 className="text-4xl font-bold text-gray-900 mb-4">
-              Professional Invoice Generator
+              Zynvoice Professional Invoice Generator
             </h1>
             <p className="text-xl text-gray-600 max-w-2xl">
               Create, customize, and send professional invoices with ease. Built
