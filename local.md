@@ -1,6 +1,8 @@
+
+
 # Database
 
-MONGODB_URI=mongodb://localhost:27017/invoice-generator
+MONGODB_URI=mongodb+srv://zynvoice:gmIMxFZQDmns29MH@cluster0.wlin7fq.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0
 
 # Authentication
 
