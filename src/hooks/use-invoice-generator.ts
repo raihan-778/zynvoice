@@ -1,11 +1,15 @@
 // 📁 src/hooks/use-invoice-generator.ts
-'use client';
+"use client";
 
-import { useState, useRef } from 'react';
-import { PDFGeneratorService } from '@/lib/services/pdf-generator';
-import { ImageGeneratorService, ImageFormat } from '@/lib/services/image-generator';
-import { InvoiceFormData } from '@/lib/types';
-import { toast } from 'sonner';
+import {
+  ImageFormat,
+  ImageGeneratorService,
+} from "@/lib/services/image-generator";
+import { PDFGeneratorService } from "@/lib/services/pdf-generator";
+import { useRef, useState } from "react";
+
+import { InvoiceFormData } from "@/lib/validations/validation";
+import { toast } from "sonner";
 
 export function useInvoiceGenerator() {
   const [isGenerating, setIsGenerating] = useState(false);
@@ -25,21 +29,21 @@ export function useInvoiceGenerator() {
         clientInfo,
         invoiceNumber
       );
-      toast.success('PDF downloaded successfully!');
+      toast.success("PDF downloaded successfully!");
     } catch (error) {
-      console.error('PDF generation failed:', error);
-      toast.error('Failed to generate PDF. Please try again.');
+      console.error("PDF generation failed:", error);
+      toast.error("Failed to generate PDF. Please try again.");
     } finally {
       setIsGenerating(false);
     }
   };
 
   const generateImage = async (
-    format: ImageFormat = 'png',
-    filename: string = 'invoice'
+    format: ImageFormat = "png",
+    filename: string = "invoice"
   ) => {
     if (!previewRef.current) {
-      toast.error('Invoice preview not found');
+      toast.error("Invoice preview not found");
       return;
     }
 
@@ -51,14 +55,16 @@ export function useInvoiceGenerator() {
         format,
         {
           quality: 1,
-          backgroundColor: '#ffffff',
+          backgroundColor: "#ffffff",
           width: 1200, // Fixed width for consistent output
         }
       );
       toast.success(`${format.toUpperCase()} image downloaded successfully!`);
     } catch (error) {
-      console.error('Image generation failed:', error);
-      toast.error(`Failed to generate ${format.toUpperCase()} image. Please try again.`);
+      console.error("Image generation failed:", error);
+      toast.error(
+        `Failed to generate ${format.toUpperCase()} image. Please try again.`
+      );
     } finally {
       setIsGenerating(false);
     }
@@ -66,8 +72,8 @@ export function useInvoiceGenerator() {
 
   const getPDFBlob = async (
     invoiceData: InvoiceFormData,
-    companyInfo: any,
-    clientInfo: any,
+    companyInfo: unknown,
+    clientInfo: unknown,
     invoiceNumber?: string
   ): Promise<Blob | null> => {
     try {
@@ -78,12 +84,51 @@ export function useInvoiceGenerator() {
         invoiceNumber
       );
     } catch (error) {
-      console.error('PDF blob generation failed:', error);
+      console.error("PDF blob generation failed:", error);
       return null;
     }
   };
 
   const getImageBlob = async (
-    format: ImageFormat = 'png'
+    format: ImageFormat = "png"
   ): Promise<Blob | null> => {
-    if
+    if (!previewRef.current) {
+      console.error("Invoice preview not found");
+      return null;
+    }
+
+    try {
+      const dataUrl: string = await ImageGeneratorService.generateImage(
+        previewRef.current,
+        format,
+        {
+          quality: 1,
+          backgroundColor: "#ffffff",
+          width: 1200,
+        }
+      );
+      // Convert data URL to Blob
+      const arr = dataUrl.split(",");
+      const mime = arr[0].match(/:(.*?);/)?.[1] || "";
+      const bstr = atob(arr[1]);
+      let n = bstr.length;
+      const u8arr = new Uint8Array(n);
+      while (n--) {
+        u8arr[n] = bstr.charCodeAt(n);
+      }
+      return new Blob([u8arr], { type: mime });
+    } catch (error) {
+      console.error("Image blob generation failed:", error);
+      return null;
+    }
+  };
+
+  return {
+    isGenerating,
+    previewRef,
+    generatePDF,
+    generateImage,
+    getPDFBlob,
+    getImageBlob,
+  };
+}

@@ -7,8 +7,8 @@ import { InvoiceFormData } from "../validations/validation";
 export class PDFGeneratorService {
   static async generatePDF(
     invoiceData: InvoiceFormData,
-    companyInfo: any,
-    clientInfo: any,
+    companyInfo: unknown,
+    clientInfo: unknown,
     invoiceNumber?: string
   ): Promise<Blob> {
     try {
@@ -30,8 +30,8 @@ export class PDFGeneratorService {
 
   static async downloadPDF(
     invoiceData: InvoiceFormData,
-    companyInfo: any,
-    clientInfo: any,
+    companyInfo: unknown,
+    clientInfo: unknown,
     invoiceNumber: string = "INV-001"
   ): Promise<void> {
     try {
@@ -54,8 +54,8 @@ export class PDFGeneratorService {
 
   static async getPDFDataURL(
     invoiceData: InvoiceFormData,
-    companyInfo: any,
-    clientInfo: any,
+    companyInfo: unknown,
+    clientInfo: unknown,
     invoiceNumber?: string
   ): Promise<string> {
     try {

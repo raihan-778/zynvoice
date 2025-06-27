@@ -1,7 +1,7 @@
 // 📁 src/lib/services/image-generator.ts
 import { toJpeg, toPng, toSvg } from "html-to-image";
 
-export type ImageFormat = "png" | "jpeg" | "svg";
+export type ImageFormat = "png" | "jpeg" | "svg" | "webp";
 
 export class ImageGeneratorService {
   static async generateImage(

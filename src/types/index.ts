@@ -123,46 +123,46 @@ export interface AuthUser {
   role: "user" | "admin";
   company?: Company;
 }
-export interface CompanyInfo {
-  _id?: string;
-  name: string;
-  email: string;
-  phone: string;
-  address: {
-    street: string;
-    city: string;
-    state: string;
-    zipCode: string;
-    country: string;
-  };
-  logo?: string;
-  website?: string;
-  taxId?: string;
-}
+// export interface CompanyInfo {
+//   _id?: string;
+//   name: string;
+//   email: string;
+//   phone: string;
+//   address: {
+//     street: string;
+//     city: string;
+//     state: string;
+//     zipCode: string;
+//     country: string;
+//   };
+//   logo?: string;
+//   website?: string;
+//   taxId?: string;
+// }
 
-export interface ServiceItem {
-  _id?: string;
-  description: string;
-  quantity: number;
-  unitPrice: number;
-  amount: number;
-  category?: "Design" | "Development" | "Consultation" | "Marketing" | "Other";
-}
+// export interface ServiceItem {
+//   _id?: string;
+//   description: string;
+//   quantity: number;
+//   unitPrice: number;
+//   amount: number;
+//   category?: "Design" | "Development" | "Consultation" | "Marketing" | "Other";
+// }
 
-export interface InvoiceFormData {
-  companyInfo: CompanyInfo;
-  client: Client;
-  serviceItems: ServiceItem[];
-  templateId: string;
-  taxRate: number;
-  discountRate: number;
-  currency: string;
-  issueDate: Date;
-  dueDate: Date;
-  notes?: string;
-  terms?: string;
-  paymentMethod?: string;
-}
+// export interface InvoiceFormData {
+//   companyInfo: CompanyInfo;
+//   client: Client;
+//   serviceItems: ServiceItem[];
+//   templateId: string;
+//   taxRate: number;
+//   discountRate: number;
+//   currency: string;
+//   issueDate: Date;
+//   dueDate: Date;
+//   notes?: string;
+//   terms?: string;
+//   paymentMethod?: string;
+// }
 
 // Form validation types
 export interface FormErrors {
