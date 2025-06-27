@@ -1,133 +1,88 @@
-"use client";
+// 📁 src/app/page.tsx (update the existing one)
 
-import { useSession } from "next-auth/react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { FileText, Users, Settings, Download, LogIn } from "lucide-react";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Download, FileText, Mail, Zap } from "lucide-react";
 import Link from "next/link";
+import MainLayout from "./layout";
 
 export default function HomePage() {
-  const { data: session, status } = useSession();
-
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
-      <div className="container mx-auto px-4 py-16">
-        {/* Header with Auth Status */}
-        <div className="flex justify-between items-center mb-8">
-          <div>
-            <h1 className="text-4xl font-bold text-gray-900 mb-4">
-              Zynvoice Professional Invoice Generator
-            </h1>
-            <p className="text-xl text-gray-600 max-w-2xl">
-              Create, customize, and send professional invoices with ease. Built
-              with Next.js, TypeScript, and modern web technologies.
-            </p>
-          </div>
+    <MainLayout>
+      <div className="text-center">
+        <h1 className="text-4xl font-bold text-gray-900 mb-4">
+          Professional Invoice Generator
+        </h1>
+        <p className="text-xl text-gray-600 mb-8 max-w-2xl mx-auto">
+          Create beautiful, professional invoices in minutes. Customize,
+          download, and send with ease.
+        </p>
 
-          <div className="flex items-center gap-4">
-            {status === "loading" ? (
-              <div className="animate-pulse">Loading...</div>
-            ) : session ? (
-              <div className="flex items-center gap-4">
-                <span className="text-sm text-gray-600">
-                  Welcome, {session.user?.name || session.user?.email}
-                </span>
-                <Link href="/dashboard">
-                  <Button>Go to Dashboard</Button>
-                </Link>
-              </div>
-            ) : (
-              <div className="flex gap-2">
-                <Link href="/auth/signin">
-                  <Button variant="outline">
-                    <LogIn className="mr-2 h-4 w-4" />
-                    Sign In
-                  </Button>
-                </Link>
-                <Link href="/auth/signup">
-                  <Button>Get Started</Button>
-                </Link>
-              </div>
-            )}
-          </div>
+        <div className="mb-12">
+          <Link href="/create">
+            <Button size="lg" className="bg-blue-600 hover:bg-blue-700">
+              <FileText className="h-5 w-5 mr-2" />
+              Create Your First Invoice
+            </Button>
+          </Link>
         </div>
 
-        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
-          <Card className="hover:shadow-lg transition-shadow">
-            <CardHeader className="text-center">
-              <FileText className="h-12 w-12 text-blue-600 mx-auto mb-4" />
-              <CardTitle className="text-lg">Create Invoice</CardTitle>
+        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <Card>
+            <CardHeader>
+              <FileText className="h-8 w-8 text-blue-600 mb-2" />
+              <CardTitle>Easy Creation</CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-gray-600 text-center">
-                Generate professional invoices quickly and easily
-              </p>
+              <CardDescription>
+                Simple form-based invoice creation with automatic calculations
+              </CardDescription>
             </CardContent>
           </Card>
 
-          <Card className="hover:shadow-lg transition-shadow">
-            <CardHeader className="text-center">
-              <Users className="h-12 w-12 text-green-600 mx-auto mb-4" />
-              <CardTitle className="text-lg">Manage Clients</CardTitle>
+          <Card>
+            <CardHeader>
+              <Download className="h-8 w-8 text-green-600 mb-2" />
+              <CardTitle>Multiple Formats</CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-gray-600 text-center">
-                Keep track of all your clients and their information
-              </p>
+              <CardDescription>
+                Download as PDF or image formats for easy sharing
+              </CardDescription>
             </CardContent>
           </Card>
 
-          <Card className="hover:shadow-lg transition-shadow">
-            <CardHeader className="text-center">
-              <Download className="h-12 w-12 text-purple-600 mx-auto mb-4" />
-              <CardTitle className="text-lg">Export & Send</CardTitle>
+          <Card>
+            <CardHeader>
+              <Mail className="h-8 w-8 text-purple-600 mb-2" />
+              <CardTitle>Email Integration</CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-gray-600 text-center">
-                Download as PDF or send directly via email
-              </p>
+              <CardDescription>
+                Send invoices directly to clients via email
+              </CardDescription>
             </CardContent>
           </Card>
 
-          <Card className="hover:shadow-lg transition-shadow">
-            <CardHeader className="text-center">
-              <Settings className="h-12 w-12 text-orange-600 mx-auto mb-4" />
-              <CardTitle className="text-lg">Customize</CardTitle>
+          <Card>
+            <CardHeader>
+              <Zap className="h-8 w-8 text-orange-600 mb-2" />
+              <CardTitle>Custom Templates</CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-gray-600 text-center">
-                Choose from multiple templates and customize your brand
-              </p>
+              <CardDescription>
+                Choose from professional templates or create your own
+              </CardDescription>
             </CardContent>
           </Card>
-        </div>
-
-        <div className="text-center">
-          {session ? (
-            <div className="space-x-4">
-              <Link href="/dashboard">
-                <Button size="lg">Go to Dashboard</Button>
-              </Link>
-              <Link href="/dashboard">
-                <Button variant="outline" size="lg">
-                  Create Invoice
-                </Button>
-              </Link>
-            </div>
-          ) : (
-            <div className="space-x-4">
-              <Link href="/auth/signup">
-                <Button size="lg">Create Your First Invoice</Button>
-              </Link>
-              <Link href="/auth/signin">
-                <Button variant="outline" size="lg">
-                  Sign In
-                </Button>
-              </Link>
-            </div>
-          )}
         </div>
       </div>
-    </div>
+    </MainLayout>
   );
 }

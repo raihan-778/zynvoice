@@ -3,11 +3,10 @@
 
 import { useState } from "react";
 
-import Footer from "@/components/layout/Footer";
-import Header from "@/components/layout/Header";
-import Sidebar from "@/components/layout/Sidebar";
 import { motion } from "framer-motion";
-import Providers from "./contextProvider/provider";
+import Header from "./Header";
+import Sidebar from "./Sidebar";
+import Footer from "./Footer";
 
 interface MainLayoutProps {
   children: React.ReactNode;
@@ -30,7 +29,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.3 }}
           >
-            <Providers>{children}</Providers>
+            {children}
           </motion.div>
         </main>
       </div>

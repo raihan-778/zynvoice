@@ -6,7 +6,7 @@ import CredentialsProvider from "next-auth/providers/credentials";
 import GitHubProvider from "next-auth/providers/github";
 import GoogleProvider from "next-auth/providers/google";
 import connectDB from "../database/connection";
-import User from "../models/User";
+import User from "../../models/User";
 
 const client = new MongoClient(process.env.MONGODB_URI!);
 const clientPromise = client.connect();
