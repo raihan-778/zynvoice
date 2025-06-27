@@ -1,11 +1,11 @@
-// services/image-service.ts
+// 📁 src/lib/services/image-generator.ts
 import { toJpeg, toPng, toSvg } from "html-to-image";
 
 export type ImageFormat = "png" | "jpeg" | "svg";
 
-export class ImageService {
+export class ImageGeneratorService {
   static async generateImage(
-    elementId: string,
+    element: HTMLElement,
     format: ImageFormat = "png",
     options?: {
       quality?: number;
@@ -14,15 +14,10 @@ export class ImageService {
       backgroundColor?: string;
     }
   ): Promise<string> {
-    const element = document.getElementById(elementId);
-    if (!element) {
-      throw new Error(`Element with id "${elementId}" not found`);
-    }
-
     const defaultOptions = {
-      quality: 0.92,
+      quality: 1,
       backgroundColor: "#ffffff",
-      pixelRatio: 2,
+      pixelRatio: 2, // For high DPI displays
       ...options,
     };
 
@@ -44,7 +39,7 @@ export class ImageService {
   }
 
   static async downloadImage(
-    elementId: string,
+    element: HTMLElement,
     filename: string,
     format: ImageFormat = "png",
     options?: {
@@ -55,21 +50,19 @@ export class ImageService {
     }
   ): Promise<void> {
     try {
-      const dataUrl = await this.generateImage(elementId, format, options);
+      const dataUrl = await this.generateImage(element, format, options);
       const link = document.createElement("a");
       link.download = `${filename}.${format}`;
       link.href = dataUrl;
-      document.body.appendChild(link);
       link.click();
-      document.body.removeChild(link);
     } catch (error) {
       console.error("Error downloading image:", error);
       throw error;
     }
   }
 
-  static async getImageBlob(
-    elementId: string,
+  static async generateImageBlob(
+    element: HTMLElement,
     format: ImageFormat = "png",
     options?: {
       quality?: number;
@@ -79,11 +72,11 @@ export class ImageService {
     }
   ): Promise<Blob> {
     try {
-      const dataUrl = await this.generateImage(elementId, format, options);
+      const dataUrl = await this.generateImage(element, format, options);
       const response = await fetch(dataUrl);
       return await response.blob();
     } catch (error) {
-      console.error("Error creating image blob:", error);
+      console.error("Error generating image blob:", error);
       throw error;
     }
   }

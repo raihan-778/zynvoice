@@ -29,9 +29,9 @@ import React, { useState } from "react";
 // import { ImageService, ImageFormat } from "@/services/image-service";
 // import { JSPDFService } from "@/services/jspdf-service";
 // import { toast } from "@/components/ui/use-toast";
-import { ImageFormat, ImageService } from "@/lib/services/image-service";
+import { ImageFormat, ImageService } from "@/lib/services/image-generator";
 import { JSPDFService } from "@/lib/services/jspdf.service";
-import { PDFService } from "@/lib/services/pdf-servece";
+import { PDFService } from "@/lib/services/pdf-generator";
 import { toast } from "sonner";
 
 interface InvoiceActionsProps {

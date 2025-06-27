@@ -1,18 +1,12 @@
-## Step 4: Client Details Form Component
-
-```typescript
 // 📁 src/components/forms/client-details-form.tsx
 "use client";
 
-import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { motion } from "framer-motion";
-import { User, Mail, Phone, Building, MapPin, FileText } from "lucide-react";
+import { FileText, Mail, MapPin, User } from "lucide-react";
+import { useForm } from "react-hook-form";
 
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import {
   Card,
   CardContent,
@@ -20,8 +14,11 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
-import { clientSchema, ClientFormData } from "@/lib/validations";
+import { Textarea } from "@/components/ui/textarea";
+import { ClientFormData, clientSchema } from "@/lib/validations/validation";
 
 interface ClientDetailsFormProps {
   initialData?: Partial<ClientFormData>;
@@ -276,6 +273,3 @@ export function ClientDetailsForm({
     </motion.div>
   );
 }
-```
-
-
