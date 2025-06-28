@@ -1,7 +1,3 @@
-// ==========================================
-// 9. RESPONSIVE LAYOUT COMPONENT
-// ==========================================
-
 // components/invoice/InvoiceGenerator.tsx
 "use client";
 
@@ -9,9 +5,10 @@ import React, { useState } from "react";
 import { motion } from "framer-motion";
 import { InvoiceForm } from "./InvoiceForm";
 import { InvoicePreview } from "./InvoicePreview";
-import { useInvoiceForm } from "@/hooks/useInvoiceForm";
+
 import { Button } from "@/components/ui/button";
 import { Eye, EyeOff, Split } from "lucide-react";
+import { useInvoiceForm } from "@/hooks/UseInvoiceForm";
 
 type ViewMode = "form" | "preview" | "split";
 

@@ -1,6 +1,7 @@
 // app/api/company/route.ts
 import { NextRequest, NextResponse } from "next/server";
-import { connectDB } from "@/lib/mongodb";
+
+import DBConnect from "@/lib/database/connection";
 import { CompanyInfo } from "@/models/CompanyInfo";
 import { writeFile } from "fs/promises";
 import path from "path";
@@ -32,7 +33,7 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
   try {
-    await connectDB();
+    await DBConnect();
     const formData = await request.formData();
 
     const companyData: any = {

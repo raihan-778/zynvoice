@@ -16,8 +16,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Calendar, FileText } from "lucide-react";
-import { CompanyDetailsForm } from "./componyDetailsForm";
+
 import { InvoiceActions } from "./InvoiceActions";
+
 
 export const InvoiceForm: React.FC = () => {
   const {
