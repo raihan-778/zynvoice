@@ -1,5 +1,6 @@
-// 📁 src/app/page.tsx (update the existing one)
+"use client";
 
+import MainLayout from "@/components/layout/Main-Layout";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -10,16 +11,15 @@ import {
 } from "@/components/ui/card";
 import { Download, FileText, Mail, Zap } from "lucide-react";
 import Link from "next/link";
-import MainLayout from "./layout";
 
 export default function HomePage() {
   return (
     <MainLayout>
       <div className="text-center">
-        <h1 className="text-4xl font-bold text-gray-900 mb-4">
+        <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-4">
           Professional Invoice Generator
         </h1>
-        <p className="text-xl text-gray-600 mb-8 max-w-2xl mx-auto">
+        <p className="text-xl text-gray-600 dark:text-gray-300 mb-8 max-w-2xl mx-auto">
           Create beautiful, professional invoices in minutes. Customize,
           download, and send with ease.
         </p>
@@ -34,7 +34,7 @@ export default function HomePage() {
         </div>
 
         <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-          <Card>
+          <Card className="hover:shadow-lg transition-shadow">
             <CardHeader>
               <FileText className="h-8 w-8 text-blue-600 mb-2" />
               <CardTitle>Easy Creation</CardTitle>
@@ -46,7 +46,7 @@ export default function HomePage() {
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="hover:shadow-lg transition-shadow">
             <CardHeader>
               <Download className="h-8 w-8 text-green-600 mb-2" />
               <CardTitle>Multiple Formats</CardTitle>
@@ -58,7 +58,7 @@ export default function HomePage() {
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="hover:shadow-lg transition-shadow">
             <CardHeader>
               <Mail className="h-8 w-8 text-purple-600 mb-2" />
               <CardTitle>Email Integration</CardTitle>
@@ -70,7 +70,7 @@ export default function HomePage() {
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="hover:shadow-lg transition-shadow">
             <CardHeader>
               <Zap className="h-8 w-8 text-orange-600 mb-2" />
               <CardTitle>Custom Templates</CardTitle>

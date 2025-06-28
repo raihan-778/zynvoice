@@ -1,11 +1,13 @@
 // components/animations/AnimatedButton.tsx
 "use client";
 
-import { Button, ButtonProps } from "@/components/ui/button";
+import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
 
 import type { TargetAndTransition, VariantLabels } from "framer-motion";
+import { ButtonHTMLAttributes, DetailedHTMLProps } from "react";
+import { ButtonProps } from "react-day-picker";
 
 interface AnimatedButtonProps extends ButtonProps {
   children: React.ReactNode;
@@ -17,7 +19,13 @@ interface AnimatedButtonProps extends ButtonProps {
   className?: string;
   onClick?: (event: React.MouseEvent<HTMLButtonElement>) => void;
 }
-
+interface AnimatedButtonProps
+  extends DetailedHTMLProps<
+    ButtonHTMLAttributes<HTMLButtonElement>,
+    HTMLButtonElement
+  > {
+  className?: string;
+}
 export function AnimatedButton({
   children,
   className,

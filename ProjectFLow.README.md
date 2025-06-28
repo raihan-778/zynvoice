@@ -1,952 +1,1035 @@
-// ===========================================
-// SECTION 6: ANIMATION & UX POLISH
-// ===========================================
+# Invoice Generator Web App - Complete Implementation Guide
 
-// 1. ANIMATION CONFIGURATION
-// ===========================================
+## 📋 Table of Contents
 
-// lib/animations/config.ts
-export const animationConfig = {
-// Durations
-duration: {
-fast: 0.2,
-normal: 0.3,
-slow: 0.5,
-slower: 0.8,
-},
+1. [Project Overview](#project-overview)
+2. [Tech Stack & Architecture](#tech-stack--architecture)
+3. [Project Structure](#project-structure)
+4. [Section-by-Section Implementation](#section-by-section-implementation)
+5. [API Routes & Database Integration](#api-routes--database-integration)
+6. [Component Integration](#component-integration)
+7. [State Management](#state-management)
+8. [Deployment Guide](#deployment-guide)
+9. [Future Scalability](#future-scalability)
 
-// Easing curves
-ease: {
-default: [0.25, 0.1, 0.25, 1],
-smooth: [0.4, 0, 0.2, 1],
-bounce: [0.68, -0.55, 0.265, 1.55],
-elastic: [0.25, 0.46, 0.45, 0.94],
-},
+## 🎯 Project Overview
 
-// Spring configurations
-spring: {
-gentle: { type: "spring", stiffness: 100, damping: 15 },
-bouncy: { type: "spring", stiffness: 300, damping: 20 },
-smooth: { type: "spring", stiffness: 200, damping: 25 },
-},
-};
+A professional invoice generator web application that allows users to:
 
-// Common animation variants
-export const fadeIn = {
-initial: { opacity: 0 },
-animate: { opacity: 1 },
-exit: { opacity: 0 },
-};
+- Create, edit, and manage invoices
+- Customize invoice templates
+- Generate PDF/Image exports
+- Send invoices via email
+- Manage company information and clients
+- Track invoice history with dashboard
 
-export const slideUp = {
-initial: { opacity: 0, y: 20 },
-animate: { opacity: 1, y: 0 },
-exit: { opacity: 0, y: -20 },
-};
+## 🛠 Tech Stack & Architecture
 
-export const slideDown = {
-initial: { opacity: 0, y: -20 },
-animate: { opacity: 1, y: 0 },
-exit: { opacity: 0, y: 20 },
-};
+### Frontend
 
-export const slideLeft = {
-initial: { opacity: 0, x: 20 },
-animate: { opacity: 1, x: 0 },
-exit: { opacity: 0, x: -20 },
-};
+- **Next.js 14** (App Router)
+- **TypeScript** for type safety
+- **TailwindCSS** for styling
+- **ShadCN UI** for components
+- **Framer Motion** for animations
+- **React Hook Form** for form management
+- **Zustand** for state management
 
-export const slideRight = {
-initial: { opacity: 0, x: -20 },
-animate: { opacity: 1, x: 0 },
-exit: { opacity: 0, x: 20 },
-};
+### Backend
 
-export const scaleIn = {
-initial: { opacity: 0, scale: 0.9 },
-animate: { opacity: 1, scale: 1 },
-exit: { opacity: 0, scale: 0.9 },
-};
+- **Next.js API Routes**
+- **MongoDB** with Mongoose
+- **NextAuth.js** for authentication
+- **Nodemailer** for email services
+- **Puppeteer** for PDF generation
 
-export const scaleOut = {
-initial: { opacity: 0, scale: 1.1 },
-animate: { opacity: 1, scale: 1 },
-exit: { opacity: 0, scale: 1.1 },
-};
+### Additional Libraries
 
-// 2. ANIMATED COMPONENTS
-// ===========================================
+- **react-pdf** for PDF handling
+- **html-to-image** for image export
+- **date-fns** for date manipulation
+- **zod** for validation
 
-// components/animations/AnimatedContainer.tsx
-'use client';
+## 📁 Project Structure
 
-import { motion, HTMLMotionProps } from 'framer-motion';
-import { animationConfig } from '@/lib/animations/config';
+```
+invoice-generator/
+├── app/
+│   ├── (auth)/
+│   │   ├── login/
+│   │   └── register/
+│   ├── (dashboard)/
+│   │   ├── dashboard/
+│   │   ├── invoices/
+│   │   ├── templates/
+│   │   ├── settings/
+│   │   └── clients/
+│   ├── api/
+│   │   ├── auth/
+│   │   ├── invoices/
+│   │   ├── templates/
+│   │   ├── clients/
+│   │   ├── email/
+│   │   └── upload/
+│   ├── globals.css
+│   ├── layout.tsx
+│   └── page.tsx
+├── components/
+│   ├── ui/ (ShadCN components)
+│   ├── forms/
+│   │   ├── InvoiceForm.tsx
+│   │   ├── CompanyDetailsForm.tsx
+│   │   ├── ClientForm.tsx
+│   │   └── ServiceItemsForm.tsx
+│   ├── invoice/
+│   │   ├── InvoicePreview.tsx
+│   │   ├── InvoiceList.tsx
+│   │   └── InvoiceActions.tsx
+│   ├── templates/
+│   │   ├── TemplateEditor.tsx
+│   │   ├── TemplatePreview.tsx
+│   │   └── TemplateSelector.tsx
+│   ├── dashboard/
+│   │   ├── StatsCards.tsx
+│   │   ├── RecentInvoices.tsx
+│   │   └── QuickActions.tsx
+│   ├── layout/
+│   │   ├── Navbar.tsx
+│   │   ├── Sidebar.tsx
+│   │   └── Footer.tsx
+│   └── shared/
+│       ├── LoadingSpinner.tsx
+│       ├── ErrorBoundary.tsx
+│       └── ConfirmDialog.tsx
+├── lib/
+│   ├── db.ts
+│   ├── auth.ts
+│   ├── utils.ts
+│   ├── validations.ts
+│   ├── pdf-generator.ts
+│   ├── email-service.ts
+│   └── store.ts
+├── models/
+│   ├── Invoice.ts
+│   ├── User.ts
+│   ├── Client.ts
+│   ├── Template.ts
+│   └── Company.ts
+├── types/
+│   ├── invoice.ts
+│   ├── user.ts
+│   ├── client.ts
+│   └── template.ts
+├── hooks/
+│   ├── useInvoices.ts
+│   ├── useTemplates.ts
+│   ├── useClients.ts
+│   └── useAuth.ts
+└── public/
+    ├── templates/
+    └── uploads/
+```
 
-interface AnimatedContainerProps extends HTMLMotionProps<'div'> {
-children: React.ReactNode;
-variant?: 'fadeIn' | 'slideUp' | 'slideDown' | 'scaleIn';
-delay?: number;
-duration?: number;
-className?: string;
+## 🔧 Section-by-Section Implementation
+
+### Section 1: Project Setup & Configuration
+
+#### 1.1 Initialize Next.js Project
+
+```bash
+# Create new Next.js project
+npx create-next-app@latest invoice-generator --typescript --tailwind --eslint --app
+
+# Navigate to project
+cd invoice-generator
+
+# Install dependencies
+npm install @radix-ui/react-* framer-motion mongoose nodemailer puppeteer
+npm install @hookform/resolvers react-hook-form zod date-fns zustand
+npm install @types/nodemailer @types/node
+
+# Install ShadCN UI
+npx shadcn-ui@latest init
+npx shadcn-ui@latest add button input label card form select textarea
+```
+
+#### 1.2 Environment Configuration
+
+```env
+# .env.local
+MONGODB_URI=mongodb://localhost:27017/invoice-generator
+NEXTAUTH_SECRET=your-secret-key
+NEXTAUTH_URL=http://localhost:3000
+
+# Email Configuration
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+SMTP_USER=your-email@gmail.com
+SMTP_PASS=your-app-password
+
+# Upload Configuration
+UPLOAD_DIR=./public/uploads
+MAX_FILE_SIZE=5242880
+```
+
+#### 1.3 Database Connection
+
+```typescript
+// lib/db.ts
+import mongoose from "mongoose";
+
+const MONGODB_URI = process.env.MONGODB_URI!;
+
+if (!MONGODB_URI) {
+  throw new Error("Please define the MONGODB_URI environment variable");
 }
 
-export function AnimatedContainer({
-children,
-variant = 'fadeIn',
-delay = 0,
-duration = animationConfig.duration.normal,
-className,
-...props
-}: AnimatedContainerProps) {
-const variants = {
-fadeIn: {
-initial: { opacity: 0 },
-animate: { opacity: 1 },
-exit: { opacity: 0 },
-},
-slideUp: {
-initial: { opacity: 0, y: 20 },
-animate: { opacity: 1, y: 0 },
-exit: { opacity: 0, y: -20 },
-},
-slideDown: {
-initial: { opacity: 0, y: -20 },
-animate: { opacity: 1, y: 0 },
-exit: { opacity: 0, y: 20 },
-},
-scaleIn: {
-initial: { opacity: 0, scale: 0.95 },
-animate: { opacity: 1, scale: 1 },
-exit: { opacity: 0, scale: 0.95 },
-},
-};
+let cached = global.mongoose;
 
-return (
-<motion.div
-variants={variants[variant]}
-initial="initial"
-animate="animate"
-exit="exit"
-transition={{
-        duration,
-        delay,
-        ease: animationConfig.ease.smooth,
-      }}
-className={className}
-{...props} >
-{children}
-</motion.div>
+if (!cached) {
+  cached = global.mongoose = { conn: null, promise: null };
+}
+
+async function dbConnect() {
+  if (cached.conn) {
+    return cached.conn;
+  }
+
+  if (!cached.promise) {
+    cached.promise = mongoose.connect(MONGODB_URI).then((mongoose) => {
+      return mongoose;
+    });
+  }
+
+  cached.conn = await cached.promise;
+  return cached.conn;
+}
+
+export default dbConnect;
+```
+
+### Section 2: Database Models & Schemas
+
+#### 2.1 User Model
+
+```typescript
+// models/User.ts
+import mongoose from "mongoose";
+
+const UserSchema = new mongoose.Schema(
+  {
+    name: { type: String, required: true },
+    email: { type: String, required: true, unique: true },
+    password: { type: String, required: true },
+    company: {
+      name: String,
+      address: String,
+      phone: String,
+      email: String,
+      logo: String,
+      website: String,
+    },
+    preferences: {
+      currency: { type: String, default: "USD" },
+      taxRate: { type: Number, default: 0 },
+      invoiceNumberPrefix: { type: String, default: "INV" },
+    },
+  },
+  {
+    timestamps: true,
+  }
 );
-}
 
-// components/animations/AnimatedButton.tsx
-'use client';
+export default mongoose.models.User || mongoose.model("User", UserSchema);
+```
 
-import { motion, HTMLMotionProps } from 'framer-motion';
-import { Button, ButtonProps } from '@/components/ui/button';
-import { cn } from '@/lib/utils';
+#### 2.2 Invoice Model
 
-interface AnimatedButtonProps extends ButtonProps {
-children: React.ReactNode;
-whileHover?: object;
-whileTap?: object;
-loading?: boolean;
-success?: boolean;
-}
+```typescript
+// models/Invoice.ts
+import mongoose from "mongoose";
 
-export function AnimatedButton({
-children,
-className,
-whileHover = { scale: 1.02 },
-whileTap = { scale: 0.98 },
-loading = false,
-success = false,
-disabled,
-...props
-}: AnimatedButtonProps) {
-return (
-<motion.div
-whileHover={!disabled && !loading ? whileHover : undefined}
-whileTap={!disabled && !loading ? whileTap : undefined}
-transition={{ type: "spring", stiffness: 400, damping: 17 }} >
-<Button
-className={cn(
-"relative overflow-hidden transition-all duration-300",
-success && "bg-green-500 hover:bg-green-600",
-className
-)}
-disabled={disabled || loading}
-{...props} >
-<motion.div
-className="flex items-center gap-2"
-animate={{
-            opacity: loading ? 0.7 : 1,
-          }} >
-{children}
-</motion.div>
+const ServiceItemSchema = new mongoose.Schema({
+  description: { type: String, required: true },
+  quantity: { type: Number, required: true, min: 1 },
+  rate: { type: Number, required: true, min: 0 },
+  amount: { type: Number, required: true, min: 0 },
+});
 
-        {/* Success checkmark animation */}
-        {success && (
-          <motion.div
-            className="absolute inset-0 flex items-center justify-center"
-            initial={{ scale: 0, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            transition={{ type: "spring", stiffness: 200, damping: 15 }}
-          >
-            <svg
-              className="w-5 h-5 text-white"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <motion.path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M5 13l4 4L19 7"
-                initial={{ pathLength: 0 }}
-                animate={{ pathLength: 1 }}
-                transition={{ duration: 0.5, delay: 0.2 }}
-              />
-            </svg>
-          </motion.div>
-        )}
-      </Button>
-    </motion.div>
+const InvoiceSchema = new mongoose.Schema(
+  {
+    userId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
+    },
+    invoiceNumber: { type: String, required: true, unique: true },
+    status: {
+      type: String,
+      enum: ["draft", "sent", "paid", "overdue"],
+      default: "draft",
+    },
+    date: { type: Date, required: true },
+    dueDate: { type: Date, required: true },
 
+    // Company Info
+    company: {
+      name: { type: String, required: true },
+      address: String,
+      phone: String,
+      email: String,
+      logo: String,
+    },
+
+    // Client Info
+    client: {
+      name: { type: String, required: true },
+      email: String,
+      phone: String,
+      address: String,
+    },
+
+    // Items
+    items: [ServiceItemSchema],
+
+    // Calculations
+    subtotal: { type: Number, required: true },
+    taxRate: { type: Number, default: 0 },
+    tax: { type: Number, default: 0 },
+    total: { type: Number, required: true },
+
+    // Template & Notes
+    templateId: { type: mongoose.Schema.Types.ObjectId, ref: "Template" },
+    notes: String,
+
+    // Tracking
+    sentAt: Date,
+    paidAt: Date,
+  },
+  {
+    timestamps: true,
+  }
 );
-}
 
-// components/animations/AnimatedCard.tsx
-'use client';
+export default mongoose.models.Invoice ||
+  mongoose.model("Invoice", InvoiceSchema);
+```
 
-import { motion, HTMLMotionProps } from 'framer-motion';
-import { Card, CardProps } from '@/components/ui/card';
-import { cn } from '@/lib/utils';
+#### 2.3 Template Model
 
-interface AnimatedCardProps extends CardProps {
-children: React.ReactNode;
-hover?: boolean;
-delay?: number;
-className?: string;
-}
+```typescript
+// models/Template.ts
+import mongoose from "mongoose";
 
-export function AnimatedCard({
-children,
-hover = true,
-delay = 0,
-className,
-...props
-}: AnimatedCardProps) {
-return (
-<motion.div
-initial={{ opacity: 0, y: 20 }}
-animate={{ opacity: 1, y: 0 }}
-transition={{
-        duration: 0.4,
-        delay,
-        ease: [0.25, 0.1, 0.25, 1],
-      }}
-whileHover={hover ? {
-y: -4,
-transition: { duration: 0.2 }
-} : undefined} >
-<Card
-className={cn(
-"transition-shadow duration-300",
-hover && "hover:shadow-lg",
-className
-)}
-{...props} >
-{children}
-</Card>
-</motion.div>
+const TemplateSchema = new mongoose.Schema(
+  {
+    userId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
+    },
+    name: { type: String, required: true },
+    description: String,
+    isDefault: { type: Boolean, default: false },
+
+    styles: {
+      primaryColor: { type: String, default: "#3b82f6" },
+      secondaryColor: { type: String, default: "#1e40af" },
+      fontFamily: { type: String, default: "Inter" },
+      layout: {
+        type: String,
+        enum: ["modern", "classic", "minimal", "corporate"],
+        default: "modern",
+      },
+    },
+
+    customFields: [
+      {
+        name: String,
+        type: { type: String, enum: ["text", "number", "date"] },
+        required: { type: Boolean, default: false },
+      },
+    ],
+  },
+  {
+    timestamps: true,
+  }
 );
+
+export default mongoose.models.Template ||
+  mongoose.model("Template", TemplateSchema);
+```
+
+### Section 3: State Management
+
+#### 3.1 Invoice Store
+
+```typescript
+// lib/store.ts
+import { create } from "zustand";
+import { persist } from "zustand/middleware";
+
+interface InvoiceItem {
+  id: string;
+  description: string;
+  quantity: number;
+  rate: number;
+  amount: number;
 }
 
-// 3. FORM ANIMATIONS
-// ===========================================
-
-// components/animations/AnimatedFormField.tsx
-'use client';
-
-import { motion, AnimatePresence } from 'framer-motion';
-import { cn } from '@/lib/utils';
-import { AlertCircle, Check } from 'lucide-react';
-
-interface AnimatedFormFieldProps {
-children: React.ReactNode;
-label?: string;
-error?: string;
-success?: boolean;
-delay?: number;
-className?: string;
+interface CompanyInfo {
+  name: string;
+  address: string;
+  phone: string;
+  email: string;
+  logo?: string;
 }
 
-export function AnimatedFormField({
-children,
-label,
-error,
-success,
-delay = 0,
-className,
-}: AnimatedFormFieldProps) {
-return (
-<motion.div
-initial={{ opacity: 0, x: -20 }}
-animate={{ opacity: 1, x: 0 }}
-transition={{
-        duration: 0.3,
-        delay,
-        ease: [0.25, 0.1, 0.25, 1],
-      }}
-className={cn("space-y-2", className)} >
-{label && (
-<motion.label
-className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-initial={{ opacity: 0 }}
-animate={{ opacity: 1 }}
-transition={{ delay: delay + 0.1 }} >
-{label}
-</motion.label>
-)}
+interface ClientInfo {
+  name: string;
+  email: string;
+  phone: string;
+  address: string;
+}
 
-      <div className="relative">
-        {children}
+interface InvoiceState {
+  // Current invoice data
+  invoiceNumber: string;
+  date: string;
+  dueDate: string;
+  company: CompanyInfo;
+  client: ClientInfo;
+  items: InvoiceItem[];
+  notes: string;
+  templateId: string;
 
-        {/* Success icon */}
-        <AnimatePresence>
-          {success && (
-            <motion.div
-              className="absolute right-3 top-1/2 -translate-y-1/2"
-              initial={{ scale: 0, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0, opacity: 0 }}
-              transition={{ type: "spring", stiffness: 200, damping: 15 }}
-            >
-              <Check className="w-4 h-4 text-green-500" />
-            </motion.div>
-          )}
-        </AnimatePresence>
+  // Calculations
+  subtotal: number;
+  taxRate: number;
+  tax: number;
+  total: number;
+
+  // Actions
+  setInvoiceNumber: (number: string) => void;
+  setDates: (date: string, dueDate: string) => void;
+  setCompany: (company: CompanyInfo) => void;
+  setClient: (client: ClientInfo) => void;
+  setItems: (items: InvoiceItem[]) => void;
+  addItem: () => void;
+  removeItem: (id: string) => void;
+  updateItem: (id: string, item: Partial<InvoiceItem>) => void;
+  setTaxRate: (rate: number) => void;
+  calculateTotals: () => void;
+  resetInvoice: () => void;
+}
+
+export const useInvoiceStore = create<InvoiceState>()(
+  persist(
+    (set, get) => ({
+      // Initial state
+      invoiceNumber: "",
+      date: new Date().toISOString().split("T")[0],
+      dueDate: "",
+      company: {
+        name: "",
+        address: "",
+        phone: "",
+        email: "",
+      },
+      client: {
+        name: "",
+        email: "",
+        phone: "",
+        address: "",
+      },
+      items: [],
+      notes: "",
+      templateId: "",
+      subtotal: 0,
+      taxRate: 0,
+      tax: 0,
+      total: 0,
+
+      // Actions
+      setInvoiceNumber: (number) => set({ invoiceNumber: number }),
+
+      setDates: (date, dueDate) => set({ date, dueDate }),
+
+      setCompany: (company) => set({ company }),
+
+      setClient: (client) => set({ client }),
+
+      setItems: (items) => {
+        set({ items });
+        get().calculateTotals();
+      },
+
+      addItem: () => {
+        const newItem: InvoiceItem = {
+          id: crypto.randomUUID(),
+          description: "",
+          quantity: 1,
+          rate: 0,
+          amount: 0,
+        };
+        set({ items: [...get().items, newItem] });
+      },
+
+      removeItem: (id) => {
+        const items = get().items.filter((item) => item.id !== id);
+        set({ items });
+        get().calculateTotals();
+      },
+
+      updateItem: (id, updatedItem) => {
+        const items = get().items.map((item) => {
+          if (item.id === id) {
+            const updated = { ...item, ...updatedItem };
+            updated.amount = updated.quantity * updated.rate;
+            return updated;
+          }
+          return item;
+        });
+        set({ items });
+        get().calculateTotals();
+      },
+
+      setTaxRate: (rate) => {
+        set({ taxRate: rate });
+        get().calculateTotals();
+      },
+
+      calculateTotals: () => {
+        const { items, taxRate } = get();
+        const subtotal = items.reduce((sum, item) => sum + item.amount, 0);
+        const tax = subtotal * (taxRate / 100);
+        const total = subtotal + tax;
+
+        set({ subtotal, tax, total });
+      },
+
+      resetInvoice: () =>
+        set({
+          invoiceNumber: "",
+          date: new Date().toISOString().split("T")[0],
+          dueDate: "",
+          client: { name: "", email: "", phone: "", address: "" },
+          items: [],
+          notes: "",
+          subtotal: 0,
+          tax: 0,
+          total: 0,
+        }),
+    }),
+    {
+      name: "invoice-storage",
+    }
+  )
+);
+```
+
+### Section 4: API Routes Implementation
+
+#### 4.1 Invoice API Routes
+
+```typescript
+// app/api/invoices/route.ts
+import { NextRequest, NextResponse } from "next/server";
+import dbConnect from "@/lib/db";
+import Invoice from "@/models/Invoice";
+import { getServerSession } from "next-auth";
+
+export async function GET(request: NextRequest) {
+  try {
+    await dbConnect();
+    const session = await getServerSession();
+
+    if (!session?.user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const { searchParams } = new URL(request.url);
+    const page = parseInt(searchParams.get("page") || "1");
+    const limit = parseInt(searchParams.get("limit") || "10");
+    const status = searchParams.get("status");
+
+    const query = { userId: session.user.id };
+    if (status) query.status = status;
+
+    const invoices = await Invoice.find(query)
+      .sort({ createdAt: -1 })
+      .skip((page - 1) * limit)
+      .limit(limit)
+      .populate("templateId", "name styles");
+
+    const total = await Invoice.countDocuments(query);
+
+    return NextResponse.json({
+      invoices,
+      pagination: {
+        page,
+        limit,
+        total,
+        pages: Math.ceil(total / limit),
+      },
+    });
+  } catch (error) {
+    return NextResponse.json(
+      { error: "Failed to fetch invoices" },
+      { status: 500 }
+    );
+  }
+}
+
+export async function POST(request: NextRequest) {
+  try {
+    await dbConnect();
+    const session = await getServerSession();
+
+    if (!session?.user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const data = await request.json();
+
+    // Generate invoice number if not provided
+    if (!data.invoiceNumber) {
+      const lastInvoice = await Invoice.findOne({
+        userId: session.user.id,
+      }).sort({ createdAt: -1 });
+
+      const nextNumber = lastInvoice
+        ? parseInt(lastInvoice.invoiceNumber.split("-")[2]) + 1
+        : 1;
+
+      data.invoiceNumber = `INV-${new Date().getFullYear()}-${nextNumber
+        .toString()
+        .padStart(3, "0")}`;
+    }
+
+    const invoice = new Invoice({
+      ...data,
+      userId: session.user.id,
+    });
+
+    await invoice.save();
+
+    return NextResponse.json(invoice, { status: 201 });
+  } catch (error) {
+    return NextResponse.json(
+      { error: "Failed to create invoice" },
+      { status: 500 }
+    );
+  }
+}
+```
+
+#### 4.2 PDF Generation API
+
+```typescript
+// app/api/invoices/[id]/pdf/route.ts
+import { NextRequest, NextResponse } from "next/server";
+import puppeteer from "puppeteer";
+import dbConnect from "@/lib/db";
+import Invoice from "@/models/Invoice";
+import Template from "@/models/Template";
+
+export async function GET(
+  request: NextRequest,
+  { params }: { params: { id: string } }
+) {
+  try {
+    await dbConnect();
+
+    const invoice = await Invoice.findById(params.id).populate("templateId");
+    if (!invoice) {
+      return NextResponse.json({ error: "Invoice not found" }, { status: 404 });
+    }
+
+    // Generate HTML for PDF
+    const html = generateInvoiceHTML(invoice);
+
+    // Create PDF using Puppeteer
+    const browser = await puppeteer.launch();
+    const page = await browser.newPage();
+
+    await page.setContent(html);
+    const pdf = await page.pdf({
+      format: "A4",
+      printBackground: true,
+      margin: {
+        top: "20px",
+        bottom: "20px",
+        left: "20px",
+        right: "20px",
+      },
+    });
+
+    await browser.close();
+
+    return new NextResponse(pdf, {
+      headers: {
+        "Content-Type": "application/pdf",
+        "Content-Disposition": `attachment; filename="${invoice.invoiceNumber}.pdf"`,
+      },
+    });
+  } catch (error) {
+    return NextResponse.json(
+      { error: "Failed to generate PDF" },
+      { status: 500 }
+    );
+  }
+}
+
+function generateInvoiceHTML(invoice: any): string {
+  const template = invoice.templateId || {
+    styles: { primaryColor: "#3b82f6" },
+  };
+
+  return `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="utf-8">
+      <title>Invoice ${invoice.invoiceNumber}</title>
+      <style>
+        body { 
+          font-family: Arial, sans-serif; 
+          margin: 0; 
+          padding: 20px;
+          color: #333;
+        }
+        .header { 
+          display: flex; 
+          justify-content: space-between; 
+          margin-bottom: 40px; 
+        }
+        .company-info h1 { 
+          color: ${template.styles.primaryColor}; 
+          margin: 0;
+        }
+        .invoice-title { 
+          font-size: 32px; 
+          font-weight: bold; 
+          color: ${template.styles.primaryColor}; 
+        }
+        .invoice-details { 
+          margin-top: 10px; 
+        }
+        .client-info { 
+          margin-bottom: 30px; 
+        }
+        .client-info h3 { 
+          color: ${template.styles.primaryColor}; 
+          margin-bottom: 10px; 
+        }
+        table { 
+          width: 100%; 
+          border-collapse: collapse; 
+          margin-bottom: 30px; 
+        }
+        th { 
+          background-color: ${template.styles.primaryColor}; 
+          color: white; 
+          padding: 12px; 
+          text-align: left; 
+        }
+        td { 
+          padding: 12px; 
+          border-bottom: 1px solid #eee; 
+        }
+        .totals { 
+          margin-left: auto; 
+          width: 300px; 
+        }
+        .total-row { 
+          display: flex; 
+          justify-content: space-between; 
+          padding: 8px 0; 
+        }
+        .final-total { 
+          background-color: ${
+            template.styles.secondaryColor || template.styles.primaryColor
+          }; 
+          color: white; 
+          padding: 15px; 
+          font-weight: bold; 
+          font-size: 18px; 
+        }
+      </style>
+    </head>
+    <body>
+      <div class="header">
+        <div class="company-info">
+          <h1>${invoice.company.name}</h1>
+          <div>${invoice.company.address.replace(/\n/g, "<br>")}</div>
+          <div>${invoice.company.email}</div>
+          <div>${invoice.company.phone}</div>
+        </div>
+        <div class="invoice-info">
+          <div class="invoice-title">INVOICE</div>
+          <div class="invoice-details">
+            <div><strong>Invoice #:</strong> ${invoice.invoiceNumber}</div>
+            <div><strong>Date:</strong> ${new Date(
+              invoice.date
+            ).toLocaleDateString()}</div>
+            <div><strong>Due Date:</strong> ${new Date(
+              invoice.dueDate
+            ).toLocaleDateString()}</div>
+          </div>
+        </div>
       </div>
-
-      {/* Error message */}
-      <AnimatePresence>
-        {error && (
-          <motion.div
-            className="flex items-center gap-2 text-sm text-red-500"
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: 'auto' }}
-            exit={{ opacity: 0, height: 0 }}
-            transition={{ duration: 0.2 }}
-          >
-            <AlertCircle className="w-4 h-4" />
-            {error}
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </motion.div>
-
-);
+      
+      <div class="client-info">
+        <h3>Bill To:</h3>
+        <div><strong>${invoice.client.name}</strong></div>
+        <div>${invoice.client.address.replace(/\n/g, "<br>")}</div>
+        <div>${invoice.client.email}</div>
+      </div>
+      
+      <table>
+        <thead>
+          <tr>
+            <th>Description</th>
+            <th style="text-align: center;">Qty</th>
+            <th style="text-align: right;">Rate</th>
+            <th style="text-align: right;">Amount</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${invoice.items
+            .map(
+              (item) => `
+            <tr>
+              <td>${item.description}</td>
+              <td style="text-align: center;">${item.quantity}</td>
+              <td style="text-align: right;">$${item.rate.toFixed(2)}</td>
+              <td style="text-align: right;">$${item.amount.toFixed(2)}</td>
+            </tr>
+          `
+            )
+            .join("")}
+        </tbody>
+      </table>
+      
+      <div class="totals">
+        <div class="total-row">
+          <span>Subtotal:</span>
+          <span>$${invoice.subtotal.toFixed(2)}</span>
+        </div>
+        <div class="total-row">
+          <span>Tax:</span>
+          <span>$${invoice.tax.toFixed(2)}</span>
+        </div>
+        <div class="total-row final-total">
+          <span>Total:</span>
+          <span>$${invoice.total.toFixed(2)}</span>
+        </div>
+      </div>
+      
+      ${
+        invoice.notes
+          ? `
+        <div style="margin-top: 40px;">
+          <h3>Notes:</h3>
+          <p>${invoice.notes}</p>
+        </div>
+      `
+          : ""
+      }
+    </body>
+    </html>
+  `;
 }
+```
 
-// 4. LOADING ANIMATIONS
-// ===========================================
+#### 4.3 Email Service API
 
-// components/animations/LoadingSpinner.tsx
-'use client';
+```typescript
+// app/api/invoices/[id]/send/route.ts
+import { NextRequest, NextResponse } from "next/server";
+import nodemailer from "nodemailer";
+import dbConnect from "@/lib/db";
+import Invoice from "@/models/Invoice";
 
-import { motion } from 'framer-motion';
-import { cn } from '@/lib/utils';
+export async function POST(
+  request: NextRequest,
+  { params }: { params: { id: string } }
+) {
+  try {
+    await dbConnect();
 
-interface LoadingSpinnerProps {
-size?: 'sm' | 'md' | 'lg';
-className?: string;
-text?: string;
+    const { to, subject, message } = await request.json();
+
+    const invoice = await Invoice.findById(params.id);
+    if (!invoice) {
+      return NextResponse.json({ error: "Invoice not found" }, { status: 404 });
+    }
+
+    // Create transporter
+    const transporter = nodemailer.createTransporter({
+      host: process.env.SMTP_HOST,
+      port: parseInt(process.env.SMTP_PORT || "587"),
+      secure: false,
+      auth: {
+        user: process.env.SMTP_USER,
+        pass: process.env.SMTP_PASS,
+      },
+    });
+
+    // Generate PDF (reuse the PDF generation logic)
+    const pdfBuffer = await generateInvoicePDF(invoice);
+
+    // Send email
+    await transporter.sendMail({
+      from: process.env.SMTP_USER,
+      to: to || invoice.client.email,
+      subject: subject || `Invoice ${invoice.invoiceNumber}`,
+      html: `
+        <div style="font-family: Arial, sans-serif;">
+          <h2>Invoice ${invoice.invoiceNumber}</h2>
+          <p>${message || "Please find attached your invoice."}</p>
+          <p>Thank you for your business!</p>
+          <hr>
+          <p><small>This is an automated message from ${
+            invoice.company.name
+          }</small></p>
+        </div>
+      `,
+      attachments: [
+        {
+          filename: `${invoice.invoiceNumber}.pdf`,
+          content: pdfBuffer,
+          contentType: "application/pdf",
+        },
+      ],
+    });
+
+    // Update invoice status
+    await Invoice.findByIdAndUpdate(params.id, {
+      status: "sent",
+      sentAt: new Date(),
+    });
+
+    return NextResponse.json({ message: "Invoice sent successfully" });
+  } catch (error) {
+    console.error("Email sending failed:", error);
+    return NextResponse.json(
+      { error: "Failed to send invoice" },
+      { status: 500 }
+    );
+  }
 }
+```
 
-export function LoadingSpinner({
-size = 'md',
-className,
-text
-}: LoadingSpinnerProps) {
-const sizeClasses = {
-sm: 'w-4 h-4',
-md: 'w-6 h-6',
-lg: 'w-8 h-8',
-};
+### Section 5: Main Components Integration
 
-return (
-<div className={cn("flex items-center gap-3", className)}>
-<motion.div
-className={cn(
-"border-2 border-current border-t-transparent rounded-full",
-sizeClasses[size]
-)}
-animate={{ rotate: 360 }}
-transition={{
-          duration: 1,
-          repeat: Infinity,
-          ease: "linear",
-        }}
-/>
-{text && (
-<motion.span
-className="text-sm text-muted-foreground"
-animate={{ opacity: [0.5, 1, 0.5] }}
-transition={{
-            duration: 1.5,
-            repeat: Infinity,
-            ease: "easeInOut",
-          }} >
-{text}
-</motion.span>
-)}
-</div>
-);
-}
+#### 5.1 Dashboard Layout
 
-// components/animations/ProgressBar.tsx
-'use client';
+```typescript
+// app/(dashboard)/layout.tsx
+import { Sidebar } from "@/components/layout/Sidebar";
+import { Navbar } from "@/components/layout/Navbar";
 
-import { motion } from 'framer-motion';
-import { cn } from '@/lib/utils';
-
-interface ProgressBarProps {
-progress: number;
-className?: string;
-showPercentage?: boolean;
-animated?: boolean;
-}
-
-export function ProgressBar({
-progress,
-className,
-showPercentage = true,
-animated = true,
-}: ProgressBarProps) {
-return (
-<div className={cn("space-y-2", className)}>
-{showPercentage && (
-<div className="flex justify-between text-sm">
-<span>Progress</span>
-<motion.span
-animate={{ opacity: [0.7, 1, 0.7] }}
-transition={{
-              duration: 2,
-              repeat: Infinity,
-              ease: "easeInOut",
-            }} >
-{Math.round(progress)}%
-</motion.span>
-</div>
-)}
-
-      <div className="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
-        <motion.div
-          className="h-full bg-blue-500 rounded-full"
-          initial={{ width: 0 }}
-          animate={{ width: `${progress}%` }}
-          transition={{
-            duration: animated ? 0.5 : 0,
-            ease: "easeOut",
-          }}
-        />
+export default function DashboardLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="flex h-screen bg-gray-50">
+      <Sidebar />
+      <div className="flex-1 flex flex-col overflow-hidden">
+        <Navbar />
+        <main className="flex-1 overflow-auto p-6">{children}</main>
       </div>
     </div>
-
-);
+  );
 }
+```
 
-// 5. SUCCESS/ERROR ANIMATIONS
-// ===========================================
+#### 5.2 Invoice Creation Page
 
-// components/animations/StatusMessage.tsx
-'use client';
-
-import { motion, AnimatePresence } from 'framer-motion';
-import { Check, X, AlertTriangle, Info } from 'lucide-react';
-import { cn } from '@/lib/utils';
-
-interface StatusMessageProps {
-type: 'success' | 'error' | 'warning' | 'info';
-message: string;
-visible: boolean;
-onClose?: () => void;
-className?: string;
-}
-
-export function StatusMessage({
-type,
-message,
-visible,
-onClose,
-className,
-}: StatusMessageProps) {
-const icons = {
-success: Check,
-error: X,
-warning: AlertTriangle,
-info: Info,
-};
-
-const colors = {
-success: 'bg-green-50 text-green-800 border-green-200',
-error: 'bg-red-50 text-red-800 border-red-200',
-warning: 'bg-yellow-50 text-yellow-800 border-yellow-200',
-info: 'bg-blue-50 text-blue-800 border-blue-200',
-};
-
-const Icon = icons[type];
-
-return (
-<AnimatePresence>
-{visible && (
-<motion.div
-initial={{ opacity: 0, y: -10, scale: 0.95 }}
-animate={{ opacity: 1, y: 0, scale: 1 }}
-exit={{ opacity: 0, y: -10, scale: 0.95 }}
-transition={{
-            type: "spring",
-            stiffness: 200,
-            damping: 20,
-          }}
-className={cn(
-"flex items-center gap-3 p-4 rounded-lg border",
-colors[type],
-className
-)} >
-<motion.div
-initial={{ scale: 0 }}
-animate={{ scale: 1 }}
-transition={{
-              type: "spring",
-              stiffness: 300,
-              damping: 15,
-              delay: 0.1,
-            }} >
-<Icon className="w-5 h-5" />
-</motion.div>
-
-          <p className="flex-1 text-sm font-medium">{message}</p>
-
-          {onClose && (
-            <motion.button
-              onClick={onClose}
-              whileHover={{ scale: 1.1 }}
-              whileTap={{ scale: 0.9 }}
-              className="p-1 rounded-full hover:bg-black/10 transition-colors"
-            >
-              <X className="w-4 h-4" />
-            </motion.button>
-          )}
-        </motion.div>
-      )}
-    </AnimatePresence>
-
-);
-}
-
-// 6. LIST ANIMATIONS
-// ===========================================
-
-// components/animations/AnimatedList.tsx
-'use client';
-
-import { motion, AnimatePresence } from 'framer-motion';
-import { cn } from '@/lib/utils';
-
-interface AnimatedListProps {
-children: React.ReactNode[];
-className?: string;
-staggerDelay?: number;
-}
-
-export function AnimatedList({
-children,
-className,
-staggerDelay = 0.1,
-}: AnimatedListProps) {
-return (
-<motion.div
-className={cn("space-y-4", className)}
-initial="hidden"
-animate="visible"
-variants={{
-        hidden: { opacity: 0 },
-        visible: {
-          opacity: 1,
-          transition: {
-            staggerChildren: staggerDelay,
-          },
-        },
-      }} >
-<AnimatePresence mode="popLayout">
-{children.map((child, index) => (
-<motion.div
-key={index}
-layout
-variants={{
-              hidden: { opacity: 0, y: 20 },
-              visible: { opacity: 1, y: 0 },
-            }}
-exit={{ opacity: 0, x: -100 }}
-transition={{
-              type: "spring",
-              stiffness: 100,
-              damping: 15,
-            }} >
-{child}
-</motion.div>
-))}
-</AnimatePresence>
-</motion.div>
-);
-}
-
-// 7. PAGE TRANSITIONS
-// ===========================================
-
-// components/animations/PageTransition.tsx
-'use client';
-
-import { motion, AnimatePresence } from 'framer-motion';
-import { usePathname } from 'next/navigation';
-
-interface PageTransitionProps {
-children: React.ReactNode;
-}
-
-export function PageTransition({ children }: PageTransitionProps) {
-const pathname = usePathname();
-
-return (
-<AnimatePresence mode="wait">
-<motion.div
-key={pathname}
-initial={{ opacity: 0, y: 20 }}
-animate={{ opacity: 1, y: 0 }}
-exit={{ opacity: 0, y: -20 }}
-transition={{
-          duration: 0.4,
-          ease: [0.25, 0.1, 0.25, 1],
-        }} >
-{children}
-</motion.div>
-</AnimatePresence>
-);
-}
-
-// 8. ENHANCED INVOICE FORM WITH ANIMATIONS
-// ===========================================
-
-// components/forms/AnimatedInvoiceForm.tsx
+```typescript
+// app/(dashboard)/invoices/new/page.tsx
 'use client';
 
 import { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, Trash2, Calculator } from 'lucide-react';
-import { AnimatedContainer } from '@/components/animations/AnimatedContainer';
-import { AnimatedButton } from '@/components/animations/AnimatedButton';
-import { AnimatedFormField } from '@/components/animations/AnimatedFormField';
-import { AnimatedCard } from '@/components/animations/AnimatedCard';
-import { StatusMessage } from '@/components/animations/StatusMessage';
-import { ProgressBar } from '@/components/animations/ProgressBar';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Separator } from '@/components/ui/separator';
-
-interface ServiceItem {
-id: string;
-description: string;
-quantity: number;
-rate: number;
-amount: number;
-}
-
-export function AnimatedInvoiceForm() {
-const [services, setServices] = useState<ServiceItem[]>([
-{ id: '1', description: '', quantity: 1, rate: 0, amount: 0 }
-]);
-const [showSuccess, setShowSuccess] = useState(false);
-const [isGenerating, setIsGenerating] = useState(false);
-const [formProgress, setFormProgress] = useState(0);
-
-// Calculate form completion progress
-const calculateProgress = () => {
-let completed = 0;
-const totalFields = 6; // Adjust based on your form fields
-
-    // Add your progress calculation logic here
-    return (completed / totalFields) * 100;
-
-};
-
-const addService = () => {
-const newService: ServiceItem = {
-id: Date.now().toString(),
-description: '',
-quantity: 1,
-rate: 0,
-amount: 0,
-};
-setServices([...services, newService]);
-};
-
-const removeService = (id: string) => {
-setServices(services.filter(service => service.id !== id));
-};
-
-const updateService = (id: string, field: keyof ServiceItem, value: string | number) => {
-setServices(services.map(service => {
-if (service.id === id) {
-const updated = { ...service, [field]: value };
-if (field === 'quantity' || field === 'rate') {
-updated.amount = updated.quantity \* updated.rate;
-}
-return updated;
-}
-return service;
-}));
-};
-
-const totalAmount = services.reduce((sum, service) => sum + service.amount, 0);
-
-const handleGenerate = async () => {
-setIsGenerating(true);
-
-    // Simulate generation process
-    await new Promise(resolve => setTimeout(resolve, 2000));
-
-    setIsGenerating(false);
-    setShowSuccess(true);
-
-    // Hide success message after 3 seconds
-    setTimeout(() => setShowSuccess(false), 3000);
-
-};
-
-return (
-<AnimatedContainer variant="slideUp" className="max-w-4xl mx-auto p-6 space-y-8">
-{/_ Progress Bar _/}
-<ProgressBar progress={formProgress} />
-
-      {/* Status Messages */}
-      <StatusMessage
-        type="success"
-        message="Invoice generated successfully!"
-        visible={showSuccess}
-        onClose={() => setShowSuccess(false)}
-      />
-
-      {/* Company Information */}
-      <AnimatedCard delay={0.1}>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <motion.div
-              animate={{ rotate: [0, 10, -10, 0] }}
-              transition={{ duration: 2, repeat: Infinity, repeatDelay: 5 }}
-            >
-              🏢
-            </motion.div>
-            Company Information
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="grid grid-cols-2 gap-4">
-          <AnimatedFormField label="Company Name" delay={0.2}>
-            <Input placeholder="Your Company Name" />
-          </AnimatedFormField>
-
-          <AnimatedFormField label="Email" delay={0.3}>
-            <Input type="email" placeholder="company@example.com" />
-          </AnimatedFormField>
-
-          <AnimatedFormField label="Phone" delay={0.4} className="col-span-2">
-            <Input placeholder="+1 (555) 123-4567" />
-          </AnimatedFormField>
-
-          <AnimatedFormField label="Address" delay={0.5} className="col-span-2">
-            <Textarea placeholder="Company Address" rows={3} />
-          </AnimatedFormField>
-        </CardContent>
-      </AnimatedCard>
-
-      {/* Client Information */}
-      <AnimatedCard delay={0.2}>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <motion.div
-              animate={{ rotate: [0, -10, 10, 0] }}
-              transition={{ duration: 2, repeat: Infinity, repeatDelay: 5 }}
-            >
-              👤
-            </motion.div>
-            Client Information
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="grid grid-cols-2 gap-4">
-          <AnimatedFormField label="Client Name" delay={0.3}>
-            <Input placeholder="Client Name" />
-          </AnimatedFormField>
-
-          <AnimatedFormField label="Client Email" delay={0.4}>
-            <Input type="email" placeholder="client@example.com" />
-          </AnimatedFormField>
-        </CardContent>
-      </AnimatedCard>
-
-      {/* Services */}
-      <AnimatedCard delay={0.3}>
-        <CardHeader>
-          <CardTitle className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <motion.div
-                animate={{ scale: [1, 1.1, 1] }}
-                transition={{ duration: 2, repeat: Infinity, repeatDelay: 3 }}
-              >
-                📋
-              </motion.div>
-              Services
-            </div>
-
-            <AnimatedButton
-              onClick={addService}
-              variant="outline"
-              size="sm"
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-            >
-              <Plus className="w-4 h-4 mr-2" />
-              Add Service
-            </AnimatedButton>
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <AnimatePresence mode="popLayout">
-            {services.map((service, index) => (
-              <motion.div
-                key={service.id}
-                layout
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, x: -100 }}
-                transition={{
-                  type: "spring",
-                  stiffness: 100,
-                  damping: 15,
-                }}
-                className="grid grid-cols-12 gap-4 p-4 border rounded-lg mb-4"
-              >
-                <div className="col-span-5">
-                  <Input
-                    placeholder="Service description"
-                    value={service.description}
-                    onChange={(e) => updateService(service.id, 'description', e.target.value)}
-                  />
-                </div>
-
-                <div className="col-span-2">
-                  <Input
-                    type="number"
-                    placeholder="Qty"
-                    value={service.quantity}
-                    onChange={(e) => updateService(service.id, 'quantity', parseInt(e.target.value) || 0)}
-                  />
-                </div>
-
-                <div className="col-span-2">
-                  <Input
-                    type="number"
-                    placeholder="Rate"
-                    value={service.rate}
-                    onChange={(e) => updateService(service.id, 'rate', parseFloat(e.target.value) || 0)}
-                  />
-                </div>
-
-                <div className="col-span-2">
-                  <motion.div
-                    className="flex items-center h-10 px-3 bg-gray-50 rounded-md"
-                    animate={{ scale: service.amount > 0 ? [1, 1.05, 1] : 1 }}
-                    transition={{ duration: 0.3 }}
-                  >
-                    ${service.amount.toFixed(2)}
-                  </motion.div>
-                </div>
-
-                <div className="col-span-1 flex justify-end">
-                  {services.length > 1 && (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => removeService(service.id)}
-                      className="text-red-500 hover:text-red-700"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
-                  )}
-                </div>
-              </motion.div>
-            ))}
-          </AnimatePresence>
-
-          <Separator className="my-6" />
-
-          {/* Total */}
-          <motion.div
-            className="flex justify-end items-center gap-4 text-lg font-semibold"
-            animate={{ scale: totalAmount > 0 ? [1, 1.02, 1] : 1 }}
-            transition={{ duration: 0.5 }}
-          >
-            <Calculator className="w-5 h-5" />
-            <span>Total: ${totalAmount.toFixed(2)}</span>
-          </motion.div>
-        </CardContent>
-      </AnimatedCard>
-
-      {/* Action Buttons */}
-      <motion.div
-        className="flex justify-end gap-4"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 0.5 }}
-      >
-        <AnimatedButton
-          variant="outline"
-          whileHover={{ scale: 1.02 }}
-          whileTap={{ scale: 0.98 }}
-        >
-          Save Draft
-        </AnimatedButton>
-
-        <AnimatedButton
-          onClick={handleGenerate}
-          loading={isGenerating}
-          className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700"
-        >
-          {isGenerating ? 'Generating...' : 'Generate Invoice'}
-        </AnimatedButton>
-      </motion.div>
-    </AnimatedContainer>
-
-);
-}
-
-// 9. ENHANCED DASHBOARD WITH ANIMATIONS
-// ===========================================
-
-// components/dashboard/AnimatedDashboard.tsx
-'use client';
-
 import { motion } from 'framer-motion';
-import { AnimatedContainer } from '@/components/animations/AnimatedContainer';
-import { AnimatedCard } from '@/components/animations/AnimatedCard';
-import { AnimatedList } from '@/components/animations/AnimatedList';
-import { FileText, DollarSign, Users, TrendingUp } from 'lucide-react';
+import { InvoiceForm } from '@/components/forms/InvoiceForm';
+import { InvoicePreview } from '@/components/invoice/InvoicePreview';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Save, Send, Download, Eye } from 'lucide-react';
+import { useInvoiceStore } from '@/lib/store';
 
-const stats = [
-{ title: 'Total Invoices', value: '1,234', icon: FileText, change: '+12%' },
-{ title: 'Revenue', value: '$45,678', icon: DollarSign, change: '+8%' },
-{ title: 'Clients', value: '89', icon: Users
+export default function NewInvoicePage() {
+  const [activeTab, setActiveTab] = useState('form');
+  const [isLoading, setIsLoading] = useState(false);
+  const invoiceData = useInvoiceStore();
+
+  const handleSave = async () => {
+    setIsLoading(true);
+    try {
+      const response = await fetch('/api/invoices', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(invoiceData),
+      });
+
+      if (response.ok) {
+        const invoice = await response.json();
+        // Handle success (redirect, toast, etc.)
+      }
+    } catch (error) {
+      console.error('Failed to save invoice:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleDownload = async () => {
+    // Implement PDF download
+  };
+
+  const handleSend = async () => {
+    // Implement email sending
+  };
+
+  return (
+    <div className="container mx-auto py-6">
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="space-y-6"
+      >
+        <div className="flex items-center justify-between">
+          <h1 className="text-3xl font-bold">Create New Invoice</h1>
+          <div className="flex space-x-2">
+            <Button variant="outline" onClick={handleDownload}>
+              <Download className="h-4 w-4 mr-2" />
+              Download PDF
+            </Button>
+            <Button variant="outline" onClick={handleSend}>
+              <Send className="h-4 w-4 mr-2" />
+              Send Email
+            </Button>
+            <Button onClick={handleSave} disabled={isLoading}>
+              <Save className="h-4 w-4 mr-2" />
+              {isLoading ? 'Saving...' : 'Save Invoice'}
+            </Button>
+          </div>
+        </div>
+
+        <Tabs value={activeTab} onValueChange={setActiveTab}>
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="form">Invoice Form</TabsTrigger>
+            <TabsTrigger value="preview">
+              <Eye className="h-4 w-4 mr-2" />
+              Preview
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="form" className="space-y-
+```

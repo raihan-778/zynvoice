@@ -1,41 +1,22 @@
-// 📁 src/components/layout/main-layout.tsx
-"use client";
+import type { Metadata } from "next";
+import { Inter } from "next/font/google";
+import "./globals.css";
 
-import { useState } from "react";
+const inter = Inter({ subsets: ["latin"] });
 
-import Footer from "@/components/layout/Footer";
-import Header from "@/components/layout/Header";
-import Sidebar from "@/components/layout/Sidebar";
-import { motion } from "framer-motion";
-import Providers from "./contextProvider/provider";
+export const metadata: Metadata = {
+  title: "Invoice Generator",
+  description: "Professional invoice generator application",
+};
 
-interface MainLayoutProps {
+export default function RootLayout({
+  children,
+}: {
   children: React.ReactNode;
-}
-
-export default function MainLayout({ children }: MainLayoutProps) {
-  const [sidebarOpen, setSidebarOpen] = useState(false);
-
+}) {
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
-      <Header onMenuClick={() => setSidebarOpen(true)} />
-
-      <div className="flex flex-1">
-        <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
-
-        <main className="flex-1 overflow-auto">
-          <motion.div
-            className="max-w-7xl mx-auto px-4 py-6 lg:px-6"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.3 }}
-          >
-            <Providers>{children}</Providers>
-          </motion.div>
-        </main>
-      </div>
-
-      <Footer />
-    </div>
+    <html lang="en">
+      <body className={inter.className}>{children}</body>
+    </html>
   );
 }

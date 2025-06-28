@@ -1,6 +1,8 @@
 // 15. PERFORMANCE OPTIMIZATIONS
 // ===========================================
 
+import { useEffect, useState } from "react";
+
 // utils/animationUtils.ts
 export const reducedMotionQuery = "(prefers-reduced-motion: reduce)";
 

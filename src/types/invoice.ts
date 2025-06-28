@@ -35,6 +35,7 @@ export interface Invoice {
   total: number;
   notes?: string;
   template: string;
+  status?: "draft" | "sent" | "paid" | "overdue";
 }
 
 export interface InvoiceTemplate {

@@ -1,7 +1,7 @@
 // hooks/useInvoiceForm.ts
 "use client";
 
-import { Invoice } from "@/types/invoice";
+import { Client, CompanyInfo, Invoice, ServiceItem } from "@/types/invoice";
 import { useCallback, useState } from "react";
 
 export const useInvoiceForm = () => {

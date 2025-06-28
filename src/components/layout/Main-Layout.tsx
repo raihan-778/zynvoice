@@ -1,12 +1,10 @@
-// 📁 src/components/layout/main-layout.tsx
 "use client";
 
 import { useState } from "react";
-
 import { motion } from "framer-motion";
+import Footer from "./Footer";
 import Header from "./Header";
 import Sidebar from "./Sidebar";
-import Footer from "./Footer";
 
 interface MainLayoutProps {
   children: React.ReactNode;
