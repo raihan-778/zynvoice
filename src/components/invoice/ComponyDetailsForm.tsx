@@ -1,14 +1,15 @@
 "use client";
 
-import React, { useRef } from "react";
-import { motion } from "framer-motion";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Upload, Building2 } from "lucide-react";
 import { CompanyInfo } from "@/types/invoice";
+import { motion } from "framer-motion";
+import { Building2, Upload } from "lucide-react";
+import Image from "next/image";
+import React, { useRef } from "react";
 
 interface CompanyDetailsFormProps {
   company: CompanyInfo;
@@ -56,9 +57,11 @@ export const CompanyDetailsForm: React.FC<CompanyDetailsFormProps> = ({
                   animate={{ scale: 1 }}
                   className="w-16 h-16 border-2 border-dashed border-gray-300 rounded-lg overflow-hidden"
                 >
-                  <img
+                  <Image
                     src={company.logo}
                     alt="Logo"
+                    width={64}
+                    height={64}
                     className="w-full h-full object-cover"
                   />
                 </motion.div>

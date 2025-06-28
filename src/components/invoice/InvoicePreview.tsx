@@ -7,14 +7,16 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import { InvoiceFormData } from "@/lib/validations/validation";
+import { Client, CompanyInfo } from "@/types/invoice";
 import Image from "next/image";
 
 interface InvoicePreviewProps {
   data: InvoiceFormData;
-  companyInfo: any;
-  clientInfo: any;
+  companyInfo: CompanyInfo;
+  clientInfo: Client;
   invoiceNumber?: string;
   className?: string;
+  // Removed unused props: invoice and template
 }
 
 export const InvoicePreview = forwardRef<HTMLDivElement, InvoicePreviewProps>(

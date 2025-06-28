@@ -23,7 +23,7 @@ export const InvoiceGenerator: React.FC = () => {
       case "preview":
         return (
           <div className="max-w-4xl mx-auto p-6">
-            <InvoicePreview invoice={invoice} template={invoice.template} />
+            <InvoicePreview invoice={invoice} />
           </div>
         );
       case "split":

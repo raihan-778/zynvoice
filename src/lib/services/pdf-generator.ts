@@ -2,13 +2,14 @@ import { InvoicePDFTemplate } from "@/components/pdf/invoice-template-pdf";
 import { pdf } from "@react-pdf/renderer";
 import { saveAs } from "file-saver";
 import { InvoiceFormData } from "../validations/validation";
+import { Client, CompanyInfo } from "@/types/invoice";
 // 📁 src/lib/services/pdf-generator.ts
 
 export class PDFGeneratorService {
   static async generatePDF(
     invoiceData: InvoiceFormData,
-    companyInfo: unknown,
-    clientInfo: unknown,
+    companyInfo: CompanyInfo,
+    clientInfo: Client,
     invoiceNumber?: string
   ): Promise<Blob> {
     try {
@@ -30,8 +31,8 @@ export class PDFGeneratorService {
 
   static async downloadPDF(
     invoiceData: InvoiceFormData,
-    companyInfo: unknown,
-    clientInfo: unknown,
+    companyInfo: CompanyInfo,
+    clientInfo: Client,
     invoiceNumber: string = "INV-001"
   ): Promise<void> {
     try {
@@ -54,8 +55,8 @@ export class PDFGeneratorService {
 
   static async getPDFDataURL(
     invoiceData: InvoiceFormData,
-    companyInfo: unknown,
-    clientInfo: unknown,
+    companyInfo: CompanyInfo,
+    clientInfo: Client,
     invoiceNumber?: string
   ): Promise<string> {
     try {

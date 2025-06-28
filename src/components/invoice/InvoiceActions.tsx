@@ -25,13 +25,9 @@ import {
   Palette,
 } from "lucide-react";
 import React, { useState } from "react";
-// import { PDFService } from "@/lib/services/pdf-service";
-// import { ImageService, ImageFormat } from "@/services/image-service";
-// import { JSPDFService } from "@/services/jspdf-service";
-// import { toast } from "@/components/ui/use-toast";
 import { ImageFormat, ImageService } from "@/lib/services/image-generator";
 import { JSPDFService } from "@/lib/services/jspdf.service";
-import { PDFService } from "@/lib/services/pdf-generator";
+import { PDFGeneratorService } from "@/lib/services/pdf-generator";
 import { toast } from "sonner";
 
 interface InvoiceActionsProps {
@@ -78,7 +74,7 @@ export const InvoiceActions: React.FC<InvoiceActionsProps> = ({
     setIsDownloading(true);
     try {
       if (useReactPDF) {
-        await PDFService.downloadPDF(invoice);
+        await PDFGeneratorService.downloadPDF(invoice);
       } else {
         JSPDFService.downloadPDF(invoice);
       }
@@ -129,7 +125,7 @@ export const InvoiceActions: React.FC<InvoiceActionsProps> = ({
     setIsGenerating(true);
     try {
       // Generate PDF blob for preview or processing
-      const pdfBlob = await PDFService.generatePDF(invoice);
+      const pdfBlob = await PDFGeneratorService.generatePDF(invoice);
       console.log("Invoice generated successfully:", pdfBlob);
 
       toast("Success!", {

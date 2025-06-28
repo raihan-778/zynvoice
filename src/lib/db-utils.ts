@@ -2,11 +2,12 @@
 
 // 📁 src/lib/db-utils.ts
 import Client from "@/models/Client";
-import CompanyInfo from "@/models/CompanyInfo";
+
 import Invoice from "@/models/Invoice";
 import InvoiceTemplate from "@/models/InvoiceTemplet";
 import ServiceItem from "@/models/ServiceItem";
 import DBConnect from "./database/connection";
+import { CompanyInfo } from "@/models/CompanyInfo";
 
 export class DatabaseService {
   // Initialize database connection

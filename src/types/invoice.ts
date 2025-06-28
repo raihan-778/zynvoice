@@ -48,3 +48,14 @@ export interface InvoiceTemplate {
     accent: string;
   };
 }
+export interface InvoiceTax {
+  rate: number;
+  amount?: number; // calculated field
+  description?: string;
+}
+
+export interface InvoiceDiscount {
+  rate: number;
+  amount?: number; // calculated field
+  description?: string;
+}

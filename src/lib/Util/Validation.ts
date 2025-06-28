@@ -1,4 +1,4 @@
-import { Client, CompanyInfo, ServiceItem } from "@/types";
+import { Client, CompanyInfo, ServiceItem } from "@/types/invoice";
 
 export function validateCompanyInfo(companyInfo: CompanyInfo): string[] {
   const errors: string[] = [];
@@ -19,19 +19,19 @@ export function validateCompanyInfo(companyInfo: CompanyInfo): string[] {
     errors.push("Company phone is required");
   }
 
-  if (!companyInfo.address?.street?.trim()) {
+  if (!companyInfo.address?.trim()) {
     errors.push("Company street address is required");
   }
 
-  if (!companyInfo.address?.city?.trim()) {
+  if (!companyInfo.address?.trim()) {
     errors.push("Company city is required");
   }
 
-  if (!companyInfo.address?.state?.trim()) {
+  if (!companyInfo.address?.trim()) {
     errors.push("Company state is required");
   }
 
-  if (!companyInfo.address?.zipCode?.trim()) {
+  if (!companyInfo.address?.trim()) {
     errors.push("Company zip code is required");
   }
 
@@ -53,19 +53,19 @@ export function validateClient(client: Client): string[] {
     errors.push("Invalid client email format");
   }
 
-  if (!client.address?.street?.trim()) {
+  if (!client.address?.trim()) {
     errors.push("Client street address is required");
   }
 
-  if (!client.address?.city?.trim()) {
+  if (!client.address?.trim()) {
     errors.push("Client city is required");
   }
 
-  if (!client.address?.state?.trim()) {
+  if (!client.address?.trim()) {
     errors.push("Client state is required");
   }
 
-  if (!client.address?.zipCode?.trim()) {
+  if (!client.address?.trim()) {
     errors.push("Client zip code is required");
   }
 
@@ -89,7 +89,7 @@ export function validateServiceItems(serviceItems: ServiceItem[]): string[] {
       errors.push(`Service item ${index + 1}: Valid quantity is required`);
     }
 
-    if (!item.unitPrice || item.unitPrice < 0) {
+    if (!item.rate || item.rate < 0) {
       errors.push(`Service item ${index + 1}: Valid unit price is required`);
     }
 

@@ -4,9 +4,9 @@
 // components/invoice/InvoiceForm.tsx
 "use client";
 
-import React, { useState } from "react";
-import { motion } from "framer-motion";
 import { useInvoiceForm } from "@/hooks/UseInvoiceForm";
+import { motion } from "framer-motion";
+import React, { useState } from "react";
 
 import { ClientDetailsForm } from "./ClientDetailsForm";
 import { ServiceItemsForm } from "./ServiceItemsForm";
@@ -15,10 +15,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Calendar, FileText } from "lucide-react";
+import { Calendar } from "lucide-react";
 
+import { CompanyDetailsForm } from "./ComponyDetailsForm";
 import { InvoiceActions } from "./InvoiceActions";
-
 
 export const InvoiceForm: React.FC = () => {
   const {

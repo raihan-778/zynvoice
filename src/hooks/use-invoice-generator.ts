@@ -9,6 +9,7 @@ import { PDFGeneratorService } from "@/lib/services/pdf-generator";
 import { useRef, useState } from "react";
 
 import { InvoiceFormData } from "@/lib/validations/validation";
+import { Client, CompanyInfo } from "@/types/invoice";
 import { toast } from "sonner";
 
 export function useInvoiceGenerator() {
@@ -17,8 +18,8 @@ export function useInvoiceGenerator() {
 
   const generatePDF = async (
     invoiceData: InvoiceFormData,
-    companyInfo: any,
-    clientInfo: any,
+    companyInfo: CompanyInfo,
+    clientInfo: Client,
     invoiceNumber?: string
   ) => {
     setIsGenerating(true);
@@ -72,8 +73,8 @@ export function useInvoiceGenerator() {
 
   const getPDFBlob = async (
     invoiceData: InvoiceFormData,
-    companyInfo: unknown,
-    clientInfo: unknown,
+    companyInfo: CompanyInfo,
+    clientInfo: Client,
     invoiceNumber?: string
   ): Promise<Blob | null> => {
     try {

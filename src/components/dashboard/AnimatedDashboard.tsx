@@ -1,6 +1,3 @@
-// 9. ENHANCED DASHBOARD WITH ANIMATIONS
-// ===========================================
-
 // components/dashboard/AnimatedDashboard.tsx
 "use client";
 
@@ -110,7 +107,3 @@ export function AnimatedDashboard() {
     </AnimatedContainer>
   );
 }
-
-
-
-

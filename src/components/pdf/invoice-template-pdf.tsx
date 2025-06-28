@@ -10,6 +10,7 @@ import {
   Font,
 } from "@react-pdf/renderer";
 import { InvoiceFormData } from "@/lib/validations/validation";
+import { Client, CompanyInfo } from "@/types/invoice";
 
 // Register fonts (optional - for better typography)
 Font.register({
@@ -229,8 +230,8 @@ const styles = StyleSheet.create({
 
 interface InvoicePDFTemplateProps {
   data: InvoiceFormData;
-  companyInfo: any;
-  clientInfo: any;
+  companyInfo: CompanyInfo;
+  clientInfo: Client;
   invoiceNumber?: string;
 }
 

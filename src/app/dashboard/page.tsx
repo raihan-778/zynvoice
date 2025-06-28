@@ -30,7 +30,7 @@ export default function DashboardPage() {
       addNotification({
         type: "error",
         title: "Delete Failed",
-        message: "Failed to delete invoice. Please try again.",
+        message: `Failed to delete invoice. Please try again.${error}`,
       });
     }
   };
