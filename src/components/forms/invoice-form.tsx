@@ -27,7 +27,12 @@ import { TemplatePicker } from "./template-picker";
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { formatDate } from "@/lib/utils";
-import { InvoiceFormData, invoiceSchema } from "@/lib/validations/validation";
+import {
+  Client,
+  CompanyInfo,
+  InvoiceFormData,
+  invoiceSchema,
+} from "@/lib/validations/validation";
 import {
   Popover,
   PopoverContent,
@@ -42,8 +47,8 @@ interface InvoiceFormProps {
   onDownload: (data: InvoiceFormData) => void;
   onSendEmail: (data: InvoiceFormData) => void;
   isLoading?: boolean;
-  clients: Array<{ id: string; name: string; email: string }>;
-  companyInfos: Array<{ id: string; name: string }>;
+  clientList: Client[];
+  companyList: CompanyInfo[];
 }
 
 export function InvoiceForm({
@@ -53,20 +58,17 @@ export function InvoiceForm({
   onDownload,
   onSendEmail,
   isLoading,
-  clients,
-  companyInfos,
+  clientList,
+  companyList,
 }: InvoiceFormProps) {
   const [currentTab, setCurrentTab] = useState("details");
-  const [selectedClient, setSelectedClient] = useState(
-    initialData?.client || ""
+  const [selectedClient, setSelectedClient] = useState<Client>(
+    initialData?.client || clientList[0]
   );
-  const [selectedCompany, setSelectedCompany] = useState(
-    initialData?.companyInfo || ""
+  const [selectedCompany, setSelectedCompany] = useState<CompanyInfo>(
+    initialData?.companyInfo || companyList[0]
   );
-  const [selectedTemplate, setSelectedTemplate] = useState(
-    initialData?.template || "modern"
-  );
-  const [serviceItems, setServiceItems] = useState(initialData?.items || []);
+  const [items, setItems] = useState(initialData?.items || []);
   const [taxRate, setTaxRate] = useState(initialData?.taxRate || 0);
   const [discountType, setDiscountType] = useState<"percentage" | "fixed">(
     initialData?.discountType || "percentage"
@@ -75,48 +77,45 @@ export function InvoiceForm({
     initialData?.discountValue || 0
   );
   const [currency, setCurrency] = useState(initialData?.currency || "USD");
-  const [issuedDate, setIssuedDate] = useState<Date>(
-    initialData?.dates?.issued || new Date()
-  );
-  const [dueDate, setDueDate] = useState<Date>(
-    initialData?.dates?.due || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
-  );
-
+  const [template, setTemplate] = useState(initialData?.template || "modern");
   const {
     register,
     handleSubmit,
     formState: { errors },
-    getValues,
     setValue,
+    watch,
   } = useForm<InvoiceFormData>({
     resolver: zodResolver(invoiceSchema),
     defaultValues: {
-      client: selectedClient || "", // must be string
-      companyInfo: selectedCompany || "", // must be string
-      template: selectedTemplate || "", // must be string
-      items: serviceItems || [
+      ...initialData,
+      client: selectedClient!,
+      companyInfo: selectedCompany!,
+      items: initialData?.items?.map((i) => ({ ...i })) || [
         {
-          // must match serviceItemSchema structure
+          id: Date.now().toString(),
           description: "",
           quantity: 1,
           rate: 0,
+          amount: 0,
+          category: "Other",
+          unit: "hour",
+          taxable: false,
+          taxRate: 0,
         },
       ],
-      taxRate: taxRate || 0,
-      discountType: discountType || "percentage",
-      discountValue: discountValue || 0,
-      currency: currency || "USD",
       dates: {
-        // issued: issuedDate || new Date(), // can be Date or ISO string
-        // due: dueDate || new Date(new Date().setDate(new Date().getDate() + 30)),
-        issued: issuedDate,
-        due: dueDate,
+        issued: initialData?.dates?.issued ?? new Date(),
+        due:
+          initialData?.dates?.due ??
+          new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
       },
-      notes: initialData?.notes || "",
-      terms: initialData?.terms || "",
-      paymentInstructions: initialData?.paymentInstructions || "",
+      subtotal: initialData?.subtotal ?? 0,
+      tax: initialData?.tax ?? 0,
+      total: initialData?.total ?? 0,
     },
   });
+
+  const values = watch();
 
   const handleFormSubmit = (data: InvoiceFormData) => {
     const formData = {
@@ -136,7 +135,7 @@ export function InvoiceForm({
     };
     onSubmit(formData);
   };
-
+  //
   const handlePreview = () => {
     const formData = getFormData();
     onPreview(formData);
@@ -152,23 +151,38 @@ export function InvoiceForm({
     onSendEmail(formData);
   };
 
-  const getFormData = (): InvoiceFormData => ({
-    client: selectedClient,
-    companyInfo: selectedCompany,
-    template: selectedTemplate,
-    items: serviceItems,
-    taxRate,
-    discountType,
-    discountValue,
-    currency,
-    dates: {
-      issued: issuedDate,
-      due: dueDate,
-    },
-    notes: getValues("notes"),
-    terms: getValues("terms"),
-    paymentInstructions: getValues("paymentInstructions"),
-  });
+  const getFormData = (): InvoiceFormData => {
+    const { subtotal, tax, total } = calculateInvoiceTotals(
+      serviceItems,
+      taxRate,
+      discountValue,
+      discountType
+    );
+
+    return {
+      id: initialData?.id,
+      invoiceNumber: initialData?.invoiceNumber || `INV-${Date.now()}`,
+      client: selectedClient,
+      companyInfo: selectedCompany,
+      template: selectedTemplate,
+      items: serviceItems,
+      taxRate,
+      discountType,
+      discountValue,
+      currency,
+      dates: {
+        issued: issuedDate,
+        due: dueDate,
+      },
+      notes: getValues("notes"),
+      terms: getValues("terms"),
+      paymentInstructions: getValues("paymentInstructions"),
+      subtotal,
+      tax,
+      total,
+      status: initialData?.status || "draft",
+    };
+  };
 
   const currencies = ["USD", "EUR", "GBP", "CAD", "AUD", "JPY", "INR"];
 

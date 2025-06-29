@@ -18,11 +18,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
-import { ClientFormData, clientSchema } from "@/lib/validations/validation";
+import { Client, clientSchema } from "@/lib/validations/validation";
 
 interface ClientDetailsFormProps {
-  initialData?: Partial<ClientFormData>;
-  onSubmit: (data: ClientFormData) => void;
+  initialData?: Partial<Client>;
+  onSubmit: (data: Client) => void;
   onCancel?: () => void;
   isLoading?: boolean;
   isEditing?: boolean;
@@ -39,7 +39,7 @@ export function ClientDetailsForm({
     register,
     handleSubmit,
     formState: { errors },
-  } = useForm<ClientFormData>({
+  } = useForm<Client>({
     resolver: zodResolver(clientSchema),
     defaultValues: {
       name: initialData?.name || "",

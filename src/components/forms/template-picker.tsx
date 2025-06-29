@@ -1,13 +1,11 @@
 // 📁 src/components/forms/template-picker.tsx
 "use client";
 
-import { useState } from "react";
 import { motion } from "framer-motion";
-import { Palette, Check } from "lucide-react";
+import { Check, Palette } from "lucide-react";
 
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 interface InvoiceTemplate {
   id: string;

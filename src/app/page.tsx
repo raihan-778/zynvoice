@@ -25,7 +25,7 @@ export default function HomePage() {
         </p>
 
         <div className="mb-12">
-          <Link href="/invoice">
+          <Link href="/createInvoice">
             <Button size="lg" className="bg-blue-600 hover:bg-blue-700">
               <FileText className="h-5 w-5 mr-2" />
               Create Your First Invoice
