@@ -50,7 +50,7 @@ export class JSPDFService {
     });
 
     // Company Info
-    if (invoice.companyInfo.logo) {
+    if (invoice.companyInfo?.logo) {
       try {
         doc.addImage(
           invoice.companyInfo.logo,
@@ -68,8 +68,8 @@ export class JSPDFService {
     doc.setFontSize(16);
     doc.setTextColor(...theme.primary);
     doc.text(
-      invoice.companyInfo.name,
-      invoice.companyInfo.logo ? 50 : 20,
+      invoice.companyInfo?.name || "",
+      invoice.companyInfo?.logo ? 50 : 20,
       yPosition + 5
     );
 
@@ -97,15 +97,16 @@ export class JSPDFService {
     };
 
     const companyLines = [
-      formatAddress(invoice.companyInfo.address),
-      `${invoice.companyInfo.contact.phone} • ${invoice.companyInfo.contact.email}`,
-      invoice.companyInfo.contact.website,
+      formatAddress(invoice.companyInfo?.address ?? ""),
+      `${invoice.companyInfo?.contact?.phone ?? ""} • ${
+        invoice?.companyInfo?.contact?.email ?? ""
+      }`,
     ].filter(Boolean);
 
     companyLines.forEach((line, index) => {
       return doc.text(
         line || "",
-        invoice.companyInfo.logo ? 50 : 20,
+        invoice.companyInfo?.logo ? 50 : 20,
         yPosition + 15 + index * 5
       );
     });
@@ -119,10 +120,16 @@ export class JSPDFService {
 
     doc.setFontSize(10);
     doc.setTextColor(0, 0, 0);
-    doc.text(invoice.client.name, 20, yPosition + 8);
-    doc.text(invoice.client.email, 20, yPosition + 16);
-    doc.text(invoice.client.address.street, 20, yPosition + 24);
-    doc.text(invoice.client.email, 20, yPosition + 32);
+    doc.text(invoice?.client?.name || "", 20, yPosition + 8);
+    doc.text(invoice?.client?.email || "", 20, yPosition + 16);
+    doc.text(invoice.client?.address?.street || "", 20, yPosition + 24);
+    if (client?.address?.city || client?.address?.zip) {
+      doc.text(
+        `${client.address.city || ""}, ${client.address.zip || ""}`,
+        20,
+        yPosition + 32
+      );
+    }
 
     // Invoice Details
     const invoiceDate = new Date(invoice.dates.issued).toLocaleDateString();
@@ -166,7 +173,7 @@ export class JSPDFService {
         align: "center",
       });
       doc.text(
-        `$${(item.amount ?? 0).toFixed(2)}`,
+        `$${(item?.rate ?? 0).toFixed(2)}`,
         pageWidth - 30,
         yPosition + 4,
         {
@@ -181,10 +188,10 @@ export class JSPDFService {
 
     // Totals
     const totalsX = pageWidth - 80;
-    doc.text(`Subtotal: $${invoice.subtotal.toFixed(2)}`, totalsX, yPosition, {
+    doc.text(`Subtotal: $${invoice.subtotal?.toFixed(2)}`, totalsX, yPosition, {
       align: "right",
     });
-    doc.text(`Tax (10%): $${invoice.tax.toFixed(2)}`, totalsX, yPosition + 8, {
+    doc.text(`Tax (10%): $${invoice.tax?.toFixed(2)}`, totalsX, yPosition + 8, {
       align: "right",
     });
 
@@ -192,7 +199,7 @@ export class JSPDFService {
     doc.rect(totalsX - 60, yPosition + 12, 60, 10, "F");
     doc.setTextColor(255, 255, 255);
     doc.setFontSize(12);
-    doc.text(`Total: $${invoice.total.toFixed(2)}`, totalsX, yPosition + 19, {
+    doc.text(`Total: $${invoice.total?.toFixed(2)}`, totalsX, yPosition + 19, {
       align: "right",
     });
 

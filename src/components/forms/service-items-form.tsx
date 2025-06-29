@@ -28,11 +28,11 @@ import {
 } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { formatCurrency } from "@/lib/utils";
-import { ServiceItemFormData } from "@/lib/validations/validation";
+import { ServiceItem } from "@/lib/validations/validation";
 
 interface ServiceItemsFormProps {
-  items: ServiceItemFormData[];
-  onChange: (items: ServiceItemFormData[]) => void;
+  items: ServiceItem[];
+  onChange: (items: ServiceItem[]) => void;
   currency?: string;
 }
 
@@ -78,6 +78,7 @@ export function ServiceItemsForm({
 
   const addServiceItem = () => {
     append({
+      id: "",
       description: "",
       quantity: 1,
       rate: 0,

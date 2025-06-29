@@ -23,7 +23,12 @@ export const InvoiceGenerator: React.FC = () => {
       case "preview":
         return (
           <div className="max-w-4xl mx-auto p-6">
-            <InvoicePreview invoice={invoice} />
+            <InvoicePreview
+              data={invoice}
+              companyInfo={invoice.companyInfo ?? { name: "" }}
+              clientInfo={invoice.client}
+              invoiceNumber={invoice.invoiceNumber}
+            />
           </div>
         );
       case "split":
@@ -33,7 +38,12 @@ export const InvoiceGenerator: React.FC = () => {
               <InvoiceForm />
             </div>
             <div className="order-1 xl:order-2 sticky top-6">
-              <InvoicePreview invoice={invoice} />
+              <InvoicePreview
+                data={invoice}
+                companyInfo={invoice.companyInfo ?? { name: "" }}
+                clientInfo={invoice.client}
+                invoiceNumber={invoice.invoiceNumber}
+              />
             </div>
           </div>
         );

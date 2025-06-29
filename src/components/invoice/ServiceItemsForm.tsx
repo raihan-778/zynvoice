@@ -5,14 +5,15 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { ServiceItem } from "@/lib/validations/validation";
+import { InvoiceItem } from "@/lib/validations/validation";
+
 import { AnimatePresence, motion } from "framer-motion";
 import { Package, Plus, Trash2 } from "lucide-react";
 import React from "react";
 
 interface ServiceItemsFormProps {
-  items: ServiceItem[];
-  onUpdateItem: (index: number, item: Partial<ServiceItem>) => void;
+  items: InvoiceItem[];
+  onUpdateItem: (index: number, item: Partial<InvoiceItem>) => void;
   onAddItem: () => void;
   onRemoveItem: (index: number) => void;
   subtotal: number;
@@ -120,7 +121,7 @@ export const ServiceItemsForm: React.FC<ServiceItemsFormProps> = ({
                     <Label>Amount ($)</Label>
                     <Input
                       type="number"
-                      value={(item.amount ?? 0).toFixed(2)}
+                      value={(item.rate ?? 0).toFixed(2)}
                       readOnly
                       className="bg-gray-100"
                     />

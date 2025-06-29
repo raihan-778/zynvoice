@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { CompanyInfo } from "@/lib/validations/validation";
 
 import { motion } from "framer-motion";
@@ -99,103 +100,23 @@ export const CompanyDetailsForm: React.FC<CompanyDetailsFormProps> = ({
 
           {/* Address */}
           <div className="space-y-2">
-            <Label>Address *</Label>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="company-street">Street</Label>
-                <Input
-                  id="company-street"
-                  value={company.address.street}
-                  onChange={(e) =>
-                    onUpdate({
-                      address: {
-                        ...company.address,
-                        street: e.target.value,
-                      },
-                    })
-                  }
-                  placeholder="Enter street"
-                  required
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="company-city">City</Label>
-                <Input
-                  id="company-city"
-                  value={company.address.city}
-                  onChange={(e) =>
-                    onUpdate({
-                      address: {
-                        ...company.address,
-                        city: e.target.value,
-                      },
-                    })
-                  }
-                  placeholder="Enter city"
-                  required
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="company-state">State</Label>
-                <Input
-                  id="company-state"
-                  value={company.address.state}
-                  onChange={(e) =>
-                    onUpdate({
-                      address: {
-                        ...company.address,
-                        state: e.target.value,
-                      },
-                    })
-                  }
-                  placeholder="Enter state"
-                  required
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="company-zip">Zip Code</Label>
-                <Input
-                  id="company-zip"
-                  value={company.address.zipCode}
-                  onChange={(e) =>
-                    onUpdate({
-                      address: {
-                        ...company.address,
-                        zipCode: e.target.value,
-                      },
-                    })
-                  }
-                  placeholder="Enter zip code"
-                  required
-                />
-              </div>
-              <div className="space-y-2 md:col-span-2">
-                <Label htmlFor="company-country">Country</Label>
-                <Input
-                  id="company-country"
-                  value={company.address.country}
-                  onChange={(e) =>
-                    onUpdate({
-                      address: {
-                        ...company.address,
-                        country: e.target.value,
-                      },
-                    })
-                  }
-                  placeholder="Enter country"
-                  required
-                />
-              </div>
-            </div>
+            <Label htmlFor="company-address">Address</Label>
+            <Textarea
+              id="company-address"
+              value={company.address || ""}
+              onChange={(e) => onUpdate({ address: e.target.value })}
+              placeholder="Enter company address"
+              rows={3}
+            />
           </div>
 
           {/* Contact Info Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="company-phone">Phone *</Label>
+              <Label htmlFor="company-phone">Phone</Label>
               <Input
                 id="company-phone"
-                value={company.contact.phone}
+                value={company.contact?.phone || ""}
                 onChange={(e) =>
                   onUpdate({
                     contact: {
@@ -205,15 +126,14 @@ export const CompanyDetailsForm: React.FC<CompanyDetailsFormProps> = ({
                   })
                 }
                 placeholder="Enter phone number"
-                required
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="company-email">Email *</Label>
+              <Label htmlFor="company-email">Email</Label>
               <Input
                 id="company-email"
                 type="email"
-                value={company.contact.email}
+                value={company.contact?.email || ""}
                 onChange={(e) =>
                   onUpdate({
                     contact: {
@@ -223,27 +143,8 @@ export const CompanyDetailsForm: React.FC<CompanyDetailsFormProps> = ({
                   })
                 }
                 placeholder="Enter email address"
-                required
               />
             </div>
-          </div>
-
-          {/* Website */}
-          <div className="space-y-2">
-            <Label htmlFor="company-website">Website</Label>
-            <Input
-              id="company-website"
-              value={company.contact.website || ""}
-              onChange={(e) =>
-                onUpdate({
-                  contact: {
-                    ...company.contact,
-                    website: e.target.value,
-                  },
-                })
-              }
-              placeholder="Enter website URL"
-            />
           </div>
         </CardContent>
       </Card>

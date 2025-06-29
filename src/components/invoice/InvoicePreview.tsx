@@ -79,13 +79,7 @@ export const InvoicePreview = forwardRef<HTMLDivElement, InvoicePreviewProps>(
                   {companyInfo?.name || "Your Company"}
                 </h1>
                 <div className="text-sm text-gray-600 space-y-1">
-                  {companyInfo?.address && (
-                    <div>
-                      {companyInfo.address.street}, {companyInfo.address.city},{" "}
-                      {companyInfo.address.state} {companyInfo.address.zipCode},{" "}
-                      {companyInfo.address.country}
-                    </div>
-                  )}
+                  {companyInfo?.address && <div>{companyInfo.address}</div>}
                   {companyInfo?.contact?.phone && (
                     <div>Phone: {companyInfo.contact.phone}</div>
                   )}

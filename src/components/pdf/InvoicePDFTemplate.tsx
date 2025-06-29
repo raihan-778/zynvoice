@@ -1,15 +1,15 @@
 // 📁 src/components/pdf/invoice-pdf-template.tsx
-import React from "react";
+import { InvoiceFormData } from "@/lib/validations/validation";
 import {
   Document,
+  Font,
+  Image,
   Page,
+  StyleSheet,
   Text,
   View,
-  StyleSheet,
-  Image,
-  Font,
 } from "@react-pdf/renderer";
-import { InvoiceFormData } from "@/lib/validations/validation";
+import React from "react";
 
 // Register fonts (optional - for better typography)
 Font.register({
@@ -229,7 +229,6 @@ const styles = StyleSheet.create({
 
 interface InvoicePDFTemplateProps {
   data: InvoiceFormData;
- 
 }
 
 export const InvoicePDFTemplate: React.FC<InvoicePDFTemplateProps> = ({
@@ -290,8 +289,10 @@ export const InvoicePDFTemplate: React.FC<InvoicePDFTemplateProps> = ({
             </Text>
             <Text style={styles.companyDetails}>
               {data.companyInfo?.address && `${data.companyInfo.address}\n`}
-              {data.companyInfo?.contact?.phone && `Phone: ${data.companyInfo.contact.phone}\n`}
-              {data.companyInfo?.contact.email && `Email: ${data.companyInfo.contact.email}`}
+              {data.companyInfo?.contact?.phone &&
+                `Phone: ${data.companyInfo.contact.phone}\n`}
+              {data.companyInfo?.contact?.email &&
+                `Email: ${data.companyInfo.contact.email}`}
             </Text>
           </View>
           <View>

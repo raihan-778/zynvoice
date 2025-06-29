@@ -16,7 +16,7 @@ import {
 } from "@/lib/services/image-generator";
 import { JSPDFService } from "@/lib/services/jspdf.service";
 import { PDFGeneratorService } from "@/lib/services/pdf-generator";
-import { Invoice } from "@/lib/validations/validation";
+import { InvoiceFormData } from "@/lib/validations/validation";
 
 import { motion } from "framer-motion";
 import {
@@ -31,7 +31,7 @@ import React, { useState } from "react";
 import { toast } from "sonner";
 
 interface InvoiceActionsProps {
-  invoice: Invoice;
+  invoice: InvoiceFormData;
 
   selectedTemplate: string;
   onTemplateChange: (template: string) => void;
@@ -144,7 +144,7 @@ export const InvoiceActions: React.FC<InvoiceActionsProps> = ({
     setIsGenerating(true);
     try {
       // Generate PDF blob for preview or processing
-      const pdfBlob = await PDFGeneratorService.generatePDF(invoice);
+      const pdfBlob = await JSPDFService.generatePDF(invoice);
       console.log("Invoice generated successfully:", pdfBlob);
 
       toast("Success!", {

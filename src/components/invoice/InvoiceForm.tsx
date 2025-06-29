@@ -121,7 +121,7 @@ export const InvoiceForm: React.FC = () => {
                     <Input
                       value={invoice.invoiceNumber}
                       onChange={(e) =>
-                        setInvoice((prev) => ({
+                        setInvoice((prev: any) => ({
                           ...prev,
                           invoiceNumber: e.target.value,
                         }))
@@ -139,7 +139,7 @@ export const InvoiceForm: React.FC = () => {
                           : invoice.dates.issued || ""
                       }
                       onChange={(e) =>
-                        setInvoice((prev) => ({
+                        setInvoice((prev: any) => ({
                           ...prev,
                           date: e.target.value,
                         }))
@@ -156,7 +156,7 @@ export const InvoiceForm: React.FC = () => {
                           : invoice.dates.due || ""
                       }
                       onChange={(e) =>
-                        setInvoice((prev) => ({
+                        setInvoice((prev: any) => ({
                           ...prev,
                           dueDate: e.target.value,
                         }))
@@ -169,7 +169,10 @@ export const InvoiceForm: React.FC = () => {
                   <Textarea
                     value={invoice.notes || ""}
                     onChange={(e) =>
-                      setInvoice((prev) => ({ ...prev, notes: e.target.value }))
+                      setInvoice((prev: any) => ({
+                        ...prev,
+                        notes: e.target.value,
+                      }))
                     }
                     placeholder="Additional notes or terms..."
                     rows={3}
@@ -181,7 +184,14 @@ export const InvoiceForm: React.FC = () => {
 
           {/* Company Details */}
           <CompanyDetailsForm
-            company={invoice.companyInfo}
+            company={
+              invoice?.companyInfo ?? {
+                name: "",
+                logo: "",
+                address: "",
+                contact: { phone: "", email: "" },
+              }
+            }
             onUpdate={updateCompany}
           />
 
@@ -194,18 +204,18 @@ export const InvoiceForm: React.FC = () => {
             onUpdateItem={updateItem}
             onAddItem={addItem}
             onRemoveItem={removeItem}
-            subtotal={invoice.subtotal}
-            tax={invoice.tax}
-            total={invoice.total}
+            subtotal={invoice?.subtotal ?? 0}
+            tax={invoice?.tax ?? 0}
+            total={invoice?.total ?? 0}
           />
         </div>
 
         {/* Right Column - Actions */}
         <div className="space-y-6">
           <InvoiceActions
-            selectedTemplate={invoice.template}
+            selectedTemplate={invoice.template ?? ""}
             onTemplateChange={(template) =>
-              setInvoice((prev) => ({ ...prev, template }))
+              setInvoice((prev: any) => ({ ...prev, template }))
             }
             onGenerateInvoice={handleGenerateInvoice}
             onDownloadPDF={handleDownloadPDF}
