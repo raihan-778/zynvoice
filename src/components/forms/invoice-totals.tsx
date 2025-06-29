@@ -20,10 +20,10 @@ import {
 import { Separator } from "@/components/ui/separator";
 
 import { formatCurrency } from "@/lib/utils";
-import { ServiceItemFormData } from "@/lib/validations/validation";
+import { ServiceItem } from "@/lib/validations/validation";
 
 interface InvoiceTotalsProps {
-  items: ServiceItemFormData[];
+  items: ServiceItem[];
   taxRate: number;
   discountType: "percentage" | "fixed";
   discountValue: number;

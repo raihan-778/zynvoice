@@ -6,12 +6,17 @@ import { forwardRef } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { formatCurrency, formatDate } from "@/lib/utils";
-import { InvoiceFormData } from "@/lib/validations/validation";
-import { Client, CompanyInfo } from "@/types/invoice";
+import {
+  Client,
+  CompanyInfo,
+  InvoiceFormData,
+} from "@/lib/validations/validation";
+
 import Image from "next/image";
 
 interface InvoicePreviewProps {
   data: InvoiceFormData;
+
   companyInfo: CompanyInfo;
   clientInfo: Client;
   invoiceNumber?: string;
@@ -74,9 +79,19 @@ export const InvoicePreview = forwardRef<HTMLDivElement, InvoicePreviewProps>(
                   {companyInfo?.name || "Your Company"}
                 </h1>
                 <div className="text-sm text-gray-600 space-y-1">
-                  {companyInfo?.address && <div>{companyInfo.address}</div>}
-                  {companyInfo?.phone && <div>Phone: {companyInfo.phone}</div>}
-                  {companyInfo?.email && <div>Email: {companyInfo.email}</div>}
+                  {companyInfo?.address && (
+                    <div>
+                      {companyInfo.address.street}, {companyInfo.address.city},{" "}
+                      {companyInfo.address.state} {companyInfo.address.zipCode},{" "}
+                      {companyInfo.address.country}
+                    </div>
+                  )}
+                  {companyInfo?.contact?.phone && (
+                    <div>Phone: {companyInfo.contact.phone}</div>
+                  )}
+                  {companyInfo?.contact?.email && (
+                    <div>Email: {companyInfo.contact.email}</div>
+                  )}
                 </div>
               </div>
             </div>
@@ -99,7 +114,13 @@ export const InvoicePreview = forwardRef<HTMLDivElement, InvoicePreviewProps>(
                 <div className="text-sm text-gray-600 space-y-1">
                   {clientInfo?.email && <div>{clientInfo.email}</div>}
                   {clientInfo?.phone && <div>{clientInfo.phone}</div>}
-                  {clientInfo?.address && <div>{clientInfo.address}</div>}
+                  {clientInfo?.address && (
+                    <div>
+                      {clientInfo.address.street}, {clientInfo.address.city},{" "}
+                      {clientInfo.address.state} {clientInfo.address.zipCode},{" "}
+                      {clientInfo.address.country}
+                    </div>
+                  )}
                 </div>
               </div>
             </div>

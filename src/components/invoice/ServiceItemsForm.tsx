@@ -1,14 +1,14 @@
 "use client";
 
-import React from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Plus, Trash2, Package } from "lucide-react";
-import { ServiceItem } from "@/types/invoice";
+import { ServiceItem } from "@/lib/validations/validation";
+import { AnimatePresence, motion } from "framer-motion";
+import { Package, Plus, Trash2 } from "lucide-react";
+import React from "react";
 
 interface ServiceItemsFormProps {
   items: ServiceItem[];
@@ -120,7 +120,7 @@ export const ServiceItemsForm: React.FC<ServiceItemsFormProps> = ({
                     <Label>Amount ($)</Label>
                     <Input
                       type="number"
-                      value={item.amount.toFixed(2)}
+                      value={(item.amount ?? 0).toFixed(2)}
                       readOnly
                       className="bg-gray-100"
                     />

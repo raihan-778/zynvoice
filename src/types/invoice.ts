@@ -34,6 +34,8 @@ export interface Invoice {
   tax: number;
   total: number;
   notes?: string;
+  discountType?: ["percentage", "fixed"];
+  discountValue?: number;
   template: string;
   status?: "draft" | "sent" | "paid" | "overdue";
 }

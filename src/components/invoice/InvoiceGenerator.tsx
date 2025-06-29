@@ -1,14 +1,14 @@
 // components/invoice/InvoiceGenerator.tsx
 "use client";
 
-import React, { useState } from "react";
 import { motion } from "framer-motion";
+import React, { useState } from "react";
 import { InvoiceForm } from "./InvoiceForm";
 import { InvoicePreview } from "./InvoicePreview";
 
 import { Button } from "@/components/ui/button";
-import { Eye, EyeOff, Split } from "lucide-react";
 import { useInvoiceForm } from "@/hooks/UseInvoiceForm";
+import { Eye, EyeOff, Split } from "lucide-react";
 
 type ViewMode = "form" | "preview" | "split";
 
@@ -33,7 +33,7 @@ export const InvoiceGenerator: React.FC = () => {
               <InvoiceForm />
             </div>
             <div className="order-1 xl:order-2 sticky top-6">
-              <InvoicePreview invoice={invoice} template={invoice.template} />
+              <InvoicePreview invoice={invoice} />
             </div>
           </div>
         );

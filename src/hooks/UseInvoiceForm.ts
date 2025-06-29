@@ -1,30 +1,61 @@
 // hooks/useInvoiceForm.ts
 "use client";
 
-import { Client, CompanyInfo, Invoice, ServiceItem } from "@/types/invoice";
+
+
+import {
+  Client,
+  CompanyInfo,
+  Invoice,
+  ServiceItem,
+} from "@/lib/validations/validation"; // adjust path if needed
 import { useCallback, useState } from "react";
 
 export const useInvoiceForm = () => {
   const [invoice, setInvoice] = useState<Invoice>({
+    id: undefined,
     invoiceNumber: `INV-${Date.now()}`,
-    date: new Date().toISOString().split("T")[0],
-    dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
-      .toISOString()
-      .split("T")[0],
-    company: {
+    companyInfo: {
       name: "",
-      address: "",
-      phone: "",
-      email: "",
-      website: "",
       logo: "",
+      address: {
+        street: "",
+        city: "",
+        state: "",
+        zipCode: "",
+        country: "",
+      },
+      contact: {
+        email: "",
+        phone: "",
+        website: "",
+      },
+      bankDetails: {
+        bankName: "",
+        accountNumber: "",
+        routingNumber: "",
+        accountHolderName: "",
+      },
+      taxInfo: {
+        taxId: "",
+        vatNumber: "",
+      },
     },
     client: {
       name: "",
       email: "",
       phone: "",
-      address: "",
+      company: "",
+      address: {
+        street: "",
+        city: "",
+        state: "",
+        zipCode: "",
+        country: "",
+      },
+      notes: "",
     },
+    template: "modern",
     items: [
       {
         id: "1",
@@ -32,26 +63,66 @@ export const useInvoiceForm = () => {
         quantity: 1,
         rate: 0,
         amount: 0,
+        category: "Other",
+        unit: "hour",
+        taxable: false,
+        taxRate: 0,
       },
     ],
+    taxRate: 0,
+    discountType: "percentage",
+    discountValue: 0,
+    currency: "USD",
+    dates: {
+      issued: new Date(),
+      due: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+    },
+    notes: "",
+    terms: "",
+    paymentInstructions: "",
     subtotal: 0,
     tax: 0,
     total: 0,
-    notes: "",
-    template: "modern",
+    status: "draft",
   });
 
   const updateCompany = useCallback((company: Partial<CompanyInfo>) => {
     setInvoice((prev) => ({
       ...prev,
-      company: { ...prev.company, ...company },
+      companyInfo: {
+        ...prev.companyInfo,
+        ...company,
+        address: {
+          ...prev.companyInfo.address,
+          ...(company.address || {}),
+        },
+        contact: {
+          ...prev.companyInfo.contact,
+          ...(company.contact || {}),
+        },
+        bankDetails: {
+          ...prev.companyInfo.bankDetails,
+          ...(company.bankDetails || {}),
+        },
+        taxInfo: {
+          ...prev.companyInfo.taxInfo,
+          ...(company.taxInfo || {}),
+        },
+      },
     }));
   }, []);
 
   const updateClient = useCallback((client: Partial<Client>) => {
     setInvoice((prev) => ({
       ...prev,
-      client: { ...prev.client, ...client },
+      client: {
+        ...prev.client,
+        ...client,
+        address: {
+          ...prev.client.address,
+          ...(client.address || {}),
+        },
+      },
     }));
   }, []);
 
@@ -63,12 +134,12 @@ export const useInvoiceForm = () => {
           ...newItems[index],
           ...item,
           amount:
-            (item.quantity || newItems[index].quantity) *
-            (item.rate || newItems[index].rate),
+            (item.quantity ?? newItems[index].quantity) *
+            (item.rate ?? newItems[index].rate),
         };
 
-        const subtotal = newItems.reduce((sum, item) => sum + item.amount, 0);
-        const tax = subtotal * 0.1; // 10% tax
+        const subtotal = newItems.reduce((sum, item) => sum + item.amount!, 0);
+        const tax = subtotal * (prev.taxRate / 100);
         const total = subtotal + tax;
 
         return {
@@ -94,6 +165,10 @@ export const useInvoiceForm = () => {
           quantity: 1,
           rate: 0,
           amount: 0,
+          category: "Other",
+          unit: "hour",
+          taxable: false,
+          taxRate: 0,
         },
       ],
     }));
@@ -104,8 +179,11 @@ export const useInvoiceForm = () => {
       if (prev.items.length <= 1) return prev;
 
       const newItems = prev.items.filter((_, i) => i !== index);
-      const subtotal = newItems.reduce((sum, item) => sum + item.amount, 0);
-      const tax = subtotal * 0.1;
+      const subtotal = newItems.reduce(
+        (sum, item) => sum + (item.amount ?? 0),
+        0
+      );
+      const tax = subtotal * (prev.taxRate / 100);
       const total = subtotal + tax;
 
       return {

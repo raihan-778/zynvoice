@@ -16,7 +16,8 @@ import {
 } from "@/lib/services/image-generator";
 import { JSPDFService } from "@/lib/services/jspdf.service";
 import { PDFGeneratorService } from "@/lib/services/pdf-generator";
-import { InvoiceFormData } from "@/lib/validations/validation";
+import { Invoice } from "@/lib/validations/validation";
+
 import { motion } from "framer-motion";
 import {
   Download,
@@ -30,7 +31,7 @@ import React, { useState } from "react";
 import { toast } from "sonner";
 
 interface InvoiceActionsProps {
-  invoice: InvoiceFormData;
+  invoice: Invoice;
 
   selectedTemplate: string;
   onTemplateChange: (template: string) => void;

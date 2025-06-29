@@ -133,7 +133,11 @@ export const InvoiceForm: React.FC = () => {
                     <Label>Date</Label>
                     <Input
                       type="date"
-                      value={invoice.date}
+                      value={
+                        invoice.dates.issued instanceof Date
+                          ? invoice.dates.issued.toISOString().slice(0, 10)
+                          : invoice.dates.issued || ""
+                      }
                       onChange={(e) =>
                         setInvoice((prev) => ({
                           ...prev,
@@ -146,7 +150,11 @@ export const InvoiceForm: React.FC = () => {
                     <Label>Due Date</Label>
                     <Input
                       type="date"
-                      value={invoice.dueDate}
+                      value={
+                        invoice.dates.due instanceof Date
+                          ? invoice.dates.due.toISOString().slice(0, 10)
+                          : invoice.dates.due || ""
+                      }
                       onChange={(e) =>
                         setInvoice((prev) => ({
                           ...prev,
@@ -173,7 +181,7 @@ export const InvoiceForm: React.FC = () => {
 
           {/* Company Details */}
           <CompanyDetailsForm
-            company={invoice.company}
+            company={invoice.companyInfo}
             onUpdate={updateCompany}
           />
 
@@ -206,6 +214,7 @@ export const InvoiceForm: React.FC = () => {
             isGenerating={isGenerating}
             isDownloading={isDownloading}
             isSending={isSending}
+            invoice={invoice}
           />
         </div>
       </div>

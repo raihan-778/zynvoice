@@ -1,13 +1,13 @@
 "use client";
 
-import React from "react";
-import { motion } from "framer-motion";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Client } from "@/lib/validations/validation";
+import { motion } from "framer-motion";
 import { Users } from "lucide-react";
-import { Client } from "@/types/invoice";
+import React from "react";
 
 interface ClientDetailsFormProps {
   client: Client;
@@ -74,9 +74,24 @@ export const ClientDetailsForm: React.FC<ClientDetailsFormProps> = ({
             <Label htmlFor="client-address">Address *</Label>
             <Textarea
               id="client-address"
-              value={client.address}
-              onChange={(e) => onUpdate({ address: e.target.value })}
-              placeholder="Enter client address"
+              value={
+                client.address
+                  ? `${client.address.street}, ${client.address.city}, ${client.address.state}, ${client.address.zipCode}, ${client.address.country}`
+                  : ""
+              }
+              onChange={(e) => {
+                const [
+                  street = "",
+                  city = "",
+                  state = "",
+                  zipCode = "",
+                  country = "",
+                ] = e.target.value.split(",").map((s) => s.trim());
+                onUpdate({
+                  address: { street, city, state, zipCode, country },
+                });
+              }}
+              placeholder="Street, City, State, Zip Code, Country"
               rows={3}
               required
             />
