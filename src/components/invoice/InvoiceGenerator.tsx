@@ -26,7 +26,7 @@ export const InvoiceGenerator: React.FC = () => {
             <InvoicePreview
               data={invoice}
               companyInfo={invoice.companyInfo ?? { name: "" }}
-              clientInfo={invoice.client}
+              clientInfo={invoice.client ?? { name: "" }}
               invoiceNumber={invoice.invoiceNumber}
             />
           </div>
@@ -41,7 +41,7 @@ export const InvoiceGenerator: React.FC = () => {
               <InvoicePreview
                 data={invoice}
                 companyInfo={invoice.companyInfo ?? { name: "" }}
-                clientInfo={invoice.client}
+                clientInfo={invoice.client ?? { name: "" }}
                 invoiceNumber={invoice.invoiceNumber}
               />
             </div>

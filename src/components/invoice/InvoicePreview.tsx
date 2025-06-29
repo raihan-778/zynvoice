@@ -7,7 +7,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import {
-  Client,
+  ClientInfo,
   CompanyInfo,
   InvoiceFormData,
 } from "@/lib/validations/validation";
@@ -16,9 +16,8 @@ import Image from "next/image";
 
 interface InvoicePreviewProps {
   data: InvoiceFormData;
-
   companyInfo: CompanyInfo;
-  clientInfo: Client;
+  clientInfo: ClientInfo;
   invoiceNumber?: string;
   className?: string;
   // Removed unused props: invoice and template

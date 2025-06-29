@@ -123,9 +123,11 @@ export class JSPDFService {
     doc.text(invoice?.client?.name || "", 20, yPosition + 8);
     doc.text(invoice?.client?.email || "", 20, yPosition + 16);
     doc.text(invoice.client?.address?.street || "", 20, yPosition + 24);
-    if (client?.address?.city || client?.address?.zip) {
+    if (invoice.client?.address?.city || invoice.client?.address?.zipCode) {
       doc.text(
-        `${client.address.city || ""}, ${client.address.zip || ""}`,
+        `${invoice.client?.address?.city || ""}, ${
+          invoice.client?.address?.zipCode || ""
+        }`,
         20,
         yPosition + 32
       );
