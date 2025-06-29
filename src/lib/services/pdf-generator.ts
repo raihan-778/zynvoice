@@ -1,27 +1,27 @@
-import { InvoicePDFTemplate } from "@/components/pdf/invoice-template-pdf";
+// import { InvoicePDFTemplate } from "@/components/pdf/invoice-template-pdf";
+import { InvoicePDFTemplate } from "@/components/pdf/InvoicePDFTemplate";
+
 import { pdf } from "@react-pdf/renderer";
 import { saveAs } from "file-saver";
 import { InvoiceFormData } from "../validations/validation";
-import { Client, CompanyInfo } from "@/types/invoice";
 // 📁 src/lib/services/pdf-generator.ts
 
 export class PDFGeneratorService {
-  static async generatePDF(
-    invoiceData: InvoiceFormData,
-    companyInfo: CompanyInfo,
-    clientInfo: Client,
-    invoiceNumber?: string
-  ): Promise<Blob> {
+  static async generatePDF(invoiceData: InvoiceFormData): Promise<Blob> {
     try {
-      const pdfBlob = await pdf(
-        InvoicePDFTemplate({
-          data: invoiceData,
-          companyInfo,
-          clientInfo,
-          invoiceNumber,
-        }) as React.ReactElement<import("@react-pdf/renderer").DocumentProps>
-      ).toBlob();
+      const templateElement = InvoicePDFTemplate({ data: invoiceData });
 
+      if (!templateElement) {
+        throw new Error(
+          "InvoicePDFTemplate did not return a valid React element."
+        );
+      }
+
+      const pdfBlob = await pdf(
+        templateElement as React.ReactElement<
+          import("@react-pdf/renderer").DocumentProps
+        >
+      ).toBlob();
       return pdfBlob;
     } catch (error) {
       console.error("Error generating PDF:", error);
@@ -29,21 +29,11 @@ export class PDFGeneratorService {
     }
   }
 
-  static async downloadPDF(
-    invoiceData: InvoiceFormData,
-    companyInfo: CompanyInfo,
-    clientInfo: Client,
-    invoiceNumber: string = "INV-001"
-  ): Promise<void> {
+  static async downloadPDF(invoiceData: InvoiceFormData): Promise<void> {
     try {
-      const pdfBlob = await this.generatePDF(
-        invoiceData,
-        companyInfo,
-        clientInfo,
-        invoiceNumber
-      );
+      const pdfBlob = await this.generatePDF(invoiceData);
 
-      const fileName = `invoice-${invoiceNumber}-${
+      const fileName = `invoice-${invoiceData.invoiceNumber}-${
         new Date().toISOString().split("T")[0]
       }.pdf`;
       saveAs(pdfBlob, fileName);
@@ -53,19 +43,9 @@ export class PDFGeneratorService {
     }
   }
 
-  static async getPDFDataURL(
-    invoiceData: InvoiceFormData,
-    companyInfo: CompanyInfo,
-    clientInfo: Client,
-    invoiceNumber?: string
-  ): Promise<string> {
+  static async getPDFDataURL(invoiceData: InvoiceFormData): Promise<string> {
     try {
-      const pdfBlob = await this.generatePDF(
-        invoiceData,
-        companyInfo,
-        clientInfo,
-        invoiceNumber
-      );
+      const pdfBlob = await this.generatePDF(invoiceData);
 
       return new Promise((resolve, reject) => {
         const reader = new FileReader();

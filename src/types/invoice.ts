@@ -59,3 +59,27 @@ export interface InvoiceDiscount {
   amount?: number; // calculated field
   description?: string;
 }
+export interface InvoiceTemplate {
+  id: string;
+  name: string;
+  preview: string;
+  colors: {
+    primary: string;
+    secondary: string;
+    accent: string;
+  };
+}
+
+export interface EmailConfig {
+  to: string;
+  subject: string;
+  body: string;
+  attachmentName?: string;
+}
+
+export interface InvoiceSettings {
+  defaultTaxRate: number;
+  defaultCurrency: string;
+  invoiceNumberPrefix: string;
+  autoIncrementInvoiceNumber: boolean;
+}

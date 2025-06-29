@@ -36,15 +36,13 @@ interface DownloadButtonsProps {
 
 export function DownloadButtons({
   invoiceData,
-  companyInfo,
-  clientInfo,
   invoiceNumber,
   className,
 }: DownloadButtonsProps) {
   const { isGenerating, generatePDF, generateImage } = useInvoiceGenerator();
 
   const handlePDFDownload = async () => {
-    await generatePDF(invoiceData, companyInfo, clientInfo, invoiceNumber);
+    await generatePDF(invoiceData);
   };
 
   const handleImageDownload = async (format: ImageFormat) => {

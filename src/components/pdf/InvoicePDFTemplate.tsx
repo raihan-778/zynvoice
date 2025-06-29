@@ -10,7 +10,6 @@ import {
   Font,
 } from "@react-pdf/renderer";
 import { InvoiceFormData } from "@/lib/validations/validation";
-import { Client, CompanyInfo } from "@/types/invoice";
 
 // Register fonts (optional - for better typography)
 Font.register({
@@ -230,16 +229,11 @@ const styles = StyleSheet.create({
 
 interface InvoicePDFTemplateProps {
   data: InvoiceFormData;
-  companyInfo: CompanyInfo;
-  clientInfo: Client;
-  invoiceNumber?: string;
+ 
 }
 
 export const InvoicePDFTemplate: React.FC<InvoicePDFTemplateProps> = ({
   data,
-  companyInfo,
-  clientInfo,
-  invoiceNumber = "INV-001",
 }) => {
   const formatCurrency = (amount: number, currency: string) => {
     return new Intl.NumberFormat("en-US", {
@@ -287,22 +281,22 @@ export const InvoicePDFTemplate: React.FC<InvoicePDFTemplateProps> = ({
         {/* Header */}
         <View style={styles.header}>
           <View style={styles.companyInfo}>
-            {companyInfo?.logo && (
+            {data.companyInfo?.logo && (
               // eslint-disable-next-line jsx-a11y/alt-text
-              <Image style={styles.logo} src={companyInfo.logo} />
+              <Image style={styles.logo} src={data.companyInfo.logo} />
             )}
             <Text style={styles.companyName}>
-              {companyInfo?.name || "Your Company"}
+              {data.companyInfo?.name || "Your Company"}
             </Text>
             <Text style={styles.companyDetails}>
-              {companyInfo?.address && `${companyInfo.address}\n`}
-              {companyInfo?.phone && `Phone: ${companyInfo.phone}\n`}
-              {companyInfo?.email && `Email: ${companyInfo.email}`}
+              {data.companyInfo?.address && `${data.companyInfo.address}\n`}
+              {data.companyInfo?.contact?.phone && `Phone: ${data.companyInfo.contact.phone}\n`}
+              {data.companyInfo?.contact.email && `Email: ${data.companyInfo.contact.email}`}
             </Text>
           </View>
           <View>
             <Text style={styles.invoiceTitle}>INVOICE</Text>
-            <Text style={styles.invoiceNumber}>#{invoiceNumber}</Text>
+            <Text style={styles.invoiceNumber}>#{data.invoiceNumber}</Text>
           </View>
         </View>
 
@@ -311,12 +305,13 @@ export const InvoicePDFTemplate: React.FC<InvoicePDFTemplateProps> = ({
           <View style={styles.billToBox}>
             <Text style={styles.sectionTitle}>Bill To</Text>
             <Text style={styles.clientName}>
-              {clientInfo?.name || "Client Name"}
+              {data.client?.name || "Client Name"}
             </Text>
             <Text style={styles.clientDetails}>
-              {clientInfo?.email && `${clientInfo.email}\n`}
-              {clientInfo?.phone && `${clientInfo.phone}\n`}
-              {clientInfo?.address && clientInfo.address}
+              {data.client?.email && `${data.client.email}\n`}
+              {data.client?.phone && `${data.client.phone}\n`}
+              {data.client?.address &&
+                `${data.client.address.street}, ${data.client.address.city}, ${data.client.address.state} ${data.client.address.zipCode}, ${data.client.address.country}`}
             </Text>
           </View>
           <View style={styles.dateBox}>

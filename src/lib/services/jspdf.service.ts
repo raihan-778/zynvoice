@@ -1,9 +1,10 @@
-/ services/dfjps - service.ts;
-import { Invoice } from "@/types/invoice";
+// / services/dfjps - service.ts;
+
 import jsPDF from "jspdf";
+import { InvoiceFormData } from "../validations/validation";
 
 export class JSPDFService {
-  static generatePDF(invoice: Invoice): jsPDF {
+  static generatePDF(invoice: InvoiceFormData): jsPDF {
     const doc = new jsPDF();
     const pageWidth = doc.internal.pageSize.getWidth();
     const pageHeight = doc.internal.pageSize.getHeight();
@@ -49,9 +50,16 @@ export class JSPDFService {
     });
 
     // Company Info
-    if (invoice.company.logo) {
+    if (invoice.companyInfo.logo) {
       try {
-        doc.addImage(invoice.company.logo, "JPEG", 20, yPosition - 5, 20, 20);
+        doc.addImage(
+          invoice.companyInfo.logo,
+          "JPEG",
+          20,
+          yPosition - 5,
+          20,
+          20
+        );
       } catch (error) {
         console.warn("Could not add logo to PDF:", error);
       }
@@ -60,23 +68,44 @@ export class JSPDFService {
     doc.setFontSize(16);
     doc.setTextColor(...theme.primary);
     doc.text(
-      invoice.company.name,
-      invoice.company.logo ? 50 : 20,
+      invoice.companyInfo.name,
+      invoice.companyInfo.logo ? 50 : 20,
       yPosition + 5
     );
 
     doc.setFontSize(10);
     doc.setTextColor(100, 100, 100);
+    const formatAddress = (
+      address:
+        | string
+        | {
+            street: string;
+            city: string;
+            state: string;
+            zipCode: string;
+            country: string;
+          }
+    ) => {
+      if (typeof address === "string") return address;
+      if (address && typeof address === "object") {
+        const { street, city, state, zipCode, country } = address;
+        return [street, city, state, zipCode, country]
+          .filter(Boolean)
+          .join(", ");
+      }
+      return "";
+    };
+
     const companyLines = [
-      invoice.company.address,
-      `${invoice.company.phone} • ${invoice.company.email}`,
-      invoice.company.website,
+      formatAddress(invoice.companyInfo.address),
+      `${invoice.companyInfo.contact.phone} • ${invoice.companyInfo.contact.email}`,
+      invoice.companyInfo.contact.website,
     ].filter(Boolean);
 
     companyLines.forEach((line, index) => {
-      doc.text(
+      return doc.text(
         line || "",
-        invoice.company.logo ? 50 : 20,
+        invoice.companyInfo.logo ? 50 : 20,
         yPosition + 15 + index * 5
       );
     });
@@ -91,13 +120,13 @@ export class JSPDFService {
     doc.setFontSize(10);
     doc.setTextColor(0, 0, 0);
     doc.text(invoice.client.name, 20, yPosition + 8);
-    doc.text(invoice.client.address, 20, yPosition + 16);
-    doc.text(invoice.client.phone, 20, yPosition + 24);
+    doc.text(invoice.client.email, 20, yPosition + 16);
+    doc.text(invoice.client.address.street, 20, yPosition + 24);
     doc.text(invoice.client.email, 20, yPosition + 32);
 
     // Invoice Details
-    const invoiceDate = new Date(invoice.date).toLocaleDateString();
-    const dueDate = new Date(invoice.dueDate).toLocaleDateString();
+    const invoiceDate = new Date(invoice.dates.issued).toLocaleDateString();
+    const dueDate = new Date(invoice.dates.due).toLocaleDateString();
 
     doc.text(`Invoice Date: ${invoiceDate}`, pageWidth - 80, yPosition + 8, {
       align: "right",
@@ -136,9 +165,14 @@ export class JSPDFService {
       doc.text(`$${item.rate.toFixed(2)}`, pageWidth - 80, yPosition + 4, {
         align: "center",
       });
-      doc.text(`$${item.amount.toFixed(2)}`, pageWidth - 30, yPosition + 4, {
-        align: "right",
-      });
+      doc.text(
+        `$${(item.amount ?? 0).toFixed(2)}`,
+        pageWidth - 30,
+        yPosition + 4,
+        {
+          align: "right",
+        }
+      );
 
       yPosition += 12;
     });
@@ -190,17 +224,17 @@ export class JSPDFService {
     return doc;
   }
 
-  static downloadPDF(invoice: Invoice, filename?: string): void {
+  static downloadPDF(invoice: InvoiceFormData, filename?: string): void {
     const doc = this.generatePDF(invoice);
     doc.save(filename || `invoice-${invoice.invoiceNumber}.pdf`);
   }
 
-  static getPDFBlob(invoice: Invoice): Blob {
+  static getPDFBlob(invoice: InvoiceFormData): Blob {
     const doc = this.generatePDF(invoice);
     return doc.output("blob");
   }
 
-  static getPDFBase64(invoice: Invoice): string {
+  static getPDFBase64(invoice: InvoiceFormData): string {
     const doc = this.generatePDF(invoice);
     return doc.output("datauristring").split(",")[1];
   }

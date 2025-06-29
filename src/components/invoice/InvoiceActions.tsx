@@ -1,8 +1,4 @@
-// ==========================================
-// 6. UPDATED INVOICE ACTIONS COMPONENT
-// ==========================================
-
-// components/invoice/InvoiceActions.tsx (Updated)
+// components/invoice/InvoiceActions.tsx (Fixed)
 "use client";
 
 import { Button } from "@/components/ui/button";
@@ -14,7 +10,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Invoice } from "@/types/invoice";
+import {
+  ImageFormat,
+  ImageGeneratorService,
+} from "@/lib/services/image-generator";
+import { JSPDFService } from "@/lib/services/jspdf.service";
+import { PDFGeneratorService } from "@/lib/services/pdf-generator";
+import { InvoiceFormData } from "@/lib/validations/validation";
 import { motion } from "framer-motion";
 import {
   Download,
@@ -25,37 +27,45 @@ import {
   Palette,
 } from "lucide-react";
 import React, { useState } from "react";
-import { ImageFormat, ImageService } from "@/lib/services/image-generator";
-import { JSPDFService } from "@/lib/services/jspdf.service";
-import { PDFGeneratorService } from "@/lib/services/pdf-generator";
 import { toast } from "sonner";
 
 interface InvoiceActionsProps {
-  invoice: Invoice;
+  invoice: InvoiceFormData;
+
   selectedTemplate: string;
   onTemplateChange: (template: string) => void;
-  onSendEmail: () => void;
+  onGenerateInvoice: () => Promise<void>;
+  onDownloadPDF: () => Promise<void>;
+  onDownloadImage: () => Promise<void>;
+  onSendEmail: () => Promise<void>;
+  isGenerating: boolean;
+  isDownloading: boolean;
+  isSending: boolean;
 }
 
 const templates = [
   {
     id: "modern",
     name: "Modern",
+    preview: "Modern professional design",
     colors: { primary: "#3B82F6", secondary: "#1E40AF", accent: "#EFF6FF" },
   },
   {
     id: "classic",
     name: "Classic",
+    preview: "Traditional business style",
     colors: { primary: "#374151", secondary: "#111827", accent: "#F9FAFB" },
   },
   {
     id: "minimal",
     name: "Minimal",
+    preview: "Clean and simple layout",
     colors: { primary: "#10B981", secondary: "#059669", accent: "#ECFDF5" },
   },
   {
     id: "elegant",
     name: "Elegant",
+    preview: "Sophisticated design",
     colors: { primary: "#7C3AED", secondary: "#5B21B6", accent: "#F3E8FF" },
   },
 ];
@@ -96,8 +106,16 @@ export const InvoiceActions: React.FC<InvoiceActionsProps> = ({
   const handleDownloadImage = async (format: ImageFormat = "png") => {
     setIsDownloading(true);
     try {
-      await ImageService.downloadImage(
-        "invoice-preview",
+      const invoiceElement = document.getElementById("invoice-preview");
+      if (!invoiceElement) {
+        toast("Error", {
+          description: "Invoice preview element not found.",
+        });
+        setIsDownloading(false);
+        return;
+      }
+      await ImageGeneratorService.downloadImage(
+        invoiceElement,
         `invoice-${invoice.invoiceNumber}`,
         format,
         {

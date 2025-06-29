@@ -9,27 +9,17 @@ import { PDFGeneratorService } from "@/lib/services/pdf-generator";
 import { useRef, useState } from "react";
 
 import { InvoiceFormData } from "@/lib/validations/validation";
-import { Client, CompanyInfo } from "@/types/invoice";
+
 import { toast } from "sonner";
 
 export function useInvoiceGenerator() {
   const [isGenerating, setIsGenerating] = useState(false);
   const previewRef = useRef<HTMLDivElement>(null);
 
-  const generatePDF = async (
-    invoiceData: InvoiceFormData,
-    companyInfo: CompanyInfo,
-    clientInfo: Client,
-    invoiceNumber?: string
-  ) => {
+  const generatePDF = async (invoiceData: InvoiceFormData) => {
     setIsGenerating(true);
     try {
-      await PDFGeneratorService.downloadPDF(
-        invoiceData,
-        companyInfo,
-        clientInfo,
-        invoiceNumber
-      );
+      await PDFGeneratorService.downloadPDF(invoiceData);
       toast.success("PDF downloaded successfully!");
     } catch (error) {
       console.error("PDF generation failed:", error);
@@ -72,18 +62,10 @@ export function useInvoiceGenerator() {
   };
 
   const getPDFBlob = async (
-    invoiceData: InvoiceFormData,
-    companyInfo: CompanyInfo,
-    clientInfo: Client,
-    invoiceNumber?: string
+    invoiceData: InvoiceFormData
   ): Promise<Blob | null> => {
     try {
-      return await PDFGeneratorService.generatePDF(
-        invoiceData,
-        companyInfo,
-        clientInfo,
-        invoiceNumber
-      );
+      return await PDFGeneratorService.generatePDF(invoiceData);
     } catch (error) {
       console.error("PDF blob generation failed:", error);
       return null;
