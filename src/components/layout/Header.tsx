@@ -1,8 +1,8 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { FileText, Settings, Plus, Menu } from "lucide-react";
 import { motion } from "framer-motion";
+import { FileText, Menu, Plus, Settings } from "lucide-react";
 import Link from "next/link";
 
 interface HeaderProps {
@@ -49,7 +49,7 @@ export default function Header({ onMenuClick }: HeaderProps) {
         </nav>
 
         <div className="flex items-center space-x-2">
-          <Link href="/create">
+          <Link href="invoice/create-invoice">
             <Button size="sm" className="bg-blue-600 hover:bg-blue-700">
               <Plus className="h-4 w-4 mr-2" />
               New Invoice

@@ -9,7 +9,7 @@ import { InvoicePreview } from "./InvoicePreview";
 import { Button } from "@/components/ui/button";
 import { useInvoiceForm } from "@/hooks/UseInvoiceForm";
 import { Eye, EyeOff, Split } from "lucide-react";
-import { InvoiceForm } from "../forms/invoice-form";
+import { InvoiceForm } from "./InvoiceForm";
 
 type ViewMode = "form" | "preview" | "split";
 
@@ -54,7 +54,7 @@ export const InvoiceGenerator: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen max-w-full bg-gray-50">
       {/* View Mode Toggle */}
       <div className="sticky top-0 z-10 bg-white border-b shadow-sm">
         <div className="max-w-7xl mx-auto px-4 py-3">

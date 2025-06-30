@@ -1,40 +1,35 @@
-// models/CompanyInfo.ts
-import mongoose, { Schema, Document } from "mongoose";
+// models/Company.ts
+import mongoose, { Schema } from "mongoose";
+import { ICompany } from "@/types/database";
 
-export interface ICompanyInfo extends Document {
-  name: string;
-  email: string;
-  phone?: string;
-  address?: string;
-  logo?: string;
-  website?: string;
-  taxId?: string;
-  createdAt: Date;
-  updatedAt: Date;
-}
-
-const CompanyInfoSchema = new Schema<ICompanyInfo>(
+const CompanySchema = new Schema<ICompany>(
   {
+    userId: {
+      type: Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
+    },
     name: {
       type: String,
-      required: true,
+      required: [true, "Company name is required"],
       trim: true,
+      maxlength: [100, "Company name cannot exceed 100 characters"],
+    },
+    logo: {
+      type: String,
+      default: null,
     },
     email: {
       type: String,
-      required: true,
-      trim: true,
+      required: [true, "Company email is required"],
       lowercase: true,
+      trim: true,
+      match: [
+        /^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,3})+$/,
+        "Please enter a valid email",
+      ],
     },
     phone: {
-      type: String,
-      trim: true,
-    },
-    address: {
-      type: String,
-      trim: true,
-    },
-    logo: {
       type: String,
       trim: true,
     },
@@ -42,19 +37,83 @@ const CompanyInfoSchema = new Schema<ICompanyInfo>(
       type: String,
       trim: true,
     },
+    address: {
+      street: {
+        type: String,
+        required: [true, "Street address is required"],
+        trim: true,
+      },
+      city: {
+        type: String,
+        required: [true, "City is required"],
+        trim: true,
+      },
+      state: {
+        type: String,
+        required: [true, "State is required"],
+        trim: true,
+      },
+      zipCode: {
+        type: String,
+        required: [true, "Zip code is required"],
+        trim: true,
+      },
+      country: {
+        type: String,
+        required: [true, "Country is required"],
+        trim: true,
+      },
+    },
     taxId: {
       type: String,
       trim: true,
     },
+    bankDetails: {
+      bankName: String,
+      accountName: String,
+      accountNumber: String,
+      routingNumber: String,
+      swift: String,
+    },
+    branding: {
+      primaryColor: {
+        type: String,
+        default: "#2563eb",
+      },
+      secondaryColor: {
+        type: String,
+        default: "#64748b",
+      },
+      fontFamily: {
+        type: String,
+        default: "Inter",
+      },
+    },
+    isDefault: {
+      type: Boolean,
+      default: false,
+    },
   },
   {
     timestamps: true,
+    toJSON: { virtuals: true },
+    toObject: { virtuals: true },
   }
 );
 
-// Ensure only one company info document exists
-CompanyInfoSchema.index({}, { unique: true });
+// Indexes
+CompanySchema.index({ userId: 1 });
+CompanySchema.index({ userId: 1, isDefault: 1 });
 
-export const CompanyInfo =
-  mongoose.models.CompanyInfo ||
-  mongoose.model<ICompanyInfo>("CompanyInfo", CompanyInfoSchema);
+// Ensure only one default company per user
+CompanySchema.pre("save", async function (next) {
+  if (this.isDefault && this.isModified("isDefault")) {
+    await mongoose
+      .model("Company")
+      .updateMany(
+        { userId: this.userId, _id: { $ne: this._id } },
+        { isDefault: false }
+      );
+  }
+  next();
+});
