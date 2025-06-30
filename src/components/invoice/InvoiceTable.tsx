@@ -6,7 +6,8 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Invoice } from "@/hooks/useInvoice";
+import { Invoice } from "@/types/invoice";
+
 import { Edit, Eye, MoreHorizontal, Trash2 } from "lucide-react";
 
 interface InvoiceTableProps {
@@ -63,12 +64,12 @@ export function InvoiceTable({
                     {invoice.invoiceNumber}
                   </h3>
                   <p className="text-gray-600 dark:text-gray-400">
-                    {invoice.clientName}
+                    {invoice.client.name}
                   </p>
                 </div>
                 <Badge className={getStatusColor(invoice.status)}>
-                  {invoice.status.charAt(0).toUpperCase() +
-                    invoice.status.slice(1)}
+                  {(invoice?.status ?? "draft").charAt(0).toUpperCase() +
+                    (invoice?.status ?? "draft").slice(1)}
                 </Badge>
               </div>
 
@@ -76,7 +77,7 @@ export function InvoiceTable({
                 <div>
                   <p className="text-gray-500 dark:text-gray-400">Amount</p>
                   <p className="font-medium text-gray-900 dark:text-white">
-                    ${invoice.amount.toLocaleString()}
+                    ${invoice.subtotal.toLocaleString()}
                   </p>
                 </div>
                 <div>
@@ -104,7 +105,7 @@ export function InvoiceTable({
                       Edit
                     </DropdownMenuItem>
                     <DropdownMenuItem
-                      onClick={() => onDelete(invoice.id)}
+                      onClick={() => invoice.id && onDelete(invoice.id)}
                       className="text-red-600"
                     >
                       <Trash2 className="h-4 w-4 mr-2" />
@@ -162,27 +163,27 @@ export function InvoiceTable({
                         {invoice.invoiceNumber}
                       </div>
                       <div className="text-sm text-gray-500 dark:text-gray-400">
-                        {formatDate(invoice.createdDate)}
+                        {formatDate(invoice.date)}
                       </div>
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div>
                       <div className="text-sm font-medium text-gray-900 dark:text-white">
-                        {invoice.clientName}
+                        {invoice.client.name}
                       </div>
                       <div className="text-sm text-gray-500 dark:text-gray-400">
-                        {invoice.clientEmail}
+                        {invoice.client.email}
                       </div>
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
-                    ${invoice.amount.toLocaleString()}
+                    ${invoice.total.toLocaleString()}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <Badge className={getStatusColor(invoice.status)}>
-                      {invoice.status.charAt(0).toUpperCase() +
-                        invoice.status.slice(1)}
+                      {(invoice.status ?? "draft").charAt(0).toUpperCase() +
+                        (invoice.status ?? "draft").slice(1)}
                     </Badge>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
@@ -205,7 +206,7 @@ export function InvoiceTable({
                           Edit
                         </DropdownMenuItem>
                         <DropdownMenuItem
-                          onClick={() => onDelete(invoice.id)}
+                          onClick={() => invoice.id && onDelete(invoice.id)}
                           className="text-red-600"
                         >
                           <Trash2 className="h-4 w-4 mr-2" />

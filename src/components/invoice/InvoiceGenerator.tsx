@@ -3,12 +3,13 @@
 
 import { motion } from "framer-motion";
 import React, { useState } from "react";
-import { InvoiceForm } from "./InvoiceForm";
+
 import { InvoicePreview } from "./InvoicePreview";
 
 import { Button } from "@/components/ui/button";
 import { useInvoiceForm } from "@/hooks/UseInvoiceForm";
 import { Eye, EyeOff, Split } from "lucide-react";
+import { InvoiceForm } from "../forms/invoice-form";
 
 type ViewMode = "form" | "preview" | "split";
 

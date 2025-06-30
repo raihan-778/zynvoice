@@ -14,6 +14,7 @@ import { useState } from "react";
 
 export default function DashboardPage() {
   const { invoices, loading, deleteInvoice, updateInvoice } = useInvoices();
+
   const { notifications, addNotification, dismissNotification } =
     useNotifications();
   const [view, setView] = useState<"table" | "cards">("table");

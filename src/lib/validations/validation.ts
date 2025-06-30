@@ -3,6 +3,7 @@ import { z } from "zod";
 
 // Company Information Schema
 export const CompanyInfoSchema = z.object({
+  id: z.string().optional(),
   name: z.string().min(1, "Company name is required"),
   logo: z.string().optional(),
   address: z.string().optional(),
@@ -16,6 +17,7 @@ export const CompanyInfoSchema = z.object({
 
 // Client Information Schema
 export const ClientInfoSchema = z.object({
+  id: z.string().optional(),
   name: z.string().min(1, "Client name is required"),
   email: z.string().email().optional(),
   phone: z.string().optional(),
@@ -40,6 +42,7 @@ export const InvoiceItemSchema = z.object({
 
 // Invoice Form Data Schema
 export const InvoiceFormDataSchema = z.object({
+  id: z.string().optional(),
   invoiceNumber: z.string().min(1, "Invoice number is required"),
   companyInfo: CompanyInfoSchema.optional(),
   client: ClientInfoSchema.optional(),
@@ -59,6 +62,7 @@ export const InvoiceFormDataSchema = z.object({
   subtotal: z.number().optional(),
   tax: z.number().optional(),
   total: z.number().optional(),
+  status: z.enum(["draft", "sent", "paid", "overdue"]).optional(),
 });
 
 // TypeScript types
