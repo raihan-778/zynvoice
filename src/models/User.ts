@@ -1,10 +1,59 @@
-// models/User.ts
-import mongoose, { Schema, Model } from "mongoose";
+// ============================================================================
+// models/User.ts - Updated User Model for Auth
+// ============================================================================
+
 import bcrypt from "bcryptjs";
-import { IUser } from "@/types/database";
+import mongoose, { Schema, model, models } from "mongoose";
+
+export interface ISubscription {
+  plan: "free" | "pro" | "enterprise";
+  status: "active" | "canceled" | "trialing";
+  currentPeriodEnd?: Date;
+}
+
+const SubscriptionSchema: Schema = new Schema({
+  plan: {
+    type: String,
+    enum: ["free", "pro", "enterprise"], // Only 3 allowed plan types
+    required: true,
+  },
+  status: {
+    type: String,
+    enum: ["active", "canceled", "trialing"], // Only 3 allowed status types
+    required: true,
+  },
+  currentPeriodEnd: {
+    type: Date,
+    default: null,
+  },
+});
+export interface IUser {
+  _id: mongoose.Types.ObjectId;
+  id?: string;
+  name: string;
+  email: string;
+  password?: string;
+  image?: string;
+  provider?: "credentials" | "google";
+  isVerified: boolean;
+  role?: "user" | "admin";
+  subscription: ISubscription;
+  resetPasswordToken?: string;
+  resetPasswordExpires?: Date;
+  emailVerificationToken?: string;
+  emailVerificationExpires?: Date;
+  createdAt: Date;
+  updatedAt: Date;
+}
 
 const UserSchema = new Schema<IUser>(
   {
+    name: {
+      type: String,
+      required: [true, "Name is required"],
+      trim: true,
+      maxlength: [50, "Name cannot exceed 50 characters"],
+    },
     email: {
       type: String,
       required: [true, "Email is required"],
@@ -18,20 +67,19 @@ const UserSchema = new Schema<IUser>(
     },
     password: {
       type: String,
+      select: false, // Don't include in queries by default
       minlength: [6, "Password must be at least 6 characters"],
-      select: false,
     },
-    name: {
-      type: String,
-      required: [true, "Name is required"],
-      trim: true,
-      maxlength: [50, "Name cannot exceed 50 characters"],
-    },
-    avatar: {
+    image: {
       type: String,
       default: null,
     },
-    emailVerified: {
+    provider: {
+      type: String,
+      enum: ["credentials", "google"],
+      default: "credentials",
+    },
+    isVerified: {
       type: Boolean,
       default: false,
     },
@@ -41,43 +89,18 @@ const UserSchema = new Schema<IUser>(
       default: "user",
     },
     subscription: {
-      plan: {
-        type: String,
-        enum: ["free", "pro", "enterprise"],
-        default: "free",
-      },
-      status: {
-        type: String,
-        enum: ["active", "inactive", "cancelled"],
-        default: "active",
-      },
-      expiresAt: {
-        type: Date,
-        default: null,
+      type: SubscriptionSchema,
+      required: true,
+      default: {
+        plan: "free",
+        status: "trialing",
       },
     },
-    preferences: {
-      theme: {
-        type: String,
-        enum: ["light", "dark"],
-        default: "light",
-      },
-      currency: {
-        type: String,
-        default: "USD",
-      },
-      timezone: {
-        type: String,
-        default: "UTC",
-      },
-      language: {
-        type: String,
-        default: "en",
-      },
-    },
+
     resetPasswordToken: String,
     resetPasswordExpires: Date,
     emailVerificationToken: String,
+    emailVerificationExpires: Date,
   },
   {
     timestamps: true,
@@ -88,23 +111,18 @@ const UserSchema = new Schema<IUser>(
 
 // Indexes
 UserSchema.index({ email: 1 });
-UserSchema.index({ emailVerificationToken: 1 });
 UserSchema.index({ resetPasswordToken: 1 });
+UserSchema.index({ emailVerificationToken: 1 });
 
-// Pre-save middleware to hash password
+// Hash password before saving
 UserSchema.pre("save", async function (next) {
   if (!this.isModified("password") || !this.password) return next();
 
-  try {
-    const salt = await bcrypt.genSalt(12);
-    this.password = await bcrypt.hash(this.password, salt);
-    next();
-  } catch (error) {
-    next(error as Error);
-  }
+  this.password = await bcrypt.hash(this.password, 12);
+  next();
 });
 
-// Instance method to compare passwords
+// Compare password method
 UserSchema.methods.comparePassword = async function (
   candidatePassword: string
 ): Promise<boolean> {
@@ -112,11 +130,5 @@ UserSchema.methods.comparePassword = async function (
   return bcrypt.compare(candidatePassword, this.password);
 };
 
-// Instance method to generate email verification token
-UserSchema.methods.generateEmailVerificationToken = function (): string {
-  const token =
-    Math.random().toString(36).substring(2, 15) +
-    Math.random().toString(36).substring(2, 15);
-  this.emailVerificationToken = token;
-  return token;
-};
+const User = models?.User || model<IUser>("User", UserSchema);
+export default User;

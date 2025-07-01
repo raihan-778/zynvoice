@@ -2,14 +2,16 @@
 import { NextRequest, NextResponse } from "next/server";
 
 import DBConnect from "@/lib/database/connection";
-import { CompanyInfo } from "@/models/CompanyInfo";
+
 import { writeFile } from "fs/promises";
 import path from "path";
+import Company from "@/models/CompanyInfo";
+import { CompanyInfo } from "@/lib/validations/validation";
 
 export async function GET() {
   try {
-    await connectDB();
-    const company = await CompanyInfo.findOne();
+    await DBConnect();
+    const company = await Company.findOne();
 
     if (!company) {
       return NextResponse.json({
@@ -23,7 +25,7 @@ export async function GET() {
     }
 
     return NextResponse.json(company);
-  } catch (error) {
+  } catch {
     return NextResponse.json(
       { error: "Failed to fetch company info" },
       { status: 500 }
@@ -36,7 +38,7 @@ export async function POST(request: NextRequest) {
     await DBConnect();
     const formData = await request.formData();
 
-    const companyData: any = {
+    const companyData: CompanyInfo = {
       name: formData.get("name"),
       email: formData.get("email"),
       phone: formData.get("phone"),

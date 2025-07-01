@@ -1,4 +1,6 @@
 import DBConnect from "@/lib/database/connection";
+import InvoiceTemplate from "@/models/InvoiceTemplet";
+
 import { NextRequest, NextResponse } from "next/server";
 
 export async function GET() {
@@ -9,7 +11,7 @@ export async function GET() {
       createdAt: -1,
     });
     return NextResponse.json(templates);
-  } catch (error) {
+  } catch {
     return NextResponse.json(
       { error: "Failed to fetch templates" },
       { status: 500 }
@@ -19,7 +21,7 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
   try {
-    await connectDB();
+    await DBConnect();
     const data = await request.json();
 
     const template = new InvoiceTemplate({

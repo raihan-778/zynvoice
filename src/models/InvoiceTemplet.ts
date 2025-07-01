@@ -1,8 +1,8 @@
 // models/Template.ts
-import mongoose, { Schema } from "mongoose";
 import { ITemplate } from "@/types/database";
+import mongoose, { model, models, Schema } from "mongoose";
 
-const TemplateSchema = new Schema<ITemplate>(
+export const TemplateSchema = new Schema<ITemplate>(
   {
     userId: {
       type: Schema.Types.ObjectId,
@@ -122,3 +122,8 @@ TemplateSchema.pre("save", async function (next) {
   }
   next();
 });
+
+// Export the model (handles both development and production environments)
+const InvoiceTemplate =
+  models?.InvoiceTemplate || model<ITemplate>("Client", TemplateSchema);
+export default InvoiceTemplate;

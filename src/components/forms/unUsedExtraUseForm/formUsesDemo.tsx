@@ -1,678 +1,673 @@
-import React, { useState, useEffect } from "react";
 import {
-  DollarSign,
-  Download,
+  Building,
+  Calculator,
   Eye,
-  FileText,
-  Send,
+  Hash,
   Plus,
+  Save,
   Trash2,
-  Calendar,
+  User,
 } from "lucide-react";
+import { useEffect, useState } from "react";
 
-// Mock data for demonstration
-const mockClientList = [
-  {
-    id: "1",
-    name: "Acme Corporation",
-    email: "contact@acme.com",
-    address: "123 Business St, NY 10001",
-    phone: "+1 (555) 123-4567",
-  },
-  {
-    id: "2",
-    name: "Tech Solutions Inc",
-    email: "info@techsolutions.com",
-    address: "456 Tech Ave, CA 94105",
-    phone: "+1 (555) 987-6543",
-  },
-];
-
-const mockCompanyList = [
-  {
-    id: "1",
-    name: "Your Company Ltd",
-    email: "hello@yourcompany.com",
-    address: "789 Main St, TX 75001",
-    phone: "+1 (555) 111-2222",
-    website: "www.yourcompany.com",
-  },
-];
-
-// Helper function to calculate totals
-function calculateInvoiceTotals(items, taxRate, discountValue, discountType) {
-  const subtotal = items.reduce(
-    (sum, item) => sum + item.quantity * item.rate,
-    0
-  );
-
-  let discount = 0;
-  if (discountType === "percentage") {
-    discount = (subtotal * discountValue) / 100;
-  } else {
-    discount = discountValue;
-  }
-
-  const discountedSubtotal = Math.max(0, subtotal - discount);
-  const tax = (discountedSubtotal * taxRate) / 100;
-  const total = discountedSubtotal + tax;
-
-  return { subtotal, tax, total, discount };
-}
-
-function formatDate(date) {
-  return new Date(date).toLocaleDateString();
-}
-
-export default function InvoiceForm() {
-  const [currentTab, setCurrentTab] = useState("details");
-  const [totals, setTotals] = useState({
-    subtotal: 0,
-    tax: 0,
-    total: 0,
-    discount: 0,
+const InvoiceFormBuilder = () => {
+  // Company Information State
+  const [companyInfo, setCompanyInfo] = useState({
+    name: "Your Company Name",
+    address: "123 Business Street",
+    city: "City",
+    state: "State",
+    zip: "12345",
+    phone: "(555) 123-4567",
+    email: "info@company.com",
+    website: "www.company.com",
   });
 
-  // Form state
-  const [formData, setFormData] = useState({
-    invoiceNumber: `INV-${Date.now()}`,
-    client: mockClientList[0],
-    companyInfo: mockCompanyList[0],
-    items: [
+  // Client Information State
+  const [clients, setClients] = useState([
+    {
+      id: 1,
+      name: "Client A",
+      email: "clienta@email.com",
+      address: "456 Client St, City, State 67890",
+    },
+    {
+      id: 2,
+      name: "Client B",
+      email: "clientb@email.com",
+      address: "789 Customer Ave, City, State 54321",
+    },
+  ]);
+
+  const [selectedClient, setSelectedClient] = useState(null);
+  const [showNewClient, setShowNewClient] = useState(false);
+  const [newClient, setNewClient] = useState({
+    name: "",
+    email: "",
+    address: "",
+  });
+
+  // Invoice Details State
+  const [invoiceDetails, setInvoiceDetails] = useState({
+    invoiceNumber: `INV-${Date.now().toString().slice(-6)}`,
+    date: new Date().toISOString().split("T")[0],
+    dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
+      .toISOString()
+      .split("T")[0],
+    terms: "Net 30",
+    notes: "",
+  });
+
+  // Line Items State
+  const [lineItems, setLineItems] = useState([
+    { id: 1, description: "", quantity: 1, rate: 0, amount: 0 },
+  ]);
+
+  // Tax and Discount State
+  const [taxRate, setTaxRate] = useState(0);
+  const [discountRate, setDiscountRate] = useState(0);
+  const [discountType, setDiscountType] = useState("percentage"); // 'percentage' or 'fixed'
+
+  // Calculations
+  const subtotal = lineItems.reduce((sum, item) => sum + item.amount, 0);
+  const discountAmount =
+    discountType === "percentage"
+      ? (subtotal * discountRate) / 100
+      : discountRate;
+  const taxableAmount = subtotal - discountAmount;
+  const taxAmount = (taxableAmount * taxRate) / 100;
+  const total = taxableAmount + taxAmount;
+
+  // Update line item amount when quantity or rate changes
+  useEffect(() => {
+    setLineItems((items) =>
+      items.map((item) => ({
+        ...item,
+        amount: item.quantity * item.rate,
+      }))
+    );
+  }, []);
+
+  const addLineItem = () => {
+    const newId = Math.max(...lineItems.map((item) => item.id)) + 1;
+    setLineItems([
+      ...lineItems,
       {
-        id: Date.now().toString(),
+        id: newId,
         description: "",
         quantity: 1,
         rate: 0,
+        amount: 0,
       },
-    ],
-    dates: {
-      issued: new Date(),
-      due: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
-    },
-    currency: "USD",
-    discountType: "percentage",
-    discountValue: 0,
-    taxRate: 0,
-    notes: "",
-    terms: "",
-    paymentInstructions: "",
-    template: "modern",
-    status: "draft",
-  });
-
-  // Calculate totals whenever items or rates change
-  useEffect(() => {
-    const newTotals = calculateInvoiceTotals(
-      formData.items || [],
-      formData.taxRate || 0,
-      formData.discountValue || 0,
-      formData.discountType || "percentage"
-    );
-    setTotals(newTotals);
-  }, [
-    formData.items,
-    formData.taxRate,
-    formData.discountValue,
-    formData.discountType,
-  ]);
-
-  const updateFormData = (field, value) => {
-    setFormData((prev) => ({ ...prev, [field]: value }));
+    ]);
   };
 
-  const updateNestedFormData = (field, subfield, value) => {
-    setFormData((prev) => ({
-      ...prev,
-      [field]: { ...prev[field], [subfield]: value },
-    }));
-  };
-
-  const updateItemData = (index, field, value) => {
-    const newItems = [...formData.items];
-    newItems[index] = { ...newItems[index], [field]: value };
-    setFormData((prev) => ({ ...prev, items: newItems }));
-  };
-
-  const addNewItem = () => {
-    const newItem = {
-      id: Date.now().toString(),
-      description: "",
-      quantity: 1,
-      rate: 0,
-    };
-    setFormData((prev) => ({
-      ...prev,
-      items: [...prev.items, newItem],
-    }));
-  };
-
-  const removeItem = (index) => {
-    if (formData.items.length > 1) {
-      const newItems = formData.items.filter((_, i) => i !== index);
-      setFormData((prev) => ({ ...prev, items: newItems }));
+  const removeLineItem = (id) => {
+    if (lineItems.length > 1) {
+      setLineItems(lineItems.filter((item) => item.id !== id));
     }
   };
 
-  const handleSubmit = () => {
-    console.log("Form submitted:", { ...formData, ...totals });
-    alert("Invoice saved successfully!");
+  const updateLineItem = (id, field, value) => {
+    setLineItems((items) =>
+      items.map((item) => {
+        if (item.id === id) {
+          const updatedItem = { ...item, [field]: value };
+          if (field === "quantity" || field === "rate") {
+            updatedItem.amount = updatedItem.quantity * updatedItem.rate;
+          }
+          return updatedItem;
+        }
+        return item;
+      })
+    );
   };
 
-  const handlePreview = () => {
-    console.log("Preview:", { ...formData, ...totals });
-    alert("Preview functionality would open here");
+  const addClient = () => {
+    if (newClient.name && newClient.email) {
+      const newId = Math.max(...clients.map((c) => c.id)) + 1;
+      const clientToAdd = { ...newClient, id: newId };
+      setClients([...clients, clientToAdd]);
+      setSelectedClient(clientToAdd);
+      setNewClient({ name: "", email: "", address: "" });
+      setShowNewClient(false);
+    }
   };
 
-  const handleDownload = () => {
-    console.log("Download:", { ...formData, ...totals });
-    alert("PDF download would start here");
-  };
+  const handleSave = () => {
+    const invoiceData = {
+      companyInfo,
+      client: selectedClient,
+      invoiceDetails,
+      lineItems,
+      taxRate,
+      discountRate,
+      discountType,
+      subtotal,
+      discountAmount,
+      taxAmount,
+      total,
+      createdAt: new Date().toISOString(),
+    };
 
-  const handleSendEmail = () => {
-    console.log("Send Email:", { ...formData, ...totals });
-    alert("Email sending functionality would trigger here");
+    console.log("Invoice Data:", invoiceData);
+    alert("Invoice saved! Check console for data structure.");
   };
-
-  const currencies = ["USD", "EUR", "GBP", "CAD", "AUD", "JPY", "INR"];
-  const templates = [
-    { id: "modern", name: "Modern", description: "Clean and professional" },
-    { id: "classic", name: "Classic", description: "Traditional layout" },
-    { id: "minimal", name: "Minimal", description: "Simple and elegant" },
-  ];
 
   return (
-    <div className="max-w-6xl mx-auto p-6 space-y-6 bg-gray-50 min-h-screen">
-      <div className="bg-white rounded-lg shadow-sm border">
-        <div className="p-6 border-b">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <FileText className="w-6 h-6 text-blue-600" />
-              <h1 className="text-2xl font-bold">Create Invoice</h1>
-            </div>
-            <div className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-medium">
-              Total: {totals.total.toFixed(2)} {formData.currency}
-            </div>
-          </div>
+    <div className="max-w-4xl mx-auto p-6 bg-white">
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold text-gray-900 mb-2">
+          Create Invoice
+        </h1>
+        <p className="text-gray-600">
+          Build and customize your invoice with dynamic calculations
+        </p>
+      </div>
+
+      {/* Company Information Section */}
+      <div className="mb-8 p-6 bg-blue-50 rounded-lg border">
+        <div className="flex items-center mb-4">
+          <Building className="h-5 w-5 text-blue-600 mr-2" />
+          <h2 className="text-xl font-semibold text-gray-900">
+            Company Information
+          </h2>
         </div>
 
-        <div className="p-6">
-          {/* Tab Navigation */}
-          <div className="flex border-b mb-6">
-            {[
-              { id: "details", label: "Details" },
-              { id: "items", label: `Items (${formData.items.length})` },
-              { id: "totals", label: "Totals" },
-              { id: "template", label: "Template" },
-            ].map((tab) => (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Company Name
+            </label>
+            <input
+              type="text"
+              value={companyInfo.name}
+              onChange={(e) =>
+                setCompanyInfo({ ...companyInfo, name: e.target.value })
+              }
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Email
+            </label>
+            <input
+              type="email"
+              value={companyInfo.email}
+              onChange={(e) =>
+                setCompanyInfo({ ...companyInfo, email: e.target.value })
+              }
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Address
+            </label>
+            <input
+              type="text"
+              value={companyInfo.address}
+              onChange={(e) =>
+                setCompanyInfo({ ...companyInfo, address: e.target.value })
+              }
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            />
+          </div>
+          <div className="flex gap-2">
+            <input
+              type="text"
+              placeholder="City"
+              value={companyInfo.city}
+              onChange={(e) =>
+                setCompanyInfo({ ...companyInfo, city: e.target.value })
+              }
+              className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            />
+            <input
+              type="text"
+              placeholder="State"
+              value={companyInfo.state}
+              onChange={(e) =>
+                setCompanyInfo({ ...companyInfo, state: e.target.value })
+              }
+              className="w-20 px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            />
+            <input
+              type="text"
+              placeholder="ZIP"
+              value={companyInfo.zip}
+              onChange={(e) =>
+                setCompanyInfo({ ...companyInfo, zip: e.target.value })
+              }
+              className="w-24 px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* Client Information Section */}
+      <div className="mb-8 p-6 bg-green-50 rounded-lg border">
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center">
+            <User className="h-5 w-5 text-green-600 mr-2" />
+            <h2 className="text-xl font-semibold text-gray-900">
+              Client Information
+            </h2>
+          </div>
+          <button
+            onClick={() => setShowNewClient(!showNewClient)}
+            className="flex items-center px-3 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors"
+          >
+            <Plus className="h-4 w-4 mr-1" />
+            Add Client
+          </button>
+        </div>
+
+        {showNewClient && (
+          <div className="mb-4 p-4 bg-white rounded-md border-2 border-green-200">
+            <h3 className="font-medium text-gray-900 mb-3">Add New Client</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <input
+                type="text"
+                placeholder="Client Name"
+                value={newClient.name}
+                onChange={(e) =>
+                  setNewClient({ ...newClient, name: e.target.value })
+                }
+                className="px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-green-500 focus:border-green-500"
+              />
+              <input
+                type="email"
+                placeholder="Client Email"
+                value={newClient.email}
+                onChange={(e) =>
+                  setNewClient({ ...newClient, email: e.target.value })
+                }
+                className="px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-green-500 focus:border-green-500"
+              />
+            </div>
+            <input
+              type="text"
+              placeholder="Client Address"
+              value={newClient.address}
+              onChange={(e) =>
+                setNewClient({ ...newClient, address: e.target.value })
+              }
+              className="w-full mt-3 px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-green-500 focus:border-green-500"
+            />
+            <div className="flex gap-2 mt-3">
               <button
-                key={tab.id}
-                onClick={() => setCurrentTab(tab.id)}
-                className={`px-4 py-2 font-medium text-sm border-b-2 transition-colors ${
-                  currentTab === tab.id
-                    ? "border-blue-500 text-blue-600"
-                    : "border-transparent text-gray-500 hover:text-gray-700"
-                }`}
+                onClick={addClient}
+                className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors"
               >
-                {tab.label}
+                Add Client
               </button>
+              <button
+                onClick={() => setShowNewClient(false)}
+                className="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400 transition-colors"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        )}
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Select Client
+          </label>
+          <select
+            value={selectedClient?.id || ""}
+            onChange={(e) => {
+              const client = clients.find(
+                (c) => c.id === parseInt(e.target.value)
+              );
+              setSelectedClient(client || null);
+            }}
+            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-green-500 focus:border-green-500"
+          >
+            <option value="">Choose a client...</option>
+            {clients.map((client) => (
+              <option key={client.id} value={client.id}>
+                {client.name} ({client.email})
+              </option>
             ))}
+          </select>
+        </div>
+
+        {selectedClient && (
+          <div className="mt-4 p-3 bg-white rounded-md border">
+            <p className="font-medium">{selectedClient.name}</p>
+            <p className="text-gray-600">{selectedClient.email}</p>
+            <p className="text-gray-600">{selectedClient.address}</p>
+          </div>
+        )}
+      </div>
+
+      {/* Invoice Details Section */}
+      <div className="mb-8 p-6 bg-purple-50 rounded-lg border">
+        <div className="flex items-center mb-4">
+          <Hash className="h-5 w-5 text-purple-600 mr-2" />
+          <h2 className="text-xl font-semibold text-gray-900">
+            Invoice Details
+          </h2>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Invoice Number
+            </label>
+            <input
+              type="text"
+              value={invoiceDetails.invoiceNumber}
+              onChange={(e) =>
+                setInvoiceDetails({
+                  ...invoiceDetails,
+                  invoiceNumber: e.target.value,
+                })
+              }
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Invoice Date
+            </label>
+            <input
+              type="date"
+              value={invoiceDetails.date}
+              onChange={(e) =>
+                setInvoiceDetails({ ...invoiceDetails, date: e.target.value })
+              }
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Due Date
+            </label>
+            <input
+              type="date"
+              value={invoiceDetails.dueDate}
+              onChange={(e) =>
+                setInvoiceDetails({
+                  ...invoiceDetails,
+                  dueDate: e.target.value,
+                })
+              }
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Payment Terms
+            </label>
+            <select
+              value={invoiceDetails.terms}
+              onChange={(e) =>
+                setInvoiceDetails({ ...invoiceDetails, terms: e.target.value })
+              }
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+            >
+              <option value="Net 15">Net 15</option>
+              <option value="Net 30">Net 30</option>
+              <option value="Net 60">Net 60</option>
+              <option value="Due on Receipt">Due on Receipt</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      {/* Line Items Section */}
+      <div className="mb-8 p-6 bg-orange-50 rounded-lg border">
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center">
+            <Calculator className="h-5 w-5 text-orange-600 mr-2" />
+            <h2 className="text-xl font-semibold text-gray-900">Line Items</h2>
+          </div>
+          <button
+            onClick={addLineItem}
+            className="flex items-center px-3 py-2 bg-orange-600 text-white rounded-md hover:bg-orange-700 transition-colors"
+          >
+            <Plus className="h-4 w-4 mr-1" />
+            Add Item
+          </button>
+        </div>
+
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead>
+              <tr className="border-b border-gray-200">
+                <th className="text-left py-2 px-2 font-medium text-gray-700">
+                  Description
+                </th>
+                <th className="text-right py-2 px-2 font-medium text-gray-700 w-20">
+                  Qty
+                </th>
+                <th className="text-right py-2 px-2 font-medium text-gray-700 w-24">
+                  Rate
+                </th>
+                <th className="text-right py-2 px-2 font-medium text-gray-700 w-24">
+                  Amount
+                </th>
+                <th className="w-10"></th>
+              </tr>
+            </thead>
+            <tbody>
+              {lineItems.map((item, index) => (
+                <tr key={item.id} className="border-b border-gray-100">
+                  <td className="py-2 px-2">
+                    <input
+                      type="text"
+                      placeholder="Description of work or product..."
+                      value={item.description}
+                      onChange={(e) =>
+                        updateLineItem(item.id, "description", e.target.value)
+                      }
+                      className="w-full px-2 py-1 border border-gray-300 rounded focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+                    />
+                  </td>
+                  <td className="py-2 px-2">
+                    <input
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      value={item.quantity}
+                      onChange={(e) =>
+                        updateLineItem(
+                          item.id,
+                          "quantity",
+                          parseFloat(e.target.value) || 0
+                        )
+                      }
+                      className="w-full px-2 py-1 border border-gray-300 rounded text-right focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+                    />
+                  </td>
+                  <td className="py-2 px-2">
+                    <input
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      value={item.rate}
+                      onChange={(e) =>
+                        updateLineItem(
+                          item.id,
+                          "rate",
+                          parseFloat(e.target.value) || 0
+                        )
+                      }
+                      className="w-full px-2 py-1 border border-gray-300 rounded text-right focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+                    />
+                  </td>
+                  <td className="py-2 px-2 text-right font-medium">
+                    ${item.amount.toFixed(2)}
+                  </td>
+                  <td className="py-2 px-2">
+                    {lineItems.length > 1 && (
+                      <button
+                        onClick={() => removeLineItem(item.id)}
+                        className="text-red-600 hover:text-red-800 transition-colors"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    )}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* Calculations & Totals Section */}
+      <div className="mb-8 p-6 bg-gray-50 rounded-lg border">
+        <h3 className="text-lg font-semibold text-gray-900 mb-4">
+          Invoice Calculations
+        </h3>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* Tax and Discount Controls */}
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Discount
+              </label>
+              <div className="flex gap-2">
+                <select
+                  value={discountType}
+                  onChange={(e) => setDiscountType(e.target.value)}
+                  className="px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                >
+                  <option value="percentage">%</option>
+                  <option value="fixed">$</option>
+                </select>
+                <input
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={discountRate}
+                  onChange={(e) =>
+                    setDiscountRate(parseFloat(e.target.value) || 0)
+                  }
+                  placeholder="0.00"
+                  className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Tax Rate (%)
+              </label>
+              <input
+                type="number"
+                min="0"
+                max="100"
+                step="0.01"
+                value={taxRate}
+                onChange={(e) => setTaxRate(parseFloat(e.target.value) || 0)}
+                placeholder="0.00"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              />
+            </div>
           </div>
 
-          <div className="space-y-6">
-            {/* Details Tab */}
-            {currentTab === "details" && (
-              <div className="space-y-6">
-                {/* Invoice Number */}
-                <div>
-                  <label className="block text-sm font-medium mb-2">
-                    Invoice Number *
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.invoiceNumber}
-                    onChange={(e) =>
-                      updateFormData("invoiceNumber", e.target.value)
-                    }
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    placeholder="INV-001"
-                  />
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {/* Client Selection */}
-                  <div>
-                    <label className="block text-sm font-medium mb-2">
-                      Select Client *
-                    </label>
-                    <select
-                      value={formData.client?.id || ""}
-                      onChange={(e) => {
-                        const client = mockClientList.find(
-                          (c) => c.id === e.target.value
-                        );
-                        updateFormData("client", client);
-                      }}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    >
-                      <option value="">Choose a client</option>
-                      {mockClientList.map((client) => (
-                        <option key={client.id} value={client.id}>
-                          {client.name} ({client.email})
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-                  {/* Company Selection */}
-                  <div>
-                    <label className="block text-sm font-medium mb-2">
-                      Select Company Info *
-                    </label>
-                    <select
-                      value={formData.companyInfo?.id || ""}
-                      onChange={(e) => {
-                        const company = mockCompanyList.find(
-                          (c) => c.id === e.target.value
-                        );
-                        updateFormData("companyInfo", company);
-                      }}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    >
-                      <option value="">Choose company info</option>
-                      {mockCompanyList.map((company) => (
-                        <option key={company.id} value={company.id}>
-                          {company.name}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  {/* Currency */}
-                  <div>
-                    <label className="block text-sm font-medium mb-2">
-                      Currency
-                    </label>
-                    <select
-                      value={formData.currency}
-                      onChange={(e) =>
-                        updateFormData("currency", e.target.value)
-                      }
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    >
-                      {currencies.map((curr) => (
-                        <option key={curr} value={curr}>
-                          {curr}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-                  {/* Issue Date */}
-                  <div>
-                    <label className="block text-sm font-medium mb-2">
-                      Issue Date
-                    </label>
-                    <input
-                      type="date"
-                      value={formData.dates.issued.toISOString().split("T")[0]}
-                      onChange={(e) =>
-                        updateNestedFormData(
-                          "dates",
-                          "issued",
-                          new Date(e.target.value)
-                        )
-                      }
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    />
-                  </div>
-
-                  {/* Due Date */}
-                  <div>
-                    <label className="block text-sm font-medium mb-2">
-                      Due Date
-                    </label>
-                    <input
-                      type="date"
-                      value={formData.dates.due.toISOString().split("T")[0]}
-                      onChange={(e) =>
-                        updateNestedFormData(
-                          "dates",
-                          "due",
-                          new Date(e.target.value)
-                        )
-                      }
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    />
-                  </div>
-                </div>
-
-                <hr className="my-6" />
-
-                {/* Additional Information */}
-                <div className="space-y-4">
-                  <h3 className="text-lg font-semibold">
-                    Additional Information
-                  </h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium mb-2">
-                        Notes
-                      </label>
-                      <textarea
-                        value={formData.notes}
-                        onChange={(e) =>
-                          updateFormData("notes", e.target.value)
-                        }
-                        rows={3}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                        placeholder="Any additional notes..."
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium mb-2">
-                        Terms & Conditions
-                      </label>
-                      <textarea
-                        value={formData.terms}
-                        onChange={(e) =>
-                          updateFormData("terms", e.target.value)
-                        }
-                        rows={3}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                        placeholder="Payment terms and conditions..."
-                      />
-                    </div>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium mb-2">
-                      Payment Instructions
-                    </label>
-                    <textarea
-                      value={formData.paymentInstructions}
-                      onChange={(e) =>
-                        updateFormData("paymentInstructions", e.target.value)
-                      }
-                      rows={2}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                      placeholder="How should clients pay this invoice..."
-                    />
-                  </div>
-                </div>
+          {/* Totals Display */}
+          <div className="bg-white p-4 rounded-md border-2 border-gray-200">
+            <div className="space-y-2">
+              <div className="flex justify-between">
+                <span className="text-gray-600">Subtotal:</span>
+                <span className="font-medium">${subtotal.toFixed(2)}</span>
               </div>
-            )}
 
-            {/* Items Tab */}
-            {currentTab === "items" && (
-              <div className="space-y-4">
-                <div className="flex justify-between items-center">
-                  <h3 className="text-lg font-semibold">Service Items</h3>
-                  <button
-                    type="button"
-                    onClick={addNewItem}
-                    className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-                  >
-                    <Plus className="w-4 h-4" />
-                    Add Item
-                  </button>
+              {discountAmount > 0 && (
+                <div className="flex justify-between text-green-600">
+                  <span>Discount:</span>
+                  <span>-${discountAmount.toFixed(2)}</span>
                 </div>
+              )}
 
-                <div className="space-y-4">
-                  {formData.items.map((item, index) => (
-                    <div
-                      key={item.id}
-                      className="bg-gray-50 p-4 rounded-lg border"
-                    >
-                      <div className="grid grid-cols-1 md:grid-cols-12 gap-4 items-end">
-                        <div className="md:col-span-5">
-                          <label className="block text-sm font-medium mb-2">
-                            Description
-                          </label>
-                          <textarea
-                            value={item.description}
-                            onChange={(e) =>
-                              updateItemData(
-                                index,
-                                "description",
-                                e.target.value
-                              )
-                            }
-                            rows={2}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                            placeholder="Service description..."
-                          />
-                        </div>
-                        <div className="md:col-span-2">
-                          <label className="block text-sm font-medium mb-2">
-                            Quantity
-                          </label>
-                          <input
-                            type="number"
-                            min="1"
-                            value={item.quantity}
-                            onChange={(e) =>
-                              updateItemData(
-                                index,
-                                "quantity",
-                                parseInt(e.target.value) || 1
-                              )
-                            }
-                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                          />
-                        </div>
-                        <div className="md:col-span-2">
-                          <label className="block text-sm font-medium mb-2">
-                            Rate
-                          </label>
-                          <input
-                            type="number"
-                            min="0"
-                            step="0.01"
-                            value={item.rate}
-                            onChange={(e) =>
-                              updateItemData(
-                                index,
-                                "rate",
-                                parseFloat(e.target.value) || 0
-                              )
-                            }
-                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                          />
-                        </div>
-                        <div className="md:col-span-2">
-                          <label className="block text-sm font-medium mb-2">
-                            Total
-                          </label>
-                          <div className="h-10 px-3 py-2 bg-gray-100 rounded-lg flex items-center font-medium">
-                            {(item.quantity * item.rate).toFixed(2)}
-                          </div>
-                        </div>
-                        <div className="md:col-span-1">
-                          <button
-                            type="button"
-                            onClick={() => removeItem(index)}
-                            disabled={formData.items.length === 1}
-                            className="w-full h-10 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
-                          >
-                            <Trash2 className="w-4 h-4 mx-auto" />
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
+              {taxAmount > 0 && (
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Tax ({taxRate}%):</span>
+                  <span className="font-medium">${taxAmount.toFixed(2)}</span>
                 </div>
-              </div>
-            )}
+              )}
 
-            {/* Totals Tab */}
-            {currentTab === "totals" && (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-4">
-                  <h3 className="text-lg font-semibold">Tax & Discount</h3>
+              <hr className="my-2" />
 
-                  <div>
-                    <label className="block text-sm font-medium mb-2">
-                      Tax Rate (%)
-                    </label>
-                    <input
-                      type="number"
-                      min="0"
-                      max="100"
-                      step="0.01"
-                      value={formData.taxRate}
-                      onChange={(e) =>
-                        updateFormData(
-                          "taxRate",
-                          parseFloat(e.target.value) || 0
-                        )
-                      }
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium mb-2">
-                      Discount Type
-                    </label>
-                    <select
-                      value={formData.discountType}
-                      onChange={(e) =>
-                        updateFormData("discountType", e.target.value)
-                      }
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    >
-                      <option value="percentage">Percentage (%)</option>
-                      <option value="fixed">Fixed Amount</option>
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium mb-2">
-                      Discount Value{" "}
-                      {formData.discountType === "percentage"
-                        ? "(%)"
-                        : `(${formData.currency})`}
-                    </label>
-                    <input
-                      type="number"
-                      min="0"
-                      step="0.01"
-                      value={formData.discountValue}
-                      onChange={(e) =>
-                        updateFormData(
-                          "discountValue",
-                          parseFloat(e.target.value) || 0
-                        )
-                      }
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    />
-                  </div>
-                </div>
-
-                <div className="space-y-4">
-                  <h3 className="text-lg font-semibold">Invoice Summary</h3>
-                  <div className="bg-gray-50 p-4 rounded-lg border space-y-3">
-                    <div className="flex justify-between">
-                      <span>Subtotal:</span>
-                      <span>
-                        {totals.subtotal.toFixed(2)} {formData.currency}
-                      </span>
-                    </div>
-                    {totals.discount > 0 && (
-                      <div className="flex justify-between text-green-600">
-                        <span>Discount:</span>
-                        <span>
-                          -{totals.discount.toFixed(2)} {formData.currency}
-                        </span>
-                      </div>
-                    )}
-                    <div className="flex justify-between">
-                      <span>Tax ({formData.taxRate}%):</span>
-                      <span>
-                        {totals.tax.toFixed(2)} {formData.currency}
-                      </span>
-                    </div>
-                    <hr />
-                    <div className="flex justify-between font-bold text-lg">
-                      <span>Total:</span>
-                      <span>
-                        {totals.total.toFixed(2)} {formData.currency}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Template Tab */}
-            {currentTab === "template" && (
-              <div className="space-y-4">
-                <h3 className="text-lg font-semibold">Choose Template</h3>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  {templates.map((template) => (
-                    <div
-                      key={template.id}
-                      onClick={() => updateFormData("template", template.id)}
-                      className={`cursor-pointer p-4 border rounded-lg text-center transition-colors ${
-                        formData.template === template.id
-                          ? "border-blue-500 bg-blue-50"
-                          : "border-gray-300 hover:bg-gray-50"
-                      }`}
-                    >
-                      <h4 className="font-semibold">{template.name}</h4>
-                      <p className="text-sm text-gray-600">
-                        {template.description}
-                      </p>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Form Actions */}
-            <div className="border-t pt-6">
-              <div className="flex flex-wrap gap-3">
-                <button
-                  type="button"
-                  onClick={handlePreview}
-                  className="flex items-center gap-2 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
-                >
-                  <Eye className="w-4 h-4" />
-                  Preview
-                </button>
-
-                <button
-                  type="button"
-                  onClick={handleDownload}
-                  className="flex items-center gap-2 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
-                >
-                  <Download className="w-4 h-4" />
-                  Download PDF
-                </button>
-
-                <button
-                  type="button"
-                  onClick={handleSendEmail}
-                  className="flex items-center gap-2 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
-                >
-                  <Send className="w-4 h-4" />
-                  Send Email
-                </button>
-
-                <button
-                  onClick={handleSubmit}
-                  className="flex items-center gap-2 px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors ml-auto"
-                >
-                  <DollarSign className="w-4 h-4" />
-                  Save Invoice
-                </button>
+              <div className="flex justify-between text-xl font-bold">
+                <span>Total:</span>
+                <span className="text-blue-600">${total.toFixed(2)}</span>
               </div>
             </div>
           </div>
         </div>
       </div>
+
+      {/* Notes Section */}
+      <div className="mb-8 p-6 bg-yellow-50 rounded-lg border">
+        <h3 className="text-lg font-semibold text-gray-900 mb-2">
+          Notes & Terms
+        </h3>
+        <textarea
+          value={invoiceDetails.notes}
+          onChange={(e) =>
+            setInvoiceDetails({ ...invoiceDetails, notes: e.target.value })
+          }
+          placeholder="Additional notes, payment instructions, or terms..."
+          rows={4}
+          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500"
+        />
+      </div>
+
+      {/* Action Buttons */}
+      <div className="flex gap-4 justify-end">
+        <button
+          onClick={() => window.print()}
+          className="flex items-center px-6 py-3 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
+        >
+          <Eye className="h-5 w-5 mr-2" />
+          Preview
+        </button>
+
+        <button
+          onClick={handleSave}
+          className="flex items-center px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+        >
+          <Save className="h-5 w-5 mr-2" />
+          Save Invoice
+        </button>
+      </div>
+
+      {/* Summary Card */}
+      <div className="mt-8 p-4 bg-blue-100 rounded-lg border border-blue-200">
+        <h4 className="font-semibold text-blue-900 mb-2">Invoice Summary</h4>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+          <div>
+            <span className="text-blue-700">Client:</span>
+            <p className="font-medium">
+              {selectedClient?.name || "Not selected"}
+            </p>
+          </div>
+          <div>
+            <span className="text-blue-700">Items:</span>
+            <p className="font-medium">{lineItems.length}</p>
+          </div>
+          <div>
+            <span className="text-blue-700">Due Date:</span>
+            <p className="font-medium">{invoiceDetails.dueDate}</p>
+          </div>
+          <div>
+            <span className="text-blue-700">Total:</span>
+            <p className="font-medium text-lg">${total.toFixed(2)}</p>
+          </div>
+        </div>
+      </div>
     </div>
   );
-}
+};
+
+export default InvoiceFormBuilder;

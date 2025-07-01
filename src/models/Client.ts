@@ -1,8 +1,8 @@
 // models/Client.ts
-import mongoose, { Schema } from "mongoose";
 import { IClient } from "@/types/database";
+import { Schema, model, models } from "mongoose";
 
-const ClientSchema = new Schema<IClient>(
+export const ClientSchema = new Schema<IClient>(
   {
     userId: {
       type: Schema.Types.ObjectId,
@@ -93,3 +93,7 @@ ClientSchema.index({ userId: 1, tags: 1 });
 ClientSchema.virtual("outstandingBalance").get(function () {
   return this.totalInvoiced - this.totalPaid;
 });
+
+// Export the model (handles both development and production environments)
+const Client = models?.Client || model<IClient>("Client", ClientSchema);
+export default Client;

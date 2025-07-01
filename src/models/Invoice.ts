@@ -1,6 +1,9 @@
+// ============================================================================
+
 // models/Invoice.ts
-import mongoose, { Schema } from "mongoose";
 import { IInvoice, IInvoiceItem } from "@/types/database";
+import { model } from "mongoose";
+import { models, Schema } from "mongoose";
 
 const InvoiceItemSchema = new Schema<IInvoiceItem>(
   {
@@ -35,7 +38,7 @@ const InvoiceItemSchema = new Schema<IInvoiceItem>(
   { _id: false }
 );
 
-const InvoiceSchema = new Schema<IInvoice>(
+export const InvoiceSchema = new Schema<IInvoice>(
   {
     userId: {
       type: Schema.Types.ObjectId,
@@ -235,3 +238,7 @@ InvoiceSchema.virtual("daysOverdue").get(function () {
   const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
   return Math.max(0, diffDays);
 });
+
+// Export the model (handles both development and production environments)
+const Invoice = models?.Invoice || model<IInvoice>("Invoice", InvoiceSchema);
+export default Invoice;

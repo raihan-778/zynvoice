@@ -3,11 +3,11 @@
 // 📁 src/lib/db-utils.ts
 import Client from "@/models/Client";
 
+import Company from "@/models/CompanyInfo";
 import Invoice from "@/models/Invoice";
 import InvoiceTemplate from "@/models/InvoiceTemplet";
 import ServiceItem from "@/models/ServiceItem";
 import DBConnect from "./database/connection";
-import { CompanyInfo } from "@/models/CompanyInfo";
 
 export class DatabaseService {
   // Initialize database connection
@@ -27,9 +27,9 @@ export class DatabaseService {
       await this.connect();
 
       // Create default company info if none exists
-      const companyCount = await CompanyInfo.countDocuments();
+      const companyCount = await Company.countDocuments();
       if (companyCount === 0) {
-        await CompanyInfo.create({
+        await Company.create({
           name: "Your Company Name",
           address: {
             street: "123 Business St",
@@ -94,7 +94,7 @@ export class DatabaseService {
     try {
       await this.connect();
       await Invoice.deleteMany({});
-      await CompanyInfo.deleteMany({});
+      await Company.deleteMany({});
       await Client.deleteMany({});
       await InvoiceTemplate.deleteMany({});
       await ServiceItem.deleteMany({});
@@ -113,7 +113,7 @@ export class DatabaseService {
         invoices: await Invoice.countDocuments(),
         clients: await Client.countDocuments(),
         templates: await InvoiceTemplate.countDocuments(),
-        companies: await CompanyInfo.countDocuments(),
+        companies: await Company.countDocuments(),
       };
       console.log("📊 Database health check:", stats);
       return stats;
