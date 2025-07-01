@@ -1,78 +1,54 @@
-// app/api/company/route.ts
 import { NextRequest, NextResponse } from "next/server";
+import type { Company, ApiResponse } from "@/types/invoice";
 
-import DBConnect from "@/lib/database/connection";
-
-import { writeFile } from "fs/promises";
-import path from "path";
-import Company from "@/models/CompanyInfo";
-import { CompanyInfo } from "@/lib/validations/validation";
-
-export async function GET() {
-  try {
-    await DBConnect();
-    const company = await Company.findOne();
-
-    if (!company) {
-      return NextResponse.json({
-        name: "",
-        email: "",
-        phone: "",
-        address: "",
-        website: "",
-        taxId: "",
-      });
-    }
-
-    return NextResponse.json(company);
-  } catch {
-    return NextResponse.json(
-      { error: "Failed to fetch company info" },
-      { status: 500 }
-    );
-  }
+interface CompaniesResponse {
+  companies: Company[];
 }
 
-export async function POST(request: NextRequest) {
+export async function GET(request: NextRequest) {
   try {
-    await DBConnect();
-    const formData = await request.formData();
+    // Replace with your database query
+    const companies: Company[] = [
+      {
+        id: 1,
+        name: "Acme Corp",
+        address: "123 Business St, City, State 12345",
+        email: "billing@acme.com",
+        phone: "+1-555-0123",
+        taxId: "TAX123456",
+      },
+      {
+        id: 2,
+        name: "Tech Solutions",
+        address: "456 Tech Ave, Tech City, State 67890",
+        email: "accounts@techsol.com",
+        phone: "+1-555-0456",
+        taxId: "TAX789012",
+      },
+      {
+        id: 3,
+        name: "Global Industries",
+        address: "789 Global Blvd, Global City, State 11111",
+        email: "finance@global.com",
+        phone: "+1-555-0789",
+        taxId: "TAX345678",
+      },
+    ];
 
-    const companyData: CompanyInfo = {
-      name: formData.get("name"),
-      email: formData.get("email"),
-      phone: formData.get("phone"),
-      address: formData.get("address"),
-      website: formData.get("website"),
-      taxId: formData.get("taxId"),
+    const response: ApiResponse<CompaniesResponse> = {
+      success: true,
+      data: { companies },
     };
 
-    // Handle logo upload
-    const logoFile = formData.get("logo") as File;
-    if (logoFile && logoFile.size > 0) {
-      const bytes = await logoFile.arrayBuffer();
-      const buffer = Buffer.from(bytes);
-
-      // Create unique filename
-      const filename = `logo-${Date.now()}.${logoFile.name.split(".").pop()}`;
-      const filepath = path.join(process.cwd(), "public", "uploads", filename);
-
-      await writeFile(filepath, buffer);
-      companyData.logo = `/uploads/${filename}`;
-    }
-
-    // Update or create company info
-    const company = await CompanyInfo.findOneAndUpdate({}, companyData, {
-      upsert: true,
-      new: true,
-    });
-
-    return NextResponse.json(company);
+    return NextResponse.json(response);
   } catch (error) {
-    console.error("Company update error:", error);
-    return NextResponse.json(
-      { error: "Failed to update company info" },
-      { status: 500 }
-    );
+    console.error("Companies API Error:", error);
+
+    const errorResponse: ApiResponse<CompaniesResponse> = {
+      success: false,
+      message: "Internal server error",
+    };
+
+    return NextResponse.json(errorResponse, { status: 500 });
   }
 }

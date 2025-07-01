@@ -1,8 +1,10 @@
 // app/invoice/page.tsx
 "use client";
 
-import { InvoiceGenerator } from "@/components/invoice/InvoiceGenerator";
+import InvoiceFormBuilder from "@/components/forms/unUsedExtraUseForm/FormUsingDemo2";
+// import { InvoiceGenerator } from "@/components/invoice/InvoiceGenerator";
 
 export default function InvoicePage() {
-  return <InvoiceGenerator />;
+  // return <InvoiceGenerator />;
+  return <InvoiceFormBuilder />;
 }

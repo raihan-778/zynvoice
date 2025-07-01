@@ -33,11 +33,22 @@ export const ClientInfoSchema = z.object({
 });
 
 // Invoice Item Schema
+
 export const InvoiceItemSchema = z.object({
-  id: z.string().optional(),
-  description: z.string().min(1, "Description is required"),
-  quantity: z.number().min(1, "Quantity must be at least 1"),
-  rate: z.number().min(0, "Rate must be non-negative"),
+  id: z.number().optional(),
+  description: z
+    .string()
+    .min(1, "Description is required")
+    .max(500, "Description too long"),
+  quantity: z
+    .number()
+    .min(0.01, "Quantity must be greater than 0")
+    .max(10000, "Quantity too large"),
+  rate: z
+    .number()
+    .min(0.01, "Rate must be greater than 0")
+    .max(1000000, "Rate too large"),
+  amount: z.number().optional(),
 });
 
 // Invoice Form Data Schema
@@ -89,3 +100,95 @@ export function validateInvoiceField<T extends keyof InvoiceFormData>(
     return false;
   }
 }
+
+export const InvoiceSchema = z
+  .object({
+    id: z.number().optional(),
+    invoiceNumber: z
+      .string()
+      .regex(/^INV-\d{4}-\d{3}$/, "Invalid invoice number format"),
+    clientId: z.number().min(1, "Client is required"),
+    companyId: z.number().min(1, "Company is required"),
+    issueDate: z
+      .string()
+      .refine((date) => !isNaN(Date.parse(date)), "Invalid issue date"),
+    dueDate: z
+      .string()
+      .refine((date) => !isNaN(Date.parse(date)), "Invalid due date"),
+    items: z.array(InvoiceItemSchema).min(1, "At least one item is required"),
+    subtotal: z.number().optional(),
+    taxRate: z.number().min(0).max(1).optional(),
+    taxAmount: z.number().optional(),
+    totalAmount: z.number().min(0.01, "Total amount must be greater than 0"),
+    notes: z.string().max(1000, "Notes too long").optional(),
+    status: z.enum(["draft", "sent", "paid", "overdue"]).optional(),
+  })
+  .refine(
+    (data) => {
+      const issueDate = new Date(data.issueDate);
+      const dueDate = new Date(data.dueDate);
+      return dueDate >= issueDate;
+    },
+    {
+      message: "Due date must be after or equal to issue date",
+      path: ["dueDate"],
+    }
+  );
+
+export const ClientSearchSchema = z.object({
+  search: z.string().optional(),
+  limit: z.number().min(1).max(100).optional(),
+});
+
+// lib/validation.ts - Client-side validation utilities
+import { InvoiceSchema } from "@/lib/validationSchemas";
+import type { FormErrors, Invoice, InvoiceItem } from "@/types/invoice";
+
+export const validateInvoiceForm = (
+  formData: Partial<Invoice>
+): {
+  isValid: boolean;
+  errors: FormErrors;
+} => {
+  const result = InvoiceSchema.safeParse(formData);
+
+  if (result.success) {
+    return { isValid: true, errors: {} };
+  }
+
+  const errors: FormErrors = {};
+  result.error.errors.forEach((error) => {
+    const path = error.path.join(".");
+    errors[path] = error.message;
+  });
+
+  return { isValid: false, errors };
+};
+
+export const formatCurrency = (amount: number): string => {
+  return new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "USD",
+  }).format(amount);
+};
+
+export const calculateItemTotal = (quantity: number, rate: number): number => {
+  return Number(((quantity || 0) * (rate || 0)).toFixed(2));
+};
+
+export const calculateInvoiceTotal = (items: InvoiceItem[]): number => {
+  return Number(
+    items
+      .reduce((total, item) => {
+        return total + calculateItemTotal(item.quantity, item.rate);
+      }, 0)
+      .toFixed(2)
+  );
+};
+
+export const calculateTaxAmount = (
+  subtotal: number,
+  taxRate: number
+): number => {
+  return Number((subtotal * (taxRate || 0)).toFixed(2));
+};
