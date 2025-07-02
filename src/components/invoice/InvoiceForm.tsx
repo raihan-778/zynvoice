@@ -22,13 +22,21 @@ import { InvoiceActions } from "./InvoiceActions";
 
 export const InvoiceForm: React.FC = () => {
   const {
-    invoice,
-    updateCompany,
-    updateClient,
+    formData,
+    errors,
+    isSubmitting,
+    companies,
+    clients,
+    clientSearch,
+    setClientSearch,
+    updateFormData,
     updateItem,
     addItem,
     removeItem,
-    setInvoice,
+    validateForm,
+    submitForm,
+    resetForm,
+    generateInvoiceNumber,
   } = useInvoiceForm();
 
   const [isGenerating, setIsGenerating] = useState(false);
@@ -119,7 +127,7 @@ export const InvoiceForm: React.FC = () => {
                   <div className="space-y-2">
                     <Label>Invoice Number</Label>
                     <Input
-                      value={invoice.invoiceNumber}
+                      value={formData.invoiceNumber}
                       onChange={(e) =>
                         setInvoice((prev: any) => ({
                           ...prev,
@@ -134,7 +142,7 @@ export const InvoiceForm: React.FC = () => {
                     <Input
                       type="date"
                       value={
-                        invoice.dates.issued instanceof Date
+                        formData?.dueDate?.instanceof Date
                           ? invoice.dates.issued.toISOString().slice(0, 10)
                           : invoice.dates.issued || ""
                       }

@@ -1,55 +1,64 @@
 // hooks/useInvoiceForm.ts - Updated for App Router
-import { IInvoice } from "@/types/database";
-import { useState, useEffect, useCallback } from "react";
+
+import { calculateInvoiceTotal, calculateTaxAmount, InvoiceItem, validateInvoiceForm } from "@/lib/validations/validation";
+import { ApiResponse } from "@/types/apiResponse";
+import {
+  IClient,
+  ICompany,
+  IInvoice,
+  IInvoiceItem,
+  InvoiceFormData,
+  InvoiceFormErrors,
+} from "@/types/database";
+import { useCallback, useEffect, useState } from "react";
 
 interface UseInvoiceFormReturn {
-  formData: Partial<IInvoicenvoice>;
-  errors: FormErrors;
+  formData: Partial<InvoiceFormData>;
+  errors: InvoiceFormErrors;
   isSubmitting: boolean;
-  companies: Company[];
-  clients: Client[];
+  companies: ICompany[];
+  clients: IClient[];
   clientSearch: string;
   setClientSearch: (search: string) => void;
-  updateFormData: <K extends keyof Invoice>(
+  updateFormData: <K extends keyof InvoiceFormData>(
     field: K,
-    value: Invoice[K]
+    value: InvoiceFormData[K]
   ) => void;
   updateItem: (
     index: number,
-    field: keyof InvoiceItem,
-    value: InvoiceItem[keyof InvoiceItem]
+    field: keyof IInvoiceItem,
+    value: IInvoiceItem[keyof IInvoiceItem]
   ) => void;
   addItem: () => void;
   removeItem: (index: number) => void;
   validateForm: () => Promise<boolean>;
   submitForm: () => Promise<{
     success: boolean;
-    invoice?: Invoice;
-    errors?: FormErrors;
+    invoice?: IInvoice;
+    errors?: InvoiceFormErrors;
     error?: string;
   }>;
   resetForm: () => void;
   generateInvoiceNumber: () => Promise<void>;
 }
 
-const initialFormData: Partial<Invoice> = {
+const initialFormData: Partial<InvoiceFormData> = {
   invoiceNumber: "",
   clientId: undefined,
   companyId: undefined,
-  issueDate: new Date().toISOString().split("T")[0],
-  dueDate: "",
-  items: [{ description: "", quantity: 1, rate: 0 }],
+
+  dueDate: new Date().toISOString().split("T")[0],
+  items: [{ description: "", quantity: 1, rate: 0, amount: 0 }],
   taxRate: 0,
   notes: "",
-  totalAmount: 0,
 };
 
 export const useInvoiceForm = (): UseInvoiceFormReturn => {
-  const [formData, setFormData] = useState<Partial<Invoice>>(initialFormData);
-  const [errors, setErrors] = useState<FormErrors>({});
+  const [formData, setFormData] = useState<Partial<InvoiceFormData>>(initialFormData);
+  const [errors, setErrors] = useState<InvoiceFormErrors>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [companies, setCompanies] = useState<Company[]>([]);
-  const [clients, setClients] = useState<Client[]>([]);
+  const [companies, setCompanies] = useState<ICompany[]>([]);
+  const [clients, setClients] = useState<IClient[]>([]);
   const [clientSearch, setClientSearch] = useState("");
 
   // Load companies and generate invoice number on mount
@@ -90,7 +99,7 @@ export const useInvoiceForm = (): UseInvoiceFormReturn => {
   const fetchCompanies = async (): Promise<void> => {
     try {
       const response = await fetch("/api/companies");
-      const data: ApiResponse<{ companies: Company[] }> = await response.json();
+      const data: ApiResponse<{ companies: ICompany[] }> = await response.json();
 
       if (data.success && data.data) {
         setCompanies(data.data.companies);
@@ -105,7 +114,7 @@ export const useInvoiceForm = (): UseInvoiceFormReturn => {
       const response = await fetch(
         `/api/clients?search=${encodeURIComponent(search)}`
       );
-      const data: ApiResponse<{ clients: Client[] }> = await response.json();
+      const data: ApiResponse<{ clients: IClient[] }> = await response.json();
 
       if (data.success && data.data) {
         setClients(data.data.clients);
@@ -150,14 +159,14 @@ export const useInvoiceForm = (): UseInvoiceFormReturn => {
   };
 
   const updateFormData = useCallback(
-    <K extends keyof Invoice>(field: K, value: Invoice[K]): void => {
+    <K extends keyof InvoiceFormData>(field: K, value: InvoiceFormData[K]): void => {
       setFormData((prev) => ({ ...prev, [field]: value }));
 
       // Clear field-specific error when user starts typing
-      if (errors[field as string]) {
+      if (errors[field as keyof InvoiceFormErrors]) {
         setErrors((prev) => {
           const newErrors = { ...prev };
-          delete newErrors[field as string];
+          delete newErrors[field as keyof InvoiceFormErrors];
           return newErrors;
         });
       }
@@ -168,8 +177,8 @@ export const useInvoiceForm = (): UseInvoiceFormReturn => {
   const updateItem = useCallback(
     (
       index: number,
-      field: keyof InvoiceItem,
-      value: InvoiceItem[keyof InvoiceItem]
+      field: keyof IInvoiceItem,
+      value: string | number | undefined
     ): void => {
       setFormData((prev) => {
         const newItems = [...(prev.items || [])];
@@ -179,9 +188,9 @@ export const useInvoiceForm = (): UseInvoiceFormReturn => {
 
       // Clear item-specific error
       const errorKey = `items.${index}.${field}`;
-      if (errors[errorKey]) {
+      if ((errors as Record<string, unknown>)[errorKey]) {
         setErrors((prev) => {
-          const newErrors = { ...prev };
+          const newErrors = { ...prev } as Record<string, unknown>;
           delete newErrors[errorKey];
           return newErrors;
         });
@@ -193,7 +202,7 @@ export const useInvoiceForm = (): UseInvoiceFormReturn => {
   const addItem = useCallback((): void => {
     setFormData((prev) => ({
       ...prev,
-      items: [...(prev.items || []), { description: "", quantity: 1, rate: 0 }],
+      items: [...(prev.items || []), { description: "", quantity: 1, rate: 0, amount: 0 }],
     }));
   }, []);
 
@@ -236,7 +245,7 @@ export const useInvoiceForm = (): UseInvoiceFormReturn => {
         body: JSON.stringify(formData),
       });
 
-      const result: ApiResponse<{ invoice: Invoice }> = await response.json();
+      const result: ApiResponse<{ invoice: IInvoice }> = await response.json();
 
       if (result.success && result.data) {
         return { success: true, invoice: result.data.invoice };

@@ -51,29 +51,30 @@ export const InvoiceItemSchema = z.object({
   amount: z.number().optional(),
 });
 
-// Invoice Form Data Schema
+// Assuming you already have InvoiceItemSchema
+
 export const InvoiceFormDataSchema = z.object({
-  id: z.string().optional(),
+  companyId: z.string(),
+  clientId: z.string(),
   invoiceNumber: z.string().min(1, "Invoice number is required"),
-  companyInfo: CompanyInfoSchema.optional(),
-  client: ClientInfoSchema.optional(),
+  invoiceDate: z.string().min(1, "Invoice date is required"), // ISO date string
+  dueDate: z.string().min(1, "Due date is required"), // ISO date string
   items: z.array(InvoiceItemSchema).min(1, "At least one item is required"),
-  dates: z.object({
-    issued: z.date(),
-    due: z.date(),
-  }),
-  currency: z.string().default("USD"),
+  taxRate: z.number().min(0).max(100).default(0),
   discountType: z.enum(["percentage", "fixed"]).default("percentage"),
   discountValue: z.number().min(0).default(0),
-  taxRate: z.number().min(0).max(100).default(0),
+  currency: z.string().default("USD"),
   notes: z.string().optional(),
   terms: z.string().optional(),
-  paymentInstructions: z.string().optional(),
-  template: z.string().optional(),
-  subtotal: z.number().optional(),
-  tax: z.number().optional(),
-  total: z.number().optional(),
-  status: z.enum(["draft", "sent", "paid", "overdue"]).optional(),
+  paymentTerms: z.number().min(0), // In days, for example
+  recurring: z
+    .object({
+      isRecurring: z.boolean(),
+      frequency: z.enum(["weekly", "monthly", "quarterly", "yearly"]),
+      nextDate: z.string().optional(), // ISO string
+      endDate: z.string().optional(), // ISO string
+    })
+    .optional(),
 });
 
 // TypeScript types
@@ -140,8 +141,6 @@ export const ClientSearchSchema = z.object({
   limit: z.number().min(1).max(100).optional(),
 });
 
-// lib/validation.ts - Client-side validation utilities
-import { InvoiceSchema } from "@/lib/validationSchemas";
 import type { FormErrors, Invoice, InvoiceItem } from "@/types/invoice";
 
 export const validateInvoiceForm = (

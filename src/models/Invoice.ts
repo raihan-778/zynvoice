@@ -240,5 +240,5 @@ InvoiceSchema.virtual("daysOverdue").get(function () {
 });
 
 // Export the model (handles both development and production environments)
-const Invoice = models?.Invoice || model<IInvoice>("Invoice", InvoiceSchema);
-export default Invoice;
+const InvoiceModel = models?.Invoice || model<IInvoice>("Invoice", InvoiceSchema);
+export default InvoiceModel;

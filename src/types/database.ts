@@ -129,6 +129,27 @@ export interface IInvoice extends BaseDocument {
   };
 }
 
+export interface InvoiceFormData {
+  companyId: string;
+  clientId: string;
+  invoiceNumber: string;
+  invoiceDate: string;
+  dueDate: string;
+  items: IInvoiceItem[];
+  taxRate: number;
+  discountType: "percentage" | "fixed";
+  discountValue: number;
+  currency: string;
+  notes?: string;
+  terms?: string;
+  paymentTerms: number;
+  recurring?: {
+    isRecurring: boolean;
+    frequency: "weekly" | "monthly" | "quarterly" | "yearly";
+    nextDate?: string;
+    endDate?: string;
+  };
+}
 // Template Types
 export interface ITemplate extends BaseDocument {
   userId: Types.ObjectId;
@@ -167,3 +188,5 @@ export interface IAuditLog extends BaseDocument {
   ipAddress: string;
   userAgent: string;
 }
+
+export type InvoiceFormErrors = Partial<InvoiceFormData>;

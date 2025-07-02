@@ -1,28 +1,60 @@
+import { InvoiceCreateResponse } from "@/types/custom";
+import { authOptions } from "@/lib/auth/auth.config";
+import DBConnect from "@/lib/database/connection";
 import { InvoiceSchema } from "@/lib/validations/validation";
+import InvoiceModel from "@/models/Invoice";
 import { ApiResponse } from "@/types/apiResponse";
-import { IInvoice } from "@/types/database";
+
+// Assuming you have a Mongoose model for invoices
+import mongoose from "mongoose";
+import { getServerSession, User } from "next-auth";
 import { NextRequest, NextResponse } from "next/server";
 
-interface InvoiceCreateResponse {
-  invoice: IInvoice;
-}
-
 export async function GET(request: NextRequest) {
+  await DBConnect();
+  const session = await getServerSession(authOptions);
+  const _user = session?.user as User;
+
+  if (!session || !_user) {
+    return NextResponse.json(
+      { success: false, message: "Not authenticated" },
+      { status: 401 }
+    );
+  }
+
+  const userId = new mongoose.Types.ObjectId(_user._id);
+
   try {
-    // Handle GET request for listing invoices
     const { searchParams } = new URL(request.url);
     const page = parseInt(searchParams.get("page") || "1");
     const limit = parseInt(searchParams.get("limit") || "10");
+    const skip = (page - 1) * limit;
 
-    // Your database query logic here
-    const invoices: IInvoice[] = []; // Replace with actual query
+    const [invoices, total] = await Promise.all([
+      InvoiceModel.find({ userId })
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit)
+        .lean(),
+      InvoiceModel.countDocuments({ userId }),
+    ]);
 
-    return NextResponse.json({
-      success: true,
-      data: { invoices, page, limit },
-    });
+    return NextResponse.json(
+      {
+        success: true,
+        data: {
+          invoices,
+          page,
+          limit,
+          total,
+          totalPages: Math.ceil(total / limit),
+        },
+      },
+      { status: 200 }
+    );
   } catch (error) {
     console.error("Get Invoices Error:", error);
+
     return NextResponse.json(
       {
         success: false,
@@ -34,10 +66,19 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
+  await DBConnect();
+  const session = await getServerSession(authOptions);
+  const _user = session?.user as User;
+
+  if (!session || !_user) {
+    return NextResponse.json(
+      { success: false, message: "Not authenticated" },
+      { status: 401 }
+    );
+  }
+
   try {
     const body = await request.json();
-
-    // Validate request body with Zod
     const validation = InvoiceSchema.safeParse(body);
 
     if (!validation.success) {
@@ -59,90 +100,48 @@ export async function POST(request: NextRequest) {
 
     const invoiceData = validation.data;
 
-    // Check for duplicate invoice number
-    const isDuplicate = await checkInvoiceExists(invoiceData.invoiceNumber);
-    if (isDuplicate) {
+    // Check for duplicate invoice number for the same user
+    const existing = await InvoiceModel.findOne({
+      invoiceNumber: invoiceData.invoiceNumber,
+      userId: _user._id,
+    });
+
+    if (existing) {
       return NextResponse.json(
         {
           success: false,
           message: "Invoice number already exists",
           errors: { invoiceNumber: "This invoice number is already in use" },
-        } as ApiResponse<InvoiceCreateResponse>,
+        },
         { status: 409 }
       );
     }
 
-    // Calculate totals
+    // Calculate invoice totals
     const processedInvoice = processInvoiceCalculations(invoiceData);
 
-    // Save to database
-    const savedInvoice = await saveInvoice(processedInvoice);
+    // Save to DB
+    const savedInvoice = await saveInvoice({
+      ...processedInvoice,
+      userId: new mongoose.Types.ObjectId(_user._id),
+    });
 
-    const response: ApiResponse<InvoiceCreateResponse> = {
-      success: true,
-      message: "Invoice created successfully",
-      data: { invoice: savedInvoice },
-    };
-
-    return NextResponse.json(response, { status: 201 });
+    return NextResponse.json(
+      {
+        success: true,
+        message: "Invoice created successfully",
+        data: { invoice: savedInvoice },
+      },
+      { status: 201 }
+    );
   } catch (error) {
     console.error("Invoice Creation Error:", error);
-
-    const errorResponse: ApiResponse<InvoiceCreateResponse> = {
-      success: false,
-      message: "Internal server error",
-    };
-
-    return NextResponse.json(errorResponse, { status: 500 });
+    return NextResponse.json(
+      {
+        success: false,
+        message: "Internal server error",
+      },
+      { status: 500 }
+    );
   }
-}
-
-function processInvoiceCalculations(invoice: Invoice): Invoice {
-  // Calculate item amounts
-  const processedItems = invoice.items.map((item) => ({
-    ...item,
-    amount: Number((item.quantity * item.rate).toFixed(2)),
-  }));
-
-  // Calculate totals
-  const subtotal = Number(
-    processedItems.reduce((sum, item) => sum + (item.amount || 0), 0).toFixed(2)
-  );
-  const taxRate = invoice.taxRate || 0;
-  const taxAmount = Number((subtotal * taxRate).toFixed(2));
-  const totalAmount = Number((subtotal + taxAmount).toFixed(2));
-
-  return {
-    ...invoice,
-    items: processedItems,
-    subtotal,
-    taxAmount,
-    totalAmount,
-  };
-}
-
-async function saveInvoice(invoiceData: Invoice): Promise<Invoice> {
-  // Replace with your database logic
-  // Example with Prisma:
-  // const invoice = await prisma.invoice.create({
-  //   data: {
-  //     ...invoiceData,
-  //     status: 'draft',
-  //     items: {
-  //       create: invoiceData.items
-  //     }
-  //   },
-  //   include: { items: true }
-  // });
-
-  const invoice: Invoice = {
-    id: Date.now(), // In real app, this would be generated by DB
-    ...invoiceData,
-    status: "draft",
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  };
-
-  console.log("Saving invoice:", invoice);
-  return invoice;
 }

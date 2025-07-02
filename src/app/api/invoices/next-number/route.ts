@@ -1,34 +1,63 @@
 // app/api/invoices/next-number/route.ts
-import { NextRequest, NextResponse } from "next/server";
 
-interface NextNumberResponse {
-  invoiceNumber: string;
-}
+import DBConnect from "@/lib/database/connection";
+import InvoiceModel from "@/models/Invoice";
+import { z } from "zod";
 
-export async function GET(request: NextRequest) {
+const YearQuerySchema = z.object({
+  year: z
+    .string()
+    .optional()
+    .transform((val) => (val ? parseInt(val) : new Date().getFullYear())),
+});
+
+export async function GET(request: Request) {
+  await DBConnect();
+
   try {
-    const currentYear = new Date().getFullYear();
-    const lastInvoiceNumber = await getLastInvoiceNumber(currentYear);
-    const nextNumber = generateNextInvoiceNumber(
-      lastInvoiceNumber,
-      currentYear
+    const { searchParams } = new URL(request.url);
+    const queryParam = { year: searchParams.get("year") };
+
+    // Validate with zod
+    const result = YearQuerySchema.safeParse(queryParam);
+    console.log("result", result); // TODO: remove this line
+
+    if (!result.success) {
+      const yearErrors = result.error.format().year?._errors || [];
+      return Response.json(
+        {
+          success: false,
+          message:
+            yearErrors?.length > 0
+              ? yearErrors.join(",")
+              : "Invalid query parameters",
+        },
+        { status: 400 }
+      );
+    }
+
+    const { year } = result.data;
+    const lastInvoiceNumber = await getLastInvoiceNumber(year);
+    const nextNumber = generateNextInvoiceNumber(lastInvoiceNumber, year);
+
+    return Response.json(
+      {
+        success: true,
+        message: "Successfully generated next invoice number",
+        data: { invoiceNumber: nextNumber },
+      },
+      { status: 200 }
     );
-
-    const response: ApiResponse<NextNumberResponse> = {
-      success: true,
-      data: { invoiceNumber: nextNumber },
-    };
-
-    return NextResponse.json(response);
   } catch (error) {
-    console.error("Next Invoice Number Error:", error);
+    console.error("Error generating next invoice number:", error);
 
-    const errorResponse: ApiResponse<NextNumberResponse> = {
-      success: false,
-      message: "Internal server error",
-    };
-
-    return NextResponse.json(errorResponse, { status: 500 });
+    return Response.json(
+      {
+        success: false,
+        message: "Error generating next invoice number",
+      },
+      { status: 500 }
+    );
   }
 }
 
@@ -49,15 +78,14 @@ function generateNextInvoiceNumber(
 }
 
 async function getLastInvoiceNumber(year: number): Promise<string | null> {
-  // Replace with your database query
-  // Example with Prisma:
-  // const lastInvoice = await prisma.invoice.findFirst({
-  //   where: {
-  //     invoiceNumber: { startsWith: `INV-${year}-` }
-  //   },
-  //   orderBy: { invoiceNumber: 'desc' }
-  // });
-  // return lastInvoice?.invoiceNumber || null;
+  try {
+    const lastInvoice = await InvoiceModel.findOne({
+      invoiceNumber: { $regex: `^INV-${year}-` },
+    }).sort({ invoiceNumber: -1 });
 
-  return `INV-${year}-005`; // Mock data
+    return lastInvoice?.invoiceNumber || null;
+  } catch (error) {
+    console.error("Error fetching last invoice number:", error);
+    return null;
+  }
 }

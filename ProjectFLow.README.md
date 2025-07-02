@@ -106,7 +106,7 @@ Section 7: PDF Export
 SECTION 7: PDF Generation
 Context: Invoice preview working
 Need: PDF generation and export functionality
-Include: @react-pdf/renderer setup, export API
+Include: @react-pdf/renderer usage flow or any other best stack used in industries, export API
 Skip: Don't include email sending yet
 
 Section 8: Email Integration

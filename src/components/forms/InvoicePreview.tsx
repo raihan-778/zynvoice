@@ -1,0 +1,653 @@
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Separator } from "@/components/ui/separator";
+import {
+  Copy,
+  Download,
+  Eye,
+  Layout,
+  Palette,
+  Send,
+  Settings,
+} from "lucide-react";
+import { useEffect, useState } from "react";
+
+// Sample data based on your database types
+const sampleInvoiceData = {
+  invoiceNumber: "INV-2025-001",
+  invoiceDate: new Date("2025-07-02"),
+  dueDate: new Date("2025-08-01"),
+  status: "draft" as const,
+  currency: "USD",
+  items: [
+    {
+      description: "Web Design & Development",
+      quantity: 1,
+      rate: 2500.0,
+      amount: 2500.0,
+      taxRate: 10,
+    },
+    {
+      description: "SEO Optimization",
+      quantity: 3,
+      rate: 300.0,
+      amount: 900.0,
+      taxRate: 10,
+    },
+    {
+      description: "Monthly Maintenance",
+      quantity: 6,
+      rate: 150.0,
+      amount: 900.0,
+      taxRate: 10,
+    },
+  ],
+  subtotal: 4300.0,
+  taxRate: 10,
+  taxAmount: 430.0,
+  discountType: "percentage" as const,
+  discountValue: 5,
+  discountAmount: 215.0,
+  total: 4515.0,
+  notes: "Thank you for your business! Payment is due within 30 days.",
+  terms: "Net 30 days. Late payments may incur a 1.5% monthly service charge.",
+  paymentTerms: 30,
+};
+
+const sampleCompany = {
+  name: "Digital Solutions Inc.",
+  email: "billing@digitalsolutions.com",
+  phone: "+1 (555) 123-4567",
+  website: "www.digitalsolutions.com",
+  address: {
+    street: "123 Business Ave, Suite 100",
+    city: "San Francisco",
+    state: "CA",
+    zipCode: "94102",
+    country: "United States",
+  },
+  taxId: "EIN: 12-3456789",
+  branding: {
+    primaryColor: "#3b82f6",
+    secondaryColor: "#1e40af",
+    fontFamily: "Inter",
+  },
+};
+
+const sampleClient = {
+  name: "Acme Corporation",
+  email: "accounts@acmecorp.com",
+  phone: "+1 (555) 987-6543",
+  company: "Acme Corp",
+  address: {
+    street: "456 Client Street",
+    city: "Los Angeles",
+    state: "CA",
+    zipCode: "90210",
+    country: "United States",
+  },
+};
+
+// Template configurations
+const templates = {
+  modern: {
+    name: "Modern",
+    description: "Clean, contemporary design with bold typography",
+    layout: "modern" as const,
+    primaryColor: "#3b82f6",
+    secondaryColor: "#1e40af",
+    fontFamily: "Inter",
+    fontSize: 14,
+    logoPosition: "left" as "left" | "center" | "right",
+    showLogo: true,
+    showCompanyAddress: true,
+    showClientAddress: true,
+    showInvoiceNumber: true,
+    showDates: true,
+    showPaymentTerms: true,
+    showNotes: true,
+    showTerms: true,
+  },
+  classic: {
+    name: "Classic",
+    description: "Traditional business invoice with formal styling",
+    layout: "classic" as const,
+    primaryColor: "#1f2937",
+    secondaryColor: "#374151",
+    fontFamily: "Georgia",
+    fontSize: 13,
+    logoPosition: "center" as "left" | "center" | "right",
+    showLogo: true,
+    showCompanyAddress: true,
+    showClientAddress: true,
+    showInvoiceNumber: true,
+    showDates: true,
+    showPaymentTerms: true,
+    showNotes: true,
+    showTerms: true,
+  },
+  minimal: {
+    name: "Minimal",
+    description: "Simple, distraction-free design",
+    layout: "minimal" as const,
+    primaryColor: "#000000",
+    secondaryColor: "#6b7280",
+    fontFamily: "Arial",
+    fontSize: 12,
+    logoPosition: "right" as "left" | "center" | "right",
+    showLogo: false,
+    showCompanyAddress: true,
+    showClientAddress: true,
+    showInvoiceNumber: true,
+    showDates: true,
+    showPaymentTerms: false,
+    showNotes: false,
+    showTerms: false,
+  },
+};
+
+const InvoicePreview = () => {
+  const [selectedTemplate, setSelectedTemplate] =
+    useState<keyof typeof templates>("modern");
+  const [customization, setCustomization] = useState<
+    (typeof templates)[keyof typeof templates]
+  >(templates.modern);
+  const [previewMode, setPreviewMode] = useState<"edit" | "preview">("preview");
+
+  useEffect(() => {
+    return setCustomization(templates[selectedTemplate]);
+  }, [selectedTemplate]);
+
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency: sampleInvoiceData.currency,
+    }).format(amount);
+  };
+
+  const formatDate = (date: Date) => {
+    return new Intl.DateTimeFormat("en-US", {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    }).format(date);
+  };
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case "draft":
+        return "bg-gray-100 text-gray-800";
+      case "sent":
+        return "bg-blue-100 text-blue-800";
+      case "viewed":
+        return "bg-yellow-100 text-yellow-800";
+      case "paid":
+        return "bg-green-100 text-green-800";
+      case "overdue":
+        return "bg-red-100 text-red-800";
+      default:
+        return "bg-gray-100 text-gray-800";
+    }
+  };
+
+  const renderInvoicePreview = () => {
+    const baseStyles = {
+      fontFamily: customization.fontFamily,
+      fontSize: `${customization.fontSize}px`,
+      color:
+        customization.layout === "minimal"
+          ? "#000"
+          : customization.secondaryColor,
+    };
+
+    const headerStyles = {
+      color: customization.primaryColor,
+      borderColor: customization.primaryColor,
+    };
+
+    return (
+      <div
+        className="bg-white p-8 shadow-lg min-h-[800px] max-w-4xl mx-auto"
+        style={baseStyles}
+      >
+        {/* Header */}
+        <div
+          className={`flex ${
+            customization.logoPosition === "center"
+              ? "flex-col items-center"
+              : customization.logoPosition === "right"
+              ? "flex-row-reverse"
+              : "flex-row"
+          } justify-between items-start mb-8`}
+        >
+          {customization.showLogo && (
+            <div className="mb-4">
+              <div
+                className="w-16 h-16 rounded-lg flex items-center justify-center text-white font-bold text-xl"
+                style={{ backgroundColor: customization.primaryColor }}
+              >
+                {sampleCompany.name.charAt(0)}
+              </div>
+            </div>
+          )}
+
+          <div
+            className={`${
+              customization.logoPosition === "center"
+                ? "text-center"
+                : customization.logoPosition === "right"
+                ? "text-left"
+                : "text-right"
+            }`}
+          >
+            <h1
+              className="text-3xl font-bold mb-2"
+              style={{ color: customization.primaryColor }}
+            >
+              INVOICE
+            </h1>
+            {customization.showInvoiceNumber && (
+              <p className="text-lg font-semibold">
+                {sampleInvoiceData.invoiceNumber}
+              </p>
+            )}
+            <Badge
+              className={`mt-2 ${getStatusColor(sampleInvoiceData.status)}`}
+            >
+              {sampleInvoiceData.status.toUpperCase()}
+            </Badge>
+          </div>
+        </div>
+
+        {/* Company & Client Info */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
+          {customization.showCompanyAddress && (
+            <div>
+              <h3 className="font-semibold mb-3" style={headerStyles}>
+                From:
+              </h3>
+              <div className="space-y-1">
+                <p className="font-semibold">{sampleCompany.name}</p>
+                <p>{sampleCompany.address.street}</p>
+                <p>
+                  {sampleCompany.address.city}, {sampleCompany.address.state}{" "}
+                  {sampleCompany.address.zipCode}
+                </p>
+                <p>{sampleCompany.address.country}</p>
+                <p>{sampleCompany.email}</p>
+                <p>{sampleCompany.phone}</p>
+                {sampleCompany.taxId && <p>{sampleCompany.taxId}</p>}
+              </div>
+            </div>
+          )}
+
+          {customization.showClientAddress && (
+            <div>
+              <h3
+                className="font-semibold mb-3"
+                style={{ color: customization.primaryColor }}
+              >
+                Bill To:
+              </h3>
+              <div className="space-y-1">
+                <p className="font-semibold">{sampleClient.name}</p>
+                <p>{sampleClient.company}</p>
+                <p>{sampleClient.address.street}</p>
+                <p>
+                  {sampleClient.address.city}, {sampleClient.address.state}{" "}
+                  {sampleClient.address.zipCode}
+                </p>
+                <p>{sampleClient.address.country}</p>
+                <p>{sampleClient.email}</p>
+                <p>{sampleClient.phone}</p>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Invoice Details */}
+        {customization.showDates && (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+            <div>
+              <h4
+                className="font-semibold mb-1"
+                style={{ color: customization.primaryColor }}
+              >
+                Invoice Date:
+              </h4>
+              <p>{formatDate(sampleInvoiceData.invoiceDate)}</p>
+            </div>
+            <div>
+              <h4
+                className="font-semibold mb-1"
+                style={{ color: customization.primaryColor }}
+              >
+                Due Date:
+              </h4>
+              <p>{formatDate(sampleInvoiceData.dueDate)}</p>
+            </div>
+            {customization.showPaymentTerms && (
+              <div>
+                <h4
+                  className="font-semibold mb-1"
+                  style={{ color: customization.primaryColor }}
+                >
+                  Payment Terms:
+                </h4>
+                <p>Net {sampleInvoiceData.paymentTerms} days</p>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Items Table */}
+        <div className="mb-8">
+          <div className="border-b-2 pb-2 mb-4" style={headerStyles}>
+            <div className="grid grid-cols-12 gap-4 font-semibold">
+              <div className="col-span-6">Description</div>
+              <div className="col-span-2 text-center">Qty</div>
+              <div className="col-span-2 text-right">Rate</div>
+              <div className="col-span-2 text-right">Amount</div>
+            </div>
+          </div>
+
+          {sampleInvoiceData.items.map((item, index) => (
+            <div
+              key={index}
+              className="grid grid-cols-12 gap-4 py-3 border-b border-gray-200"
+            >
+              <div className="col-span-6">{item.description}</div>
+              <div className="col-span-2 text-center">{item.quantity}</div>
+              <div className="col-span-2 text-right">
+                {formatCurrency(item.rate)}
+              </div>
+              <div className="col-span-2 text-right font-semibold">
+                {formatCurrency(item.amount)}
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Totals */}
+        <div className="flex justify-end mb-8">
+          <div className="w-80">
+            <div className="space-y-2">
+              <div className="flex justify-between">
+                <span>Subtotal:</span>
+                <span>{formatCurrency(sampleInvoiceData.subtotal)}</span>
+              </div>
+              {sampleInvoiceData.discountValue > 0 && (
+                <div className="flex justify-between text-green-600">
+                  <span>Discount ({sampleInvoiceData.discountValue}%):</span>
+                  <span>
+                    -{formatCurrency(sampleInvoiceData.discountAmount)}
+                  </span>
+                </div>
+              )}
+              <div className="flex justify-between">
+                <span>Tax ({sampleInvoiceData.taxRate}%):</span>
+                <span>{formatCurrency(sampleInvoiceData.taxAmount)}</span>
+              </div>
+              <Separator />
+              <div
+                className="flex justify-between text-xl font-bold border-t-2 pt-2"
+                style={headerStyles}
+              >
+                <span>Total:</span>
+                <span>{formatCurrency(sampleInvoiceData.total)}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Notes & Terms */}
+        {customization.showNotes && sampleInvoiceData.notes && (
+          <div className="mb-6">
+            <h4
+              className="font-semibold mb-2"
+              style={{ color: customization.primaryColor }}
+            >
+              Notes:
+            </h4>
+            <p className="text-sm">{sampleInvoiceData.notes}</p>
+          </div>
+        )}
+
+        {customization.showTerms && sampleInvoiceData.terms && (
+          <div>
+            <h4
+              className="font-semibold mb-2"
+              style={{ color: customization.primaryColor }}
+            >
+              Terms & Conditions:
+            </h4>
+            <p className="text-sm">{sampleInvoiceData.terms}</p>
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  return (
+    <div className="max-w-7xl mx-auto p-6 space-y-6">
+      {/* Header */}
+      <div className="flex justify-between items-center">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900">Invoice Preview</h1>
+          <p className="text-gray-600 mt-1">
+            Customize your invoice template and see live changes
+          </p>
+        </div>
+
+        <div className="flex gap-3">
+          <Button
+            variant="outline"
+            onClick={() =>
+              setPreviewMode(previewMode === "edit" ? "preview" : "edit")
+            }
+          >
+            <Settings className="w-4 h-4 mr-2" />
+            {previewMode === "edit" ? "Preview" : "Customize"}
+          </Button>
+          <Button variant="outline">
+            <Copy className="w-4 h-4 mr-2" />
+            Duplicate
+          </Button>
+          <Button variant="outline">
+            <Download className="w-4 h-4 mr-2" />
+            Download PDF
+          </Button>
+          <Button>
+            <Send className="w-4 h-4 mr-2" />
+            Send Invoice
+          </Button>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+        {/* Sidebar - Template Selection & Customization */}
+        {previewMode === "edit" && (
+          <div className="lg:col-span-1 space-y-4">
+            {/* Template Selection */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Layout className="w-5 h-5" />
+                  Templates
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                {Object.entries(templates).map(([key, template]) => (
+                  <div
+                    key={key}
+                    className={`p-3 border rounded-lg cursor-pointer transition-all ${
+                      selectedTemplate === key
+                        ? "border-blue-500 bg-blue-50"
+                        : "border-gray-200 hover:border-gray-300"
+                    }`}
+                    onClick={() =>
+                      setSelectedTemplate(key as keyof typeof templates)
+                    }
+                  >
+                    <h4 className="font-semibold">{template.name}</h4>
+                    <p className="text-sm text-gray-600 mt-1">
+                      {template.description}
+                    </p>
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
+
+            {/* Color Customization */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Palette className="w-5 h-5" />
+                  Colors
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium mb-2">
+                    Primary Color
+                  </label>
+                  <div className="flex items-center gap-3">
+                    <input
+                      type="color"
+                      value={customization.primaryColor}
+                      onChange={(e) =>
+                        setCustomization((prev) => ({
+                          ...prev,
+                          primaryColor: e.target.value,
+                        }))
+                      }
+                      className="w-12 h-10 border rounded cursor-pointer"
+                    />
+                    <input
+                      type="text"
+                      value={customization.primaryColor}
+                      onChange={(e) =>
+                        setCustomization((prev) => ({
+                          ...prev,
+                          primaryColor: e.target.value,
+                        }))
+                      }
+                      className="flex-1 px-3 py-2 border rounded text-sm"
+                      placeholder="#3b82f6"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium mb-2">
+                    Secondary Color
+                  </label>
+                  <div className="flex items-center gap-3">
+                    <input
+                      type="color"
+                      value={customization.secondaryColor}
+                      onChange={(e) =>
+                        setCustomization((prev) => ({
+                          ...prev,
+                          secondaryColor: e.target.value,
+                        }))
+                      }
+                      className="w-12 h-10 border rounded cursor-pointer"
+                    />
+                    <input
+                      type="text"
+                      value={customization.secondaryColor}
+                      onChange={(e) =>
+                        setCustomization((prev) => ({
+                          ...prev,
+                          secondaryColor: e.target.value,
+                        }))
+                      }
+                      className="flex-1 px-3 py-2 border rounded text-sm"
+                      placeholder="#1e40af"
+                    />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Display Options */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Eye className="w-5 h-5" />
+                  Display Options
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                {[
+                  { key: "showLogo", label: "Show Logo" },
+                  { key: "showCompanyAddress", label: "Company Address" },
+                  { key: "showClientAddress", label: "Client Address" },
+                  { key: "showInvoiceNumber", label: "Invoice Number" },
+                  { key: "showDates", label: "Dates" },
+                  { key: "showPaymentTerms", label: "Payment Terms" },
+                  { key: "showNotes", label: "Notes" },
+                  { key: "showTerms", label: "Terms & Conditions" },
+                ].map(({ key, label }) => (
+                  <label
+                    key={key}
+                    className="flex items-center gap-3 cursor-pointer"
+                  >
+                    <input
+                      type="checkbox"
+                      checked={
+                        customization[
+                          key as keyof typeof customization
+                        ] as boolean
+                      }
+                      onChange={(e) =>
+                        setCustomization((prev) => ({
+                          ...prev,
+                          [key]: e.target.checked,
+                        }))
+                      }
+                      className="rounded"
+                    />
+                    <span className="text-sm">{label}</span>
+                  </label>
+                ))}
+              </CardContent>
+            </Card>
+          </div>
+        )}
+
+        {/* Main Preview Area */}
+        <div
+          className={previewMode === "edit" ? "lg:col-span-3" : "lg:col-span-4"}
+        >
+          <Card className="overflow-hidden">
+            <CardContent className="p-0">
+              <div className="bg-gray-50 p-4 border-b">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <div className="w-3 h-3 bg-red-500 rounded-full"></div>
+                    <div className="w-3 h-3 bg-yellow-500 rounded-full"></div>
+                    <div className="w-3 h-3 bg-green-500 rounded-full"></div>
+                  </div>
+                  <span className="text-sm font-medium text-gray-600">
+                    Invoice Preview - {templates[selectedTemplate].name}{" "}
+                    Template
+                  </span>
+                  <div className="w-20"></div>
+                </div>
+              </div>
+
+              <div className="bg-gray-100 p-6 min-h-screen">
+                {renderInvoicePreview()}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default InvoicePreview;
