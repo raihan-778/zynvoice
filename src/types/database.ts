@@ -3,7 +3,7 @@ import { Document, Types } from "mongoose";
 
 // Base interface for all documents
 export interface BaseDocument extends Document {
-  _id: Types.ObjectId;
+  _id: Types.ObjectId | string;
   createdAt: Date;
   updatedAt: Date;
 }

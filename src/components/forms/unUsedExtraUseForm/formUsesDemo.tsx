@@ -177,7 +177,7 @@ export default function InvoiceFormBuilder() {
       dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
         .toISOString()
         .split("T")[0],
-      items: [{ description: "", quantity: 1, rate: 0, amount: 0, taxRate: 0 }],
+      items: [{ description: "", quantity: 1, rate: 0, amount: 0 }],
       taxRate: 0,
       discountType: "percentage",
       discountValue: 0,
@@ -275,7 +275,7 @@ export default function InvoiceFormBuilder() {
   };
 
   const addLineItem = () => {
-    append({ description: "", quantity: 1, rate: 0, amount: 0, taxRate: 0 });
+    append({ description: "", quantity: 1, rate: 0, amount: 0 });
   };
 
   const removeLineItem = (index: number) => {
