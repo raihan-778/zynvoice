@@ -1,7 +1,6 @@
 // models/Company.ts
-import mongoose, { models, Schema } from "mongoose";
 import { ICompany } from "@/types/database";
-import { model } from "mongoose";
+import mongoose, { model, models, Schema } from "mongoose";
 
 export const CompanySchema = new Schema<ICompany>(
   {
@@ -119,5 +118,6 @@ CompanySchema.pre("save", async function (next) {
   next();
 });
 // Export the model (handles both development and production environments)
-const Company = models?.Company || model<ICompany>("Company", CompanySchema);
-export default Company;
+const CompanyModel =
+  models?.Company || model<ICompany>("Company", CompanySchema);
+export default CompanyModel;
