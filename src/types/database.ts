@@ -129,6 +129,14 @@ export interface IInvoice extends BaseDocument {
   };
 }
 
+// In your types file, create a type for the populated document it is for pdfId route
+export type PopulatedInvoice = IInvoice & {
+  companyId: ICompany;
+  clientId: IClient;
+  _id: string;
+  __v: number;
+};
+
 export interface InvoiceFormData {
   companyId: string;
   clientId: string;
