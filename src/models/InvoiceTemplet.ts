@@ -125,5 +125,5 @@ TemplateSchema.pre("save", async function (next) {
 
 // Export the model (handles both development and production environments)
 const InvoiceTemplate =
-  models?.InvoiceTemplate || model<ITemplate>("Client", TemplateSchema);
+  models?.InvoiceTemplate || model<ITemplate>("Template", TemplateSchema);
 export default InvoiceTemplate;

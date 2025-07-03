@@ -19,14 +19,11 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import {
-  CompanyInfoFormData,
-  companyInfoSchema,
-} from "@/lib/validations/validation";
+import { ICompany } from "@/types/database";
 
 interface CompanyDetailsFormProps {
-  initialData?: Partial<CompanyInfoFormData>;
-  onSubmit: (data: CompanyInfoFormData) => void;
+  initialData?: Partial<ICompany>;
+  onSubmit: (data: ICompany) => void;
   isLoading?: boolean;
 }
 
@@ -45,7 +42,7 @@ export function CompanyDetailsForm({
     formState: { errors },
     setValue,
     watch,
-  } = useForm<CompanyInfoFormData>({
+  } = useForm<ICompany>({
     resolver: zodResolver(companyInfoSchema),
     defaultValues: {
       name: initialData?.name || "",

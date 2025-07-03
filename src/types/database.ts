@@ -3,7 +3,7 @@ import { Document, Types } from "mongoose";
 
 // Base interface for all documents
 export interface BaseDocument extends Document {
-  _id: Types.ObjectId;
+  _id: Types.ObjectId | string;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -128,6 +128,14 @@ export interface IInvoice extends BaseDocument {
     endDate?: Date;
   };
 }
+
+// In your types file, create a type for the populated document it is for pdfId route
+export type PopulatedInvoice = IInvoice & {
+  companyId: ICompany;
+  clientId: IClient;
+  _id: string;
+  __v: number;
+};
 
 export interface InvoiceFormData {
   companyId: string;

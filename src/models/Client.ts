@@ -95,5 +95,5 @@ ClientSchema.virtual("outstandingBalance").get(function () {
 });
 
 // Export the model (handles both development and production environments)
-const Client = models?.Client || model<IClient>("Client", ClientSchema);
-export default Client;
+const ClientModel = models?.Client || model<IClient>("Client", ClientSchema);
+export default ClientModel;
