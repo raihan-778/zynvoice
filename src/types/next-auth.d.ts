@@ -15,6 +15,7 @@ declare module "next-auth" {
   }
 
   interface User {
+    _id: unknown;
     id: string;
     email: string;
     name: string;

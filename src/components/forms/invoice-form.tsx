@@ -1,706 +1,983 @@
-// 📁 src/components/forms/invoice-form.tsx
-"use client";
-
-import { zodResolver } from "@hookform/resolvers/zod";
-import { motion } from "framer-motion";
+import { InvoiceFormData } from "@/lib/validations/validation";
+import { InvoiceApiResponse } from "@/types/apiResponse";
+import { IClient, InvoiceCalculations } from "@/types/database";
 import {
-  DollarSign,
-  Download,
-  Eye,
+  Building2,
+  Calculator,
+  Calendar,
   FileText,
-  Send,
   Plus,
+  RefreshCw,
+  Search,
   Trash2,
+  User,
 } from "lucide-react";
-import { useState, useEffect } from "react";
-import { useForm, useFieldArray } from "react-hook-form";
+import { useEffect, useState } from "react";
+import { useFieldArray, useForm } from "react-hook-form";
+import InvoicePreview from "./InvoicePreview";
 
-import { Button } from "@/components/ui/button";
-import { Calendar } from "@/components/ui/calendar";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Separator } from "@/components/ui/separator";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Textarea } from "@/components/ui/textarea";
-import { Badge } from "@/components/ui/badge";
+// Form data interface matching your invoice schema
 
-import { formatDate } from "@/lib/utils";
-import {
-  ClientInfo,
-  CompanyInfo,
-  InvoiceFormData,
-  InvoiceFormDataSchema,
-  InvoiceItem,
-} from "@/lib/validations/validation";
 
-// Helper function to calculate totals
-function calculateInvoiceTotals(
-  items: InvoiceItem[],
-  taxRate: number,
-  discountValue: number,
-  discountType: "percentage" | "fixed"
-) {
-  const subtotal = items.reduce(
-    (sum, item) => sum + item.quantity * item.rate,
-    0
-  );
 
-  let discount = 0;
-  if (discountType === "percentage") {
-    discount = (subtotal * discountValue) / 100;
-  } else {
-    discount = discountValue;
-  }
+export default function InvoiceFormBuilder() {
 
-  const discountedSubtotal = Math.max(0, subtotal - discount);
-  const tax = (discountedSubtotal * taxRate) / 100;
-  const total = discountedSubtotal + tax;
+   const mockClients = [
+  {
+    _id: "1",
+    name: "John Doe",
+    email: "john@example.com",
+    company: "Client Corp",
+    paymentTerms: 30,
+    status: "active",
+    address: {
+      street: "789 Client Rd",
+      city: "Boston",
+      state: "MA",
+      zipCode: "02101",
+      country: "USA",
+    },
+  },
+  {
+    _id: "2",
+    name: "Jane Smith",
+    email: "jane@business.com",
+    company: "Business Inc",
+    paymentTerms: 15,
+    status: "active",
+    address: {
+      street: "321 Business Blvd",
+      city: "Chicago",
+      state: "IL",
+      zipCode: "60601",
+      country: "USA",
+    },
+  },
+  {
+    _id: "3",
+    name: "Bob Johnson",
+    email: "bob@startup.com",
+    company: "Startup LLC",
+    paymentTerms: 45,
+    status: "active",
+    address: {
+      street: "654 Startup St",
+      city: "Austin",
+      state: "TX",
+      zipCode: "73301",
+      country: "USA",
+    },
+  },
+];
 
-  return { subtotal, tax, total, discount };
-}
+// Mock data with proper typing
+ const mockCompanies = [
+  {
+    _id: "1",
+    name: "Acme Corp",
+    email: "info@acme.com",
+    address: {
+      street: "123 Business St",
+      city: "New York",
+      state: "NY",
+      zipCode: "10001",
+      country: "USA",
+    },
+  },
+  {
+    _id: "2",
+    name: "Tech Solutions Ltd",
+    email: "hello@techsolutions.com",
+    address: {
+      street: "456 Tech Ave",
+      city: "San Francisco",
+      state: "CA",
+      zipCode: "94102",
+      country: "USA",
+    },
+  },
+];
 
-interface InvoiceFormProps {
-  initialData?: Partial<InvoiceFormData>;
-  onSubmit: (data: InvoiceFormData) => void;
-  onPreview: (data: InvoiceFormData) => void;
-  onDownload: (data: InvoiceFormData) => void;
-  onSendEmail: (data: InvoiceFormData) => void;
-  isLoading?: boolean;
-  clientList: ClientInfo[];
-  companyList: CompanyInfo[];
-}
+const currencies = [
+  { code: "USD", symbol: "$", name: "US Dollar" },
+  { code: "EUR", symbol: "€", name: "Euro" },
+  { code: "GBP", symbol: "£", name: "British Pound" },
+  { code: "CAD", symbol: "C$", name: "Canadian Dollar" },
+  { code: "JPY", symbol: "¥", name: "Japanese Yen" },
+];
 
-export function InvoiceForm({
-  initialData,
-  onSubmit,
-  onPreview,
-  onDownload,
-  onSendEmail,
-  isLoading,
-  clientList,
-  companyList,
-}: InvoiceFormProps) {
-  const [currentTab, setCurrentTab] = useState("details");
-  const [totals, setTotals] = useState({
+const frequencyOptions = [
+  { value: "weekly", label: "Weekly" },
+  { value: "monthly", label: "Monthly" },
+  { value: "quarterly", label: "Quarterly" },
+  { value: "yearly", label: "Yearly" },
+];
+
+  // Add loading state to your component
+  const [isLoading, setIsLoading] = useState(false);
+  const [apiErrors, setApiErrors] = useState<Record<string, string>>({});
+  const [companies] = useState(mockCompanies);
+  const [clients] = useState(mockClients);
+  const [clientSearch, setClientSearch] = useState<string>("");
+  const [showClientDropdown, setShowClientDropdown] = useState<boolean>(false);
+  const [selectedClient, setSelectedClient] = useState< | null>(null);
+  const [selectedCompany, setSelectedCompany] = useState<
+    (typeof mockCompanies)[0] | null
+  >(null);
+  const [previewMode, setPreviewMode] = useState(false);
+  const [invoiceData, setInvoiceData] = useState<InvoiceFormData | null>(null);
+  const [calculations, setCalculations] = useState<InvoiceCalculations>({
     subtotal: 0,
-    tax: 0,
+    discountAmount: 0,
+    taxAmount: 0,
     total: 0,
-    discount: 0,
   });
 
-  const {
-    register,
-    handleSubmit,
-    formState: { errors },
-    getValues,
-    setValue,
-    watch,
-    control,
-  } = useForm<InvoiceFormData>({
-    resolver: zodResolver(InvoiceFormDataSchema),
+
+  const form = useForm<InvoiceFormData>({
     defaultValues: {
-      invoiceNumber: initialData?.invoiceNumber || `INV-${Date.now()}`,
-      companyInfo:
-        initialData?.companyInfo ||
-        (companyList.length > 0 ? companyList[0] : undefined),
-      client:
-        initialData?.client ||
-        (clientList.length > 0 ? clientList[0] : undefined),
-      items: initialData?.items || [
-        {
-          id: Date.now().toString(),
-          description: "",
-          quantity: 1,
-          rate: 0,
-        },
-      ],
-      dates: {
-        issued: initialData?.dates?.issued || new Date(),
-        due:
-          initialData?.dates?.due ||
-          new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+      companyId: "",
+      clientId: "",
+      invoiceNumber: `INV-${Date.now()}`,
+      invoiceDate: new Date(),
+      dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+      items: [{ description: "", quantity: 1, rate: 0, amount: 0 }],
+      taxRate: 0,
+      discountType: "percentage",
+      discountValue: 0,
+      currency: "USD",
+      notes: "",
+      terms: "",
+      paymentTerms: 30,
+      recurring: {
+        isRecurring: false,
+        frequency: "monthly",
+        nextDate: undefined,
+        endDate: undefined,
       },
-      currency: initialData?.currency || "USD",
-      discountType: initialData?.discountType || "percentage",
-      discountValue: initialData?.discountValue || 0,
-      taxRate: initialData?.taxRate || 0,
-      notes: initialData?.notes || "",
-      terms: initialData?.terms || "",
-      paymentInstructions: initialData?.paymentInstructions || "",
-      template: initialData?.template || "modern",
-      status: initialData?.status || "draft",
     },
   });
 
   const { fields, append, remove } = useFieldArray({
-    control,
+    control: form.control,
     name: "items",
   });
 
-  // Watch form values for real-time updates
-  const watchedItems = watch("items");
-  const watchedTaxRate = watch("taxRate");
-  const watchedDiscountValue = watch("discountValue");
-  const watchedDiscountType = watch("discountType");
+  const watchedItems = form.watch("items");
+  const watchedTaxRate = form.watch("taxRate");
+  const watchedDiscountType = form.watch("discountType");
+  const watchedDiscountValue = form.watch("discountValue");
+  const watchedCompanyId = form.watch("companyId");
+  const watchedRecurring = form.watch("recurring");
 
-  // Calculate totals whenever items or rates change
+  // Update selected company when companyId changes
   useEffect(() => {
-    const newTotals = calculateInvoiceTotals(
-      watchedItems || [],
-      watchedTaxRate || 0,
-      watchedDiscountValue || 0,
-      watchedDiscountType || "percentage"
-    );
-    setTotals(newTotals);
-  }, [watchedItems, watchedTaxRate, watchedDiscountValue, watchedDiscountType]);
+    if (watchedCompanyId) {
+      const company = companies.find(
+        (c) => c._id.toString() === watchedCompanyId
+      );
+      setSelectedCompany(company ?? null);
+    }
+  }, [watchedCompanyId, companies]);
 
-  const handleFormSubmit = (formData: InvoiceFormData) => {
-    const finalData = {
-      ...formData,
-      ...totals,
-      id: initialData?.id,
-    };
-    onSubmit(finalData);
+  // Calculate amounts whenever items change
+  useEffect(() => {
+    const items = watchedItems || [];
+
+    let subtotal = 0;
+    items.forEach((item, index) => {
+      const amount = (item.quantity || 0) * (item.rate || 0);
+      form.setValue(`items.${index}.amount`, amount);
+      subtotal += amount;
+    });
+
+    let discountAmount = 0;
+    if (watchedDiscountType === "percentage") {
+      discountAmount = (subtotal * (watchedDiscountValue || 0)) / 100;
+    } else {
+      discountAmount = watchedDiscountValue || 0;
+    }
+
+    const taxableAmount = subtotal - discountAmount;
+    const taxAmount = (taxableAmount * (watchedTaxRate || 0)) / 100;
+    const total = taxableAmount + taxAmount;
+
+    setCalculations({
+      subtotal,
+      discountAmount,
+      taxAmount,
+      total,
+    });
+  }, [
+    watchedItems,
+    watchedTaxRate,
+    watchedDiscountType,
+    watchedDiscountValue,
+    form,
+  ]);
+
+  const filteredClients = clients.filter(
+    (client) =>
+      client.status === "active" &&
+      (client.name.toLowerCase().includes(clientSearch.toLowerCase()) ||
+        client.email.toLowerCase().includes(clientSearch.toLowerCase()) ||
+        (client.company &&
+          client.company.toLowerCase().includes(clientSearch.toLowerCase())))
+  );
+
+  const handleClientSelect = (client:) => {
+    setSelectedClient(client);
+    form.setValue("clientId", client._id.toString());
+    form.setValue("paymentTerms", client.paymentTerms);
+    setClientSearch(client.name);
+    setShowClientDropdown(false);
+
+    const dueDate = new Date(
+      Date.now() + client.paymentTerms * 24 * 60 * 60 * 1000
+    );
+    form.setValue("dueDate", dueDate);
+  };
+
+  const addLineItem = () => {
+    append({ description: "", quantity: 1, rate: 0, amount: 0 });
+  };
+
+  const removeLineItem = (index: number) => {
+    if (fields.length > 1) {
+      remove(index);
+    }
+  };
+
+  const generateInvoiceNumber = () => {
+    const timestamp = Date.now();
+    const randomSuffix = Math.floor(Math.random() * 1000)
+      .toString()
+      .padStart(3, "0");
+    form.setValue("invoiceNumber", `INV-${timestamp}-${randomSuffix}`);
   };
 
   const handlePreview = () => {
-    const formData = getValues();
-    const finalData = {
-      ...formData,
-      ...totals,
-      id: initialData?.id,
-    };
-    onPreview(finalData);
+    console.log("handle Preview Btn Clicked");
+    const formData = form.getValues();
+    console.log(formData);
+    setInvoiceData(formData);
+    setPreviewMode(true);
   };
 
-  const handleDownload = () => {
-    const formData = getValues();
-    const finalData = {
-      ...formData,
-      ...totals,
-      id: initialData?.id,
-    };
-    onDownload(finalData);
+  const handleBackToEdit = () => {
+    setPreviewMode(false);
   };
 
-  const handleSendEmail = () => {
-    const formData = getValues();
-    const finalData = {
-      ...formData,
-      ...totals,
-      id: initialData?.id,
-    };
-    onSendEmail(finalData);
+  // Watch all form fields and update preview data
+  useEffect(() => {
+    if (previewMode) {
+      const currentData = form.getValues();
+      setInvoiceData(currentData);
+    }
+  }, [form, previewMode]);
+
+  // Updated onSubmit function
+  const onSubmit = async (data: InvoiceFormData) => {
+    setIsLoading(true);
+    setApiErrors({});
+
+    try {
+      const invoiceData = {
+        ...data,
+        subtotal: calculations.subtotal,
+        discountAmount: calculations.discountAmount,
+        taxAmount: calculations.taxAmount,
+        total: calculations.total,
+      };
+
+      const response = await fetch("/api/invoices", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(invoiceData),
+      });
+
+      const result: InvoiceApiResponse = await response.json();
+
+      if (!response.ok) {
+        if (result.errors) {
+          setApiErrors(result.errors);
+          // Show validation errors
+          Object.entries(result.errors).forEach(([field, message]) => {
+            form.setError(field as keyof InvoiceFormData, { message });
+          });
+        }
+        throw new Error(result.message || "Failed to create invoice");
+      }
+
+      // Success handling
+      console.log("Invoice created successfully:", result.data);
+
+      // Show success message
+      alert(
+        `Invoice created successfully! Invoice ID: ${result.data?.invoiceId}`
+      );
+
+      // Optional: Reset form or redirect
+      // form.reset();
+      // router.push(`/invoices/${result.data?.invoiceId}`);
+    } catch (error) {
+      console.error("Error creating invoice:", error);
+      alert(
+        error instanceof Error ? error.message : "Failed to create invoice"
+      );
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const addNewItem = () => {
-    append({
-      id: Date.now().toString(),
-      description: "",
-      quantity: 1,
-      rate: 0,
-    });
-  };
-
-  const currencies = ["USD", "EUR", "GBP", "CAD", "AUD", "JPY", "INR"];
-  const templates = [
-    { id: "modern", name: "Modern", description: "Clean and professional" },
-    { id: "classic", name: "Classic", description: "Traditional layout" },
-    { id: "minimal", name: "Minimal", description: "Simple and elegant" },
-  ];
+  const selectedCurrency = currencies.find(
+    (c) => c.code === form.watch("currency")
+  );
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5 }}
-      className="space-y-6"
-    >
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <FileText className="w-5 h-5" />
-            Create Invoice
-            <Badge variant="secondary" className="ml-auto">
-              Total: {totals.total.toFixed(2)} {watch("currency")}
-            </Badge>
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <Tabs value={currentTab} onValueChange={setCurrentTab}>
-            <TabsList className="grid w-full grid-cols-4">
-              <TabsTrigger value="details">Details</TabsTrigger>
-              <TabsTrigger value="items">Items ({fields.length})</TabsTrigger>
-              <TabsTrigger value="totals">Totals</TabsTrigger>
-              <TabsTrigger value="template">Template</TabsTrigger>
-            </TabsList>
+    <div className="max-w-7xl mx-auto p-6 bg-white min-h-screen">
+      <div className="mb-8">
+        <h1 className="text-4xl font-bold text-gray-900 mb-2">
+          Create Invoice
+        </h1>
+        <p className="text-gray-600 text-lg">
+          Generate professional invoices with automatic calculations
+        </p>
+      </div>
 
-            <form
-              onSubmit={handleSubmit(handleFormSubmit)}
-              className="space-y-6"
-            >
-              {/* Details Tab */}
-              <TabsContent value="details" className="space-y-6">
-                {/* Invoice Number */}
-                <div className="space-y-2">
-                  <Label htmlFor="invoiceNumber">Invoice Number *</Label>
-                  <Input
-                    id="invoiceNumber"
-                    placeholder="INV-001"
-                    {...register("invoiceNumber")}
-                  />
-                  {errors.invoiceNumber && (
-                    <p className="text-sm text-red-500">
-                      {errors.invoiceNumber.message}
-                    </p>
+      <div>
+        {previewMode ? (
+          <InvoicePreview calculations={calculations} companyData={companies} clientData={clients} invoice={invoiceData} onBack={handleBackToEdit} />
+        ) : (
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+            {/* Company & Client Selection */}
+            <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
+              {/* Company Selection */}
+              <div className="bg-blue-50 p-6 rounded-xl border border-blue-200">
+                <div className="flex items-center gap-3 mb-6">
+                  <Building2 className="w-6 h-6 text-blue-600" />
+                  <h2 className="text-xl font-semibold text-gray-900">
+                    From Company
+                  </h2>
+                </div>
+
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Select Company *
+                    </label>
+                    <select
+                      {...form.register("companyId", {
+                        required: "Company selection is required",
+                      })}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
+                    >
+                      <option value="">Choose your company...</option>
+                      {companies.map((company) => (
+                        <option
+                          key={company._id.toString()}
+                          value={company._id.toString()}
+                        >
+                          {company.name}
+                        </option>
+                      ))}
+                    </select>
+                    {form.formState.errors.companyId && (
+                      <p className="text-red-500 text-sm mt-1">
+                        {form.formState.errors.companyId.message}
+                      </p>
+                    )}
+                  </div>
+
+                  {selectedCompany && (
+                    <div className="bg-white p-4 rounded-lg border border-blue-200">
+                      <h4 className="font-medium text-gray-900 mb-2">
+                        {selectedCompany.name}
+                      </h4>
+                      <p className="text-sm text-gray-600">
+                        {selectedCompany.email}
+                      </p>
+                      <p className="text-sm text-gray-600">
+                        {selectedCompany.address.street},{" "}
+                        {selectedCompany.address.city},{" "}
+                        {selectedCompany.address.state}{" "}
+                        {selectedCompany.address.zipCode}
+                      </p>
+                    </div>
                   )}
                 </div>
+              </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {/* Client Selection */}
-                  <div className="space-y-2">
-                    <Label>Select Client *</Label>
-                    <Select
-                      value={watch("client")?.id || ""}
-                      onValueChange={(clientId) => {
-                        const client = clientList.find(
-                          (c) => c.id === clientId
-                        );
-                        setValue("client", client);
-                      }}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Choose a client" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {clientList.map((client) => (
-                          <SelectItem key={client.id} value={client.id || ""}>
-                            {client.name} ({client.email})
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    {errors.client && (
-                      <p className="text-sm text-red-500">
-                        {errors.client.message}
-                      </p>
-                    )}
-                  </div>
-
-                  {/* Company Selection */}
-                  <div className="space-y-2">
-                    <Label>Select Company Info *</Label>
-                    <Select
-                      value={watch("companyInfo")?.id || ""}
-                      onValueChange={(companyId) => {
-                        const company = companyList.find(
-                          (c) => c.id === companyId
-                        );
-                        setValue("companyInfo", company);
-                      }}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Choose company info" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {companyList.map((company) => (
-                          <SelectItem key={company.id} value={company.id || ""}>
-                            {company.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    {errors.companyInfo && (
-                      <p className="text-sm text-red-500">
-                        {errors.companyInfo.message}
-                      </p>
-                    )}
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  {/* Currency */}
-                  <div className="space-y-2">
-                    <Label>Currency</Label>
-                    <Select
-                      value={watch("currency")}
-                      onValueChange={(value) => setValue("currency", value)}
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {currencies.map((curr) => (
-                          <SelectItem key={curr} value={curr}>
-                            {curr}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  {/* Issue Date */}
-                  <div className="space-y-2">
-                    <Label>Issue Date</Label>
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <Button
-                          variant="outline"
-                          className="w-full justify-start text-left"
-                        >
-                          <Calendar className="mr-2 h-4 w-4" />
-                          {formatDate(watch("dates.issued"))}
-                        </Button>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0" align="start">
-                        <Calendar
-                          mode="single"
-                          selected={watch("dates.issued")}
-                          onSelect={(date) =>
-                            date && setValue("dates.issued", date)
-                          }
-                        />
-                      </PopoverContent>
-                    </Popover>
-                  </div>
-
-                  {/* Due Date */}
-                  <div className="space-y-2">
-                    <Label>Due Date</Label>
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <Button
-                          variant="outline"
-                          className="w-full justify-start text-left"
-                        >
-                          <Calendar className="mr-2 h-4 w-4" />
-                          {formatDate(watch("dates.due"))}
-                        </Button>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0" align="start">
-                        <Calendar
-                          mode="single"
-                          selected={watch("dates.due")}
-                          onSelect={(date) =>
-                            date && setValue("dates.due", date)
-                          }
-                          initialFocus
-                        />
-                      </PopoverContent>
-                    </Popover>
-                  </div>
-                </div>
-
-                <Separator />
-
-                {/* Additional Information */}
-                <div className="space-y-4">
-                  <h3 className="text-lg font-semibold">
-                    Additional Information
-                  </h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="notes">Notes</Label>
-                      <Textarea
-                        id="notes"
-                        placeholder="Any additional notes..."
-                        rows={3}
-                        {...register("notes")}
-                      />
-                      {errors.notes && (
-                        <p className="text-sm text-red-500">
-                          {errors.notes.message}
-                        </p>
-                      )}
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="terms">Terms & Conditions</Label>
-                      <Textarea
-                        id="terms"
-                        placeholder="Payment terms and conditions..."
-                        rows={3}
-                        {...register("terms")}
-                      />
-                      {errors.terms && (
-                        <p className="text-sm text-red-500">
-                          {errors.terms.message}
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="paymentInstructions">
-                      Payment Instructions
-                    </Label>
-                    <Textarea
-                      id="paymentInstructions"
-                      placeholder="How should clients pay this invoice..."
-                      rows={2}
-                      {...register("paymentInstructions")}
-                    />
-                    {errors.paymentInstructions && (
-                      <p className="text-sm text-red-500">
-                        {errors.paymentInstructions.message}
-                      </p>
-                    )}
-                  </div>
-                </div>
-              </TabsContent>
-
-              {/* Items Tab */}
-              <TabsContent value="items" className="space-y-4">
-                <div className="flex justify-between items-center">
-                  <h3 className="text-lg font-semibold">Service Items</h3>
-                  <Button
-                    type="button"
-                    onClick={addNewItem}
-                    className="flex items-center gap-2"
-                  >
-                    <Plus className="w-4 h-4" />
-                    Add Item
-                  </Button>
+              {/* Client Selection */}
+              <div className="bg-green-50 p-6 rounded-xl border border-green-200">
+                <div className="flex items-center gap-3 mb-6">
+                  <User className="w-6 h-6 text-green-600" />
+                  <h2 className="text-xl font-semibold text-gray-900">
+                    To Client
+                  </h2>
                 </div>
 
                 <div className="space-y-4">
-                  {fields.map((field, index) => (
-                    <Card key={field.id}>
-                      <CardContent className="p-4">
-                        <div className="grid grid-cols-1 md:grid-cols-12 gap-4 items-end">
-                          <div className="md:col-span-5 space-y-2">
-                            <Label>Description</Label>
-                            <Textarea
-                              placeholder="Service description..."
-                              rows={2}
-                              {...register(`items.${index}.description`)}
-                            />
-                          </div>
-                          <div className="md:col-span-2 space-y-2">
-                            <Label>Quantity</Label>
-                            <Input
-                              type="number"
-                              min="1"
-                              {...register(`items.${index}.quantity`, {
-                                valueAsNumber: true,
-                              })}
-                            />
-                          </div>
-                          <div className="md:col-span-2 space-y-2">
-                            <Label>Rate</Label>
-                            <Input
-                              type="number"
-                              min="0"
-                              step="0.01"
-                              {...register(`items.${index}.rate`, {
-                                valueAsNumber: true,
-                              })}
-                            />
-                          </div>
-                          <div className="md:col-span-2 space-y-2">
-                            <Label>Total</Label>
-                            <div className="h-10 px-3 py-2 bg-muted rounded-md flex items-center">
-                              {(
-                                (watchedItems?.[index]?.quantity || 0) *
-                                (watchedItems?.[index]?.rate || 0)
-                              ).toFixed(2)}
-                            </div>
-                          </div>
-                          <div className="md:col-span-1">
-                            <Button
+                  <div className="relative">
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Select Client *
+                    </label>
+                    <div className="relative">
+                      <input
+                        type="text"
+                        value={clientSearch}
+                        onChange={(e) => {
+                          setClientSearch(e.target.value);
+                          setShowClientDropdown(true);
+                        }}
+                        onFocus={() => setShowClientDropdown(true)}
+                        placeholder="Search clients by name, email, or company..."
+                        className="w-full px-4 py-3 pl-12 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white"
+                      />
+                      <Search className="w-5 h-5 text-gray-400 absolute left-4 top-4" />
+                    </div>
+
+                    {showClientDropdown && (
+                      <div className="absolute z-20 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-xl max-h-64 overflow-y-auto">
+                        {filteredClients.length > 0 ? (
+                          filteredClients.map((client) => (
+                            <button
+                              key={client._id.toString()}
                               type="button"
-                              variant="destructive"
-                              size="sm"
-                              onClick={() => remove(index)}
-                              disabled={fields.length === 1}
+                              onClick={() => handleClientSelect(client)}
+                              className="w-full px-4 py-4 text-left hover:bg-gray-50 border-b border-gray-100 last:border-b-0 transition-colors"
                             >
-                              <Trash2 className="w-4 h-4" />
-                            </Button>
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
-              </TabsContent>
-
-              {/* Totals Tab */}
-              <TabsContent value="totals" className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="space-y-4">
-                    <h3 className="text-lg font-semibold">Tax & Discount</h3>
-
-                    <div className="space-y-2">
-                      <Label>Tax Rate (%)</Label>
-                      <Input
-                        type="number"
-                        min="0"
-                        max="100"
-                        step="0.01"
-                        {...register("taxRate", { valueAsNumber: true })}
-                      />
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label>Discount Type</Label>
-                      <Select
-                        value={watch("discountType")}
-                        onValueChange={(value) =>
-                          setValue(
-                            "discountType",
-                            value as "percentage" | "fixed"
-                          )
-                        }
-                      >
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="percentage">
-                            Percentage (%)
-                          </SelectItem>
-                          <SelectItem value="fixed">Fixed Amount</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label>
-                        Discount Value{" "}
-                        {watch("discountType") === "percentage"
-                          ? "(%)"
-                          : `(${watch("currency")})`}
-                      </Label>
-                      <Input
-                        type="number"
-                        min="0"
-                        step="0.01"
-                        {...register("discountValue", { valueAsNumber: true })}
-                      />
-                    </div>
-                  </div>
-
-                  <div className="space-y-4">
-                    <h3 className="text-lg font-semibold">Invoice Summary</h3>
-                    <Card>
-                      <CardContent className="p-4 space-y-3">
-                        <div className="flex justify-between">
-                          <span>Subtotal:</span>
-                          <span>
-                            {totals.subtotal.toFixed(2)} {watch("currency")}
-                          </span>
-                        </div>
-                        {totals.discount > 0 && (
-                          <div className="flex justify-between text-green-600">
-                            <span>Discount:</span>
-                            <span>
-                              -{totals.discount.toFixed(2)} {watch("currency")}
-                            </span>
+                              <div className="font-medium text-gray-900">
+                                {client.name}
+                              </div>
+                              <div className="text-sm text-gray-500">
+                                {client.email}
+                              </div>
+                              {client.company && (
+                                <div className="text-sm text-gray-400">
+                                  {client.company}
+                                </div>
+                              )}
+                              <div className="text-xs text-green-600 mt-1">
+                                Payment terms: {client.paymentTerms} days
+                              </div>
+                            </button>
+                          ))
+                        ) : (
+                          <div className="px-4 py-4 text-gray-500 text-center">
+                            No active clients found
                           </div>
                         )}
-                        <div className="flex justify-between">
-                          <span>Tax ({watch("taxRate")}%):</span>
-                          <span>
-                            {totals.tax.toFixed(2)} {watch("currency")}
-                          </span>
-                        </div>
-                        <Separator />
-                        <div className="flex justify-between font-bold text-lg">
-                          <span>Total:</span>
-                          <span>
-                            {totals.total.toFixed(2)} {watch("currency")}
-                          </span>
-                        </div>
-                      </CardContent>
-                    </Card>
+                      </div>
+                    )}
+                    {form.formState.errors.clientId && (
+                      <p className="text-red-500 text-sm mt-1">
+                        Client selection is required
+                      </p>
+                    )}
+                  </div>
+
+                  {selectedClient && (
+                    <div className="bg-white p-4 rounded-lg border border-green-200">
+                      <h4 className="font-medium text-gray-900 mb-2">
+                        {selectedClient.name}
+                      </h4>
+                      <p className="text-sm text-gray-600">
+                        {selectedClient.email}
+                      </p>
+                      {selectedClient.company && (
+                        <p className="text-sm text-gray-600">
+                          {selectedClient.company}
+                        </p>
+                      )}
+                      {selectedClient.address.street && (
+                        <p className="text-sm text-gray-600">
+                          {selectedClient.address.street},{" "}
+                          {selectedClient.address.city}
+                        </p>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Invoice Details */}
+            <div className="bg-gray-50 p-6 rounded-xl">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                Invoice Details
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Invoice Number *
+                  </label>
+                  <div className="flex">
+                    <input
+                      {...form.register("invoiceNumber", {
+                        required: "Invoice number is required",
+                      })}
+                      className="flex-1 px-3 py-2 border border-gray-300 rounded-l-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    />
+                    <button
+                      type="button"
+                      onClick={generateInvoiceNumber}
+                      className="px-3 py-2 bg-gray-200 border border-l-0 border-gray-300 rounded-r-lg hover:bg-gray-300 transition-colors"
+                      title="Generate new invoice number"
+                    >
+                      <RefreshCw className="w-4 h-4" />
+                    </button>
                   </div>
                 </div>
-              </TabsContent>
 
-              {/* Template Tab */}
-              <TabsContent value="template" className="space-y-4">
-                <h3 className="text-lg font-semibold">Choose Template</h3>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  {templates.map((template) => (
-                    <Card
-                      key={template.id}
-                      className={`cursor-pointer transition-colors ${
-                        watch("template") === template.id
-                          ? "ring-2 ring-primary"
-                          : "hover:bg-muted/50"
-                      }`}
-                      onClick={() => setValue("template", template.id)}
-                    >
-                      <CardContent className="p-4 text-center">
-                        <h4 className="font-semibold">{template.name}</h4>
-                        <p className="text-sm text-muted-foreground">
-                          {template.description}
-                        </p>
-                      </CardContent>
-                    </Card>
-                  ))}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Invoice Date *
+                  </label>
+                  <div className="relative">
+                    <input
+                      type="date"
+                      {...form.register("invoiceDate", {
+                        required: "Invoice date is required",
+                      })}
+                      className="w-full px-3 py-2 pl-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    />
+                    <Calendar className="w-4 h-4 text-gray-400 absolute left-3 top-3" />
+                  </div>
                 </div>
-              </TabsContent>
 
-              {/* Form Actions */}
-              <div className="flex flex-wrap gap-3 pt-6 border-t">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={handlePreview}
-                  className="flex items-center gap-2"
-                  disabled={isLoading}
-                >
-                  <Eye className="w-4 h-4" />
-                  Preview
-                </Button>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Due Date *
+                  </label>
+                  <div className="relative">
+                    <input
+                      type="date"
+                      {...form.register("dueDate", {
+                        required: "Due date is required",
+                      })}
+                      className="w-full px-3 py-2 pl-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    />
+                    <Calendar className="w-4 h-4 text-gray-400 absolute left-3 top-3" />
+                  </div>
+                </div>
 
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={handleDownload}
-                  className="flex items-center gap-2"
-                  disabled={isLoading}
-                >
-                  <Download className="w-4 h-4" />
-                  Download PDF
-                </Button>
-
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={handleSendEmail}
-                  className="flex items-center gap-2"
-                  disabled={isLoading}
-                >
-                  <Send className="w-4 h-4" />
-                  Send Email
-                </Button>
-
-                <Button
-                  type="submit"
-                  className="flex items-center gap-2 ml-auto"
-                  disabled={isLoading}
-                >
-                  <DollarSign className="w-4 h-4" />
-                  {isLoading ? "Saving..." : "Save Invoice"}
-                </Button>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Currency
+                  </label>
+                  <select
+                    {...form.register("currency")}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  >
+                    {currencies.map((currency) => (
+                      <option key={currency.code} value={currency.code}>
+                        {currency.code} - {currency.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
               </div>
-            </form>
-          </Tabs>
-        </CardContent>
-      </Card>
-    </motion.div>
+            </div>
+
+            {/* Recurring Invoice Settings */}
+            <div className="bg-purple-50 p-6 rounded-xl border border-purple-200">
+              <div className="flex items-center gap-3 mb-4">
+                <RefreshCw className="w-5 h-5 text-purple-600" />
+                <h3 className="text-lg font-semibold text-gray-900">
+                  Recurring Invoice
+                </h3>
+              </div>
+
+              <div className="space-y-4">
+                <div className="flex items-center">
+                  <input
+                    type="checkbox"
+                    {...form.register("recurring.isRecurring")}
+                    className="h-4 w-4 text-purple-600 focus:ring-purple-500 border-gray-300 rounded"
+                  />
+                  <label className="ml-2 block text-sm text-gray-900">
+                    Make this a recurring invoice
+                  </label>
+                </div>
+
+                {watchedRecurring?.isRecurring && (
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Frequency
+                      </label>
+                      <select
+                        {...form.register("recurring.frequency")}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                      >
+                        {frequencyOptions.map((option) => (
+                          <option key={option.value} value={option.value}>
+                            {option.label}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Next Invoice Date
+                      </label>
+                      <input
+                        type="date"
+                        {...form.register("recurring.nextDate")}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        End Date (Optional)
+                      </label>
+                      <input
+                        type="date"
+                        {...form.register("recurring.endDate")}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                      />
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Items List */}
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <FileText className="w-6 h-6 text-indigo-600" />
+                  <h2 className="text-xl font-semibold text-gray-900">
+                    Item List
+                  </h2>
+                </div>
+                <button
+                  type="button"
+                  onClick={addLineItem}
+                  className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
+                >
+                  <Plus className="w-4 h-4" />
+                  Add Item
+                </button>
+              </div>
+
+              <div className="border border-gray-200 rounded-xl overflow-hidden bg-white">
+                <div className="bg-gray-50 px-6 py-4 grid grid-cols-12 gap-4 text-sm font-medium text-gray-700 border-b border-gray-200">
+                  <div className="col-span-5">Description</div>
+                  <div className="col-span-2 text-center">Quantity</div>
+                  <div className="col-span-2 text-center">Rate</div>
+                  <div className="col-span-2 text-center">Amount</div>
+                  <div className="col-span-1"></div>
+                </div>
+
+                {fields.map((field, index) => (
+                  <div
+                    key={field.id}
+                    className="px-6 py-4 grid grid-cols-12 gap-4 border-b border-gray-100 last:border-b-0"
+                  >
+                    <div className="col-span-5">
+                      <textarea
+                        {...form.register(`items.${index}.description`, {
+                          required: "Description is required",
+                        })}
+                        placeholder="Describe your service or product..."
+                        rows={2}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent resize-none"
+                      />
+                      {form.formState.errors.items?.[index]?.description && (
+                        <p className="text-red-500 text-xs mt-1">
+                          Description is required
+                        </p>
+                      )}
+                    </div>
+                    <div className="col-span-2">
+                      <input
+                        type="number"
+                        step="0.01"
+                        min="0.01"
+                        {...form.register(`items.${index}.quantity`, {
+                          required: "Quantity is required",
+                          min: {
+                            value: 0.01,
+                            message: "Quantity must be greater than 0",
+                          },
+                        })}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-center"
+                      />
+                    </div>
+                    <div className="col-span-2">
+                      <div className="flex">
+                        <span className="inline-flex items-center px-3 text-sm text-gray-500 bg-gray-50 border border-r-0 border-gray-300 rounded-l-lg">
+                          {selectedCurrency?.symbol || "$"}
+                        </span>
+                        <input
+                          type="number"
+                          step="0.01"
+                          min="0"
+                          {...form.register(`items.${index}.rate`, {
+                            required: "Rate is required",
+                            min: {
+                              value: 0,
+                              message: "Rate cannot be negative",
+                            },
+                          })}
+                          className="flex-1 px-3 py-2 border border-gray-300 rounded-r-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-center"
+                        />
+                      </div>
+                    </div>
+                    <div className="col-span-2">
+                      <div className="flex items-center justify-center h-10 px-3 bg-gray-50 border border-gray-300 rounded-lg text-gray-700 font-medium">
+                        {selectedCurrency?.symbol || "$"}
+                        {form.watch(`items.${index}.amount`)?.toFixed(2) ||
+                          "0.00"}
+                      </div>
+                    </div>
+                    <div className="col-span-1 flex justify-center">
+                      <button
+                        type="button"
+                        onClick={() => removeLineItem(index)}
+                        disabled={fields.length === 1}
+                        className="p-2 text-red-600 hover:bg-red-50 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Calculations & Settings */}
+            <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
+              <div className="space-y-6">
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                    Tax & Discount Settings
+                  </h3>
+
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Tax Rate (%)
+                      </label>
+                      <input
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        max="100"
+                        {...form.register("taxRate")}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-3 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Discount Type
+                        </label>
+                        <select
+                          {...form.register("discountType")}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        >
+                          <option value="percentage">Percentage</option>
+                          <option value="fixed">Fixed Amount</option>
+                        </select>
+                      </div>
+
+                      <div className="col-span-2">
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Discount Value
+                        </label>
+                        <div className="flex">
+                          <span className="inline-flex items-center px-3 text-sm text-gray-500 bg-gray-50 border border-r-0 border-gray-300 rounded-l-lg">
+                            {form.watch("discountType") === "percentage"
+                              ? "%"
+                              : selectedCurrency?.symbol || "$"}
+                          </span>
+                          <input
+                            type="number"
+                            step="0.01"
+                            min="0"
+                            {...form.register("discountValue")}
+                            className="flex-1 px-3 py-2 border border-gray-300 rounded-r-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Notes & Terms */}
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Notes
+                    </label>
+                    <textarea
+                      {...form.register("notes")}
+                      placeholder="Add any additional notes or special instructions..."
+                      rows={4}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Terms & Conditions
+                    </label>
+                    <textarea
+                      {...form.register("terms")}
+                      placeholder="Add payment terms, conditions, or other legal information..."
+                      rows={4}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Invoice Summary */}
+              <div className="bg-gray-50 p-6 rounded-xl">
+                <div className="flex items-center gap-3 mb-6">
+                  <Calculator className="w-6 h-6 text-green-600" />
+                  <h3 className="text-xl font-semibold text-gray-900">
+                    Invoice Summary
+                  </h3>
+                </div>
+
+                <div className="space-y-4">
+                  <div className="flex justify-between py-2 border-b border-gray-200">
+                    <span className="text-gray-600">Subtotal:</span>
+                    <span className="font-medium">
+                      {selectedCurrency?.symbol || "$"}
+                      {calculations.subtotal.toFixed(2)}
+                    </span>
+                  </div>
+
+                  {calculations.discountAmount > 0 && (
+                    <div className="flex justify-between py-2 border-b border-gray-200 text-red-600">
+                      <span>
+                        Discount (
+                        {form.watch("discountType") === "percentage"
+                          ? `${form.watch("discountValue")}%`
+                          : "Fixed"}
+                        ):
+                      </span>
+                      <span className="font-medium">
+                        -{selectedCurrency?.symbol || "$"}
+                        {calculations.discountAmount.toFixed(2)}
+                      </span>
+                    </div>
+                  )}
+
+                  {calculations.taxAmount > 0 && (
+                    <div className="flex justify-between py-2 border-b border-gray-200">
+                      <span className="text-gray-600">
+                        Tax ({form.watch("taxRate")}%):
+                      </span>
+                      <span className="font-medium">
+                        {selectedCurrency?.symbol || "$"}
+                        {calculations.taxAmount.toFixed(2)}
+                      </span>
+                    </div>
+                  )}
+
+                  <div className="flex justify-between py-4 border-t-2 border-gray-300">
+                    <span className="text-xl font-semibold text-gray-900">
+                      Total:
+                    </span>
+                    <span className="text-2xl font-bold text-green-600">
+                      {selectedCurrency?.symbol || "$"}
+                      {calculations.total.toFixed(2)}
+                    </span>
+                  </div>
+
+                  {selectedClient && (
+                    <div className="mt-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
+                      <h4 className="font-medium text-gray-900 mb-2">
+                        Payment Information
+                      </h4>
+                      <p className="text-sm text-gray-600">
+                        Payment Terms: {form.watch("paymentTerms")} days
+                      </p>
+                      <p className="text-sm text-gray-600">
+                        Due Date:{" "}
+                        {new Date(form.watch("dueDate")).toLocaleDateString()}
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Form Actions */}
+            <div className="flex flex-col sm:flex-row gap-4 justify-end pt-8 border-t border-gray-200">
+              <button
+                type="button"
+                disabled={isLoading}
+                className="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium disabled:opacity-50"
+              >
+                Save as Draft
+              </button>
+              <button
+                type="button"
+                onClick={() => handlePreview()}
+                disabled={isLoading}
+                className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium disabled:opacity-50"
+              >
+                Preview Invoice
+              </button>
+              <button
+                type="submit"
+                disabled={isLoading}
+                className="px-8 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-semibold shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isLoading ? (
+                  <div className="flex items-center gap-2">
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                    Creating...
+                  </div>
+                ) : (
+                  "Create Invoice"
+                )}
+              </button>
+            </div>
+
+            {/* Form Validation Summary */}
+            {Object.keys(form.formState.errors).length > 0 && (
+              <div className="mt-6 p-4 bg-red-50 border border-red-200 rounded-lg">
+                <h4 className="text-red-800 font-medium mb-2">
+                  Please fix the following errors:
+                </h4>
+                <ul className="text-sm text-red-600 space-y-1">
+                  {form.formState.errors.companyId && (
+                    <li>• Company selection is required</li>
+                  )}
+                  {form.formState.errors.clientId && (
+                    <li>• Client selection is required</li>
+                  )}
+                  {form.formState.errors.invoiceNumber && (
+                    <li>• Invoice number is required</li>
+                  )}
+                  {form.formState.errors.invoiceDate && (
+                    <li>• Invoice date is required</li>
+                  )}
+                  {form.formState.errors.dueDate && (
+                    <li>• Due date is required</li>
+                  )}
+                  {form.formState.errors.items && (
+                    <li>• Please check line items for errors</li>
+                  )}
+                </ul>
+              </div>
+            )}
+          </form>
+        )}
+      </div>
+    </div>
   );
 }

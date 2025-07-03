@@ -1,7 +1,7 @@
 // app/invoice/page.tsx
 "use client";
 
-import InvoiceFormBuilder from "@/components/forms/unUsedExtraUseForm/formUsesDemo";
+import InvoiceFormBuilder from "@/components/forms/invoice-form";
 
 // import { InvoiceGenerator } from "@/components/invoice/InvoiceGenerator";
 

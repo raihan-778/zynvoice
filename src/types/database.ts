@@ -111,7 +111,7 @@ export interface IInvoice extends BaseDocument {
   discountAmount: number;
   total: number;
   currency: string;
-  status: "draft" | "sent" | "viewed" | "paid" | "overdue" | "cancelled";
+
   notes?: string;
   terms?: string;
   paymentTerms: number;
@@ -128,6 +128,12 @@ export interface IInvoice extends BaseDocument {
     endDate?: Date;
   };
 }
+export interface InvoiceCalculations {
+  subtotal: number;
+  discountAmount: number;
+  taxAmount: number;
+  total: number;
+}
 
 // In your types file, create a type for the populated document it is for pdfId route
 export type PopulatedInvoice = IInvoice & {
@@ -138,6 +144,9 @@ export type PopulatedInvoice = IInvoice & {
 };
 
 export interface InvoiceFormData {
+  discountAmount: number;
+  subtotal: number;
+  status: "draft" | "sent" | "viewed" | "paid" | "overdue" | "cancelled";
   companyId: string;
   clientId: string;
   invoiceNumber: string;
@@ -151,6 +160,7 @@ export interface InvoiceFormData {
   notes?: string;
   terms?: string;
   paymentTerms: number;
+  total: number;
   recurring?: {
     isRecurring: boolean;
     frequency: "weekly" | "monthly" | "quarterly" | "yearly";
@@ -198,3 +208,48 @@ export interface IAuditLog extends BaseDocument {
 }
 
 export type InvoiceFormErrors = Partial<InvoiceFormData>;
+
+// / Request body interface
+export interface InvoiceRequestBody {
+  companyId: string;
+  clientId: string;
+  invoiceNumber: string;
+  invoiceDate: string;
+  dueDate: string;
+  items: InvoiceItem[];
+  taxRate: number;
+  discountType: "percentage" | "fixed";
+  discountValue: number;
+  currency: string;
+  notes?: string;
+  terms?: string;
+  paymentTerms: number;
+  recurring: {
+    isRecurring: boolean;
+    frequency?: "weekly" | "monthly" | "quarterly" | "yearly";
+    nextDate?: string;
+    endDate?: string;
+  };
+  subtotal: number;
+  discountAmount: number;
+  taxAmount: number;
+  total: number;
+}
+
+interface InvoiceItem {
+  description: string;
+  quantity: number;
+  rate: number;
+  amount: number;
+  taxRate?: number;
+}
+
+export interface InvoicePreviewProps {
+  invoiceData: InvoiceFormData;
+  companyData: ICompany;
+  clientData: IClient;
+  calculations: InvoiceCalculations;
+  onBack: () => void;
+  onSubmit: () => void;
+  onExportPDF: () => void;
+}

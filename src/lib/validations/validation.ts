@@ -54,25 +54,76 @@ export const InvoiceItemSchema = z.object({
 // Assuming you already have InvoiceItemSchema
 
 export const InvoiceFormDataSchema = z.object({
+  userId: z.string(),
   companyId: z.string(),
   clientId: z.string(),
+
   invoiceNumber: z.string().min(1, "Invoice number is required"),
-  invoiceDate: z.string().min(1, "Invoice date is required"), // ISO date string
-  dueDate: z.string().min(1, "Due date is required"), // ISO date string
+
+  invoiceDate: z
+    .string()
+    .min(1, "Invoice date is required")
+    .transform((val) => new Date(val)),
+
+  dueDate: z
+    .string()
+    .min(1, "Due date is required")
+    .transform((val) => new Date(val)),
+
   items: z.array(InvoiceItemSchema).min(1, "At least one item is required"),
+
+  subtotal: z.number().min(0),
   taxRate: z.number().min(0).max(100).default(0),
+  taxAmount: z.number().min(0).default(0),
+
   discountType: z.enum(["percentage", "fixed"]).default("percentage"),
   discountValue: z.number().min(0).default(0),
+  discountAmount: z.number().min(0).default(0),
+
+  total: z.number().min(0),
   currency: z.string().default("USD"),
+
+  status: z
+    .enum(["draft", "sent", "viewed", "paid", "overdue", "cancelled"])
+    .default("draft"),
+
   notes: z.string().optional(),
   terms: z.string().optional(),
-  paymentTerms: z.number().min(0), // In days, for example
+
+  paymentTerms: z.number().min(0), // in days
+
+  paidAt: z
+    .string()
+    .optional()
+    .transform((val) => (val ? new Date(val) : undefined)),
+
+  paidAmount: z.number().min(0).default(0),
+  paymentMethod: z.string().optional(),
+
+  emailSentAt: z
+    .string()
+    .optional()
+    .transform((val) => (val ? new Date(val) : undefined)),
+
+  viewedAt: z
+    .string()
+    .optional()
+    .transform((val) => (val ? new Date(val) : undefined)),
+
+  templateId: z.string().optional(),
+
   recurring: z
     .object({
       isRecurring: z.boolean(),
       frequency: z.enum(["weekly", "monthly", "quarterly", "yearly"]),
-      nextDate: z.string().optional(), // ISO string
-      endDate: z.string().optional(), // ISO string
+      nextDate: z
+        .string()
+        .optional()
+        .transform((val) => (val ? new Date(val) : undefined)),
+      endDate: z
+        .string()
+        .optional()
+        .transform((val) => (val ? new Date(val) : undefined)),
     })
     .optional(),
 });

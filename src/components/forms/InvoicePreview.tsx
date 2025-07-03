@@ -1,7 +1,9 @@
+"use client";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
+import { InvoicePreviewProps } from "@/types/database";
 import {
   Copy,
   Download,
@@ -14,8 +16,8 @@ import {
 import { useEffect, useState } from "react";
 
 // Sample data based on your database types
-const sampleInvoiceData = {
-  invoiceNumber: "INV-2025-001",
+const invoiceData = {
+  invoiceNumber: `INV-${Date.now()}`,
   invoiceDate: new Date("2025-07-02"),
   dueDate: new Date("2025-08-01"),
   status: "draft" as const,
@@ -147,7 +149,16 @@ const templates = {
   },
 };
 
-const InvoicePreview = () => {
+const InvoicePreview = ({
+  invoiceData,
+  companyData,
+  clientData,
+  calculations,
+  
+  onBack,
+  onSubmit,
+  onExportPDF,
+}: InvoicePreviewProps) => {
   const [selectedTemplate, setSelectedTemplate] =
     useState<keyof typeof templates>("modern");
   const [customization, setCustomization] = useState<
@@ -162,7 +173,7 @@ const InvoicePreview = () => {
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat("en-US", {
       style: "currency",
-      currency: sampleInvoiceData.currency,
+      currency: invoiceData.currency,
     }).format(amount);
   };
 
@@ -249,13 +260,11 @@ const InvoicePreview = () => {
             </h1>
             {customization.showInvoiceNumber && (
               <p className="text-lg font-semibold">
-                {sampleInvoiceData.invoiceNumber}
+                {invoiceData.invoiceNumber}
               </p>
             )}
-            <Badge
-              className={`mt-2 ${getStatusColor(sampleInvoiceData.status)}`}
-            >
-              {sampleInvoiceData.status.toUpperCase()}
+            <Badge className={`mt-2 ${getStatusColor(invoiceData.status)}`}>
+              {invoiceData.status}
             </Badge>
           </div>
         </div>
@@ -316,7 +325,7 @@ const InvoicePreview = () => {
               >
                 Invoice Date:
               </h4>
-              <p>{formatDate(sampleInvoiceData.invoiceDate)}</p>
+              <p>{formatDate(new Date(invoiceData.invoiceDate))}</p>
             </div>
             <div>
               <h4
@@ -325,7 +334,7 @@ const InvoicePreview = () => {
               >
                 Due Date:
               </h4>
-              <p>{formatDate(sampleInvoiceData.dueDate)}</p>
+              <p>{formatDate(new Date(invoiceData.dueDate))}</p>
             </div>
             {customization.showPaymentTerms && (
               <div>
@@ -335,7 +344,7 @@ const InvoicePreview = () => {
                 >
                   Payment Terms:
                 </h4>
-                <p>Net {sampleInvoiceData.paymentTerms} days</p>
+                <p>Net {invoiceData.paymentTerms} days</p>
               </div>
             )}
           </div>
@@ -352,7 +361,7 @@ const InvoicePreview = () => {
             </div>
           </div>
 
-          {sampleInvoiceData.items.map((item, index) => (
+          {invoiceData.items.map((item, index) => (
             <div
               key={index}
               className="grid grid-cols-12 gap-4 py-3 border-b border-gray-200"
@@ -374,20 +383,18 @@ const InvoicePreview = () => {
           <div className="w-80">
             <div className="space-y-2">
               <div className="flex justify-between">
-                <span>Subtotal:</span>
-                <span>{formatCurrency(sampleInvoiceData.subtotal)}</span>
+                <span>Subtotal?:</span>
+                <span>{calculations.subtotal}</span>
               </div>
-              {sampleInvoiceData.discountValue > 0 && (
+              {invoiceData.discountValue > 0 && (
                 <div className="flex justify-between text-green-600">
-                  <span>Discount ({sampleInvoiceData.discountValue}%):</span>
-                  <span>
-                    -{formatCurrency(sampleInvoiceData.discountAmount)}
-                  </span>
+                  <span>Discount ({invoiceData.discountValue}%):</span>
+                  <span>-{formatCurrency(invoiceData.discountAmount)}</span>
                 </div>
               )}
               <div className="flex justify-between">
-                <span>Tax ({sampleInvoiceData.taxRate}%):</span>
-                <span>{formatCurrency(sampleInvoiceData.taxAmount)}</span>
+                <span>Tax ({invoiceData.taxRate}%):</span>
+                <span>{formatCurrency(invoiceData.taxRate)}</span>
               </div>
               <Separator />
               <div
@@ -395,14 +402,14 @@ const InvoicePreview = () => {
                 style={headerStyles}
               >
                 <span>Total:</span>
-                <span>{formatCurrency(sampleInvoiceData.total)}</span>
+                <span>{formatCurrency(calculations.total)}</span>
               </div>
             </div>
           </div>
         </div>
 
         {/* Notes & Terms */}
-        {customization.showNotes && sampleInvoiceData.notes && (
+        {customization.showNotes && invoiceData.notes && (
           <div className="mb-6">
             <h4
               className="font-semibold mb-2"
@@ -410,11 +417,11 @@ const InvoicePreview = () => {
             >
               Notes:
             </h4>
-            <p className="text-sm">{sampleInvoiceData.notes}</p>
+            <p className="text-sm">{invoiceData.notes}</p>
           </div>
         )}
 
-        {customization.showTerms && sampleInvoiceData.terms && (
+        {customization.showTerms && invoiceData.terms && (
           <div>
             <h4
               className="font-semibold mb-2"
@@ -422,7 +429,7 @@ const InvoicePreview = () => {
             >
               Terms & Conditions:
             </h4>
-            <p className="text-sm">{sampleInvoiceData.terms}</p>
+            <p className="text-sm">{invoiceData.terms}</p>
           </div>
         )}
       </div>

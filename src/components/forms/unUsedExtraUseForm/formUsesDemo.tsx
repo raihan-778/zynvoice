@@ -1,4 +1,5 @@
 import { InvoiceFormData } from "@/lib/validations/validation";
+import { InvoiceApiResponse } from "@/types/apiResponse";
 import {
   Building2,
   Calculator,
@@ -13,46 +14,6 @@ import {
 import { Types } from "mongoose";
 import { useEffect, useState } from "react";
 import { useFieldArray, useForm } from "react-hook-form";
-
-// Using your database types
-interface IInvoiceItem {
-  description: string;
-  quantity: number;
-  rate: number;
-  amount: number;
-  taxRate?: number;
-}
-
-interface ICompany {
-  _id: Types.ObjectId | string;
-  name: string;
-  email: string;
-  logo?: string;
-  address: {
-    street: string;
-    city: string;
-    state: string;
-    zipCode: string;
-    country: string;
-  };
-}
-
-interface IClient {
-  _id: Types.ObjectId | string;
-  name: string;
-  email: string;
-  phone?: string;
-  company?: string;
-  address: {
-    street?: string;
-    city?: string;
-    state?: string;
-    zipCode?: string;
-    country?: string;
-  };
-  paymentTerms: number;
-  status: "active" | "inactive";
-}
 
 // Form data interface matching your invoice schema
 
@@ -155,6 +116,9 @@ const frequencyOptions = [
 ];
 
 export default function InvoiceFormBuilder() {
+  // Add loading state to your component
+  const [isLoading, setIsLoading] = useState(false);
+  const [apiErrors, setApiErrors] = useState<Record<string, string>>({});
   const [companies] = useState<ICompany[]>(mockCompanies);
   const [clients] = useState<IClient[]>(mockClients);
   const [clientSearch, setClientSearch] = useState<string>("");
@@ -173,10 +137,8 @@ export default function InvoiceFormBuilder() {
       companyId: "",
       clientId: "",
       invoiceNumber: `INV-${Date.now()}`,
-      invoiceDate: new Date().toISOString().split("T")[0],
-      dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
-        .toISOString()
-        .split("T")[0],
+      invoiceDate: new Date(),
+      dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
       items: [{ description: "", quantity: 1, rate: 0, amount: 0 }],
       taxRate: 0,
       discountType: "percentage",
@@ -188,8 +150,8 @@ export default function InvoiceFormBuilder() {
       recurring: {
         isRecurring: false,
         frequency: "monthly",
-        nextDate: "",
-        endDate: "",
+        nextDate: undefined,
+        endDate: undefined,
       },
     },
   });
@@ -271,7 +233,7 @@ export default function InvoiceFormBuilder() {
     const dueDate = new Date(
       Date.now() + client.paymentTerms * 24 * 60 * 60 * 1000
     );
-    form.setValue("dueDate", dueDate.toISOString().split("T")[0]);
+    form.setValue("dueDate", dueDate);
   };
 
   const addLineItem = () => {
@@ -292,23 +254,60 @@ export default function InvoiceFormBuilder() {
     form.setValue("invoiceNumber", `INV-${timestamp}-${randomSuffix}`);
   };
 
-  const onSubmit = (data: InvoiceFormData) => {
-    const invoiceData = {
-      ...data,
-      subtotal: calculations.subtotal,
-      discountAmount: calculations.discountAmount,
-      taxAmount: calculations.taxAmount,
-      total: calculations.total,
-      invoiceDate: new Date(data.invoiceDate),
-      dueDate: new Date(data.dueDate),
-      status: "draft" as const,
-      paidAmount: 0,
-    };
+  // Updated onSubmit function
+  const onSubmit = async (data: InvoiceFormData) => {
+    setIsLoading(true);
+    setApiErrors({});
 
-    console.log("Complete Invoice Data:", invoiceData);
-    alert(
-      "Invoice created successfully! Check console for complete data structure."
-    );
+    try {
+      const invoiceData = {
+        ...data,
+        subtotal: calculations.subtotal,
+        discountAmount: calculations.discountAmount,
+        taxAmount: calculations.taxAmount,
+        total: calculations.total,
+      };
+
+      const response = await fetch("/api/invoices", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(invoiceData),
+      });
+
+      const result: InvoiceApiResponse = await response.json();
+
+      if (!response.ok) {
+        if (result.errors) {
+          setApiErrors(result.errors);
+          // Show validation errors
+          Object.entries(result.errors).forEach(([field, message]) => {
+            form.setError(field as keyof InvoiceFormData, { message });
+          });
+        }
+        throw new Error(result.message || "Failed to create invoice");
+      }
+
+      // Success handling
+      console.log("Invoice created successfully:", result.data);
+
+      // Show success message
+      alert(
+        `Invoice created successfully! Invoice ID: ${result.data?.invoiceId}`
+      );
+
+      // Optional: Reset form or redirect
+      // form.reset();
+      // router.push(`/invoices/${result.data?.invoiceId}`);
+    } catch (error) {
+      console.error("Error creating invoice:", error);
+      alert(
+        error instanceof Error ? error.message : "Failed to create invoice"
+      );
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const selectedCurrency = currencies.find(
@@ -885,21 +884,31 @@ export default function InvoiceFormBuilder() {
         <div className="flex flex-col sm:flex-row gap-4 justify-end pt-8 border-t border-gray-200">
           <button
             type="button"
-            className="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium"
+            disabled={isLoading}
+            className="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium disabled:opacity-50"
           >
             Save as Draft
           </button>
           <button
             type="button"
-            className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
+            disabled={isLoading}
+            className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium disabled:opacity-50"
           >
             Preview Invoice
           </button>
           <button
             type="submit"
-            className="px-8 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-semibold shadow-lg"
+            disabled={isLoading}
+            className="px-8 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-semibold shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            Create Invoice
+            {isLoading ? (
+              <div className="flex items-center gap-2">
+                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                Creating...
+              </div>
+            ) : (
+              "Create Invoice"
+            )}
           </button>
         </div>
 
