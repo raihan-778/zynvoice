@@ -104,7 +104,7 @@ Skip: Don't include PDF export yet
 
 Section 7: PDF Export
 SECTION 7: PDF Generation
-Context: Invoice preview working
+Context: With home I will intigrate Invoice preview to see live preview i am confused
 Need: PDF generation and export functionality
 Include: @react-pdf/renderer usage flow or any other best stack used in industries, export API
 Skip: Don't include email sending yet
