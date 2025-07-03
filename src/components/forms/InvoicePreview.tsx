@@ -149,16 +149,28 @@ const templates = {
   },
 };
 
-const InvoicePreview = ({
+export const InvoicePreview = ({
   invoiceData,
-  companyData,
-  clientData,
+
+  selectedClient,
+  selectedCompany,
   calculations,
-  
+
   onBack,
   onSubmit,
   onExportPDF,
 }: InvoicePreviewProps) => {
+  console.log(
+    selectedClient,
+    "Clients1",
+
+    selectedCompany,
+    "Companise",
+    invoiceData,
+    "subTotal",
+    calculations.subtotal
+  );
+
   const [selectedTemplate, setSelectedTemplate] =
     useState<keyof typeof templates>("modern");
   const [customization, setCustomization] = useState<
@@ -173,7 +185,7 @@ const InvoicePreview = ({
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat("en-US", {
       style: "currency",
-      currency: invoiceData.currency,
+      currency: invoiceData?.currency,
     }).format(amount);
   };
 
@@ -238,7 +250,7 @@ const InvoicePreview = ({
                 className="w-16 h-16 rounded-lg flex items-center justify-center text-white font-bold text-xl"
                 style={{ backgroundColor: customization.primaryColor }}
               >
-                {sampleCompany.name.charAt(0)}
+                {customization.name.charAt(0)}
               </div>
             </div>
           )}
@@ -263,7 +275,9 @@ const InvoicePreview = ({
                 {invoiceData.invoiceNumber}
               </p>
             )}
-            <Badge className={`mt-2 ${getStatusColor(invoiceData.status)}`}>
+            <Badge
+              className={`mt-2 ${getStatusColor(invoiceData.status as string)}`}
+            >
               {invoiceData.status}
             </Badge>
           </div>
@@ -277,16 +291,18 @@ const InvoicePreview = ({
                 From:
               </h3>
               <div className="space-y-1">
-                <p className="font-semibold">{sampleCompany.name}</p>
-                <p>{sampleCompany.address.street}</p>
+                <p className="font-semibold">{selectedCompany?.name}</p>
+                <p className="font-semibold">{selectedCompany.email}</p>
+                <p>{selectedCompany.address.street}</p>
                 <p>
-                  {sampleCompany.address.city}, {sampleCompany.address.state}{" "}
-                  {sampleCompany.address.zipCode}
+                  {selectedCompany.address.city},{" "}
+                  {selectedCompany.address.state}{" "}
+                  {selectedCompany.address.zipCode}
                 </p>
-                <p>{sampleCompany.address.country}</p>
-                <p>{sampleCompany.email}</p>
-                <p>{sampleCompany.phone}</p>
-                {sampleCompany.taxId && <p>{sampleCompany.taxId}</p>}
+                <p>{selectedCompany.address.country}</p>
+                <p>{selectedCompany.email}</p>
+                <p>{selectedCompany.phone}</p>
+                {selectedCompany.taxId && <p>{selectedCompany.taxId}</p>}
               </div>
             </div>
           )}
@@ -300,16 +316,16 @@ const InvoicePreview = ({
                 Bill To:
               </h3>
               <div className="space-y-1">
-                <p className="font-semibold">{sampleClient.name}</p>
-                <p>{sampleClient.company}</p>
-                <p>{sampleClient.address.street}</p>
+                <p className="font-semibold">{selectedClient.name}</p>
+                <p>{selectedClient.email}</p>
+                <p>{selectedClient.address.street}</p>
                 <p>
-                  {sampleClient.address.city}, {sampleClient.address.state}{" "}
-                  {sampleClient.address.zipCode}
+                  {selectedClient.address.city}, {selectedClient.address.state}{" "}
+                  {selectedClient.address.zipCode}
                 </p>
-                <p>{sampleClient.address.country}</p>
-                <p>{sampleClient.email}</p>
-                <p>{sampleClient.phone}</p>
+                <p>{selectedClient.address.country}</p>
+                <p>{selectedClient.email}</p>
+                <p>{selectedClient.phone}</p>
               </div>
             </div>
           )}
@@ -325,7 +341,7 @@ const InvoicePreview = ({
               >
                 Invoice Date:
               </h4>
-              <p>{formatDate(new Date(invoiceData.invoiceDate))}</p>
+              <p>{formatDate(new Date(invoiceData.invoiceDate as string))}</p>
             </div>
             <div>
               <h4
@@ -334,7 +350,7 @@ const InvoicePreview = ({
               >
                 Due Date:
               </h4>
-              <p>{formatDate(new Date(invoiceData.dueDate))}</p>
+              <p>{formatDate(new Date(invoiceData.dueDate as string))}</p>
             </div>
             {customization.showPaymentTerms && (
               <div>
@@ -361,7 +377,7 @@ const InvoicePreview = ({
             </div>
           </div>
 
-          {invoiceData.items.map((item, index) => (
+          {invoiceData?.items?.map((item, index) => (
             <div
               key={index}
               className="grid grid-cols-12 gap-4 py-3 border-b border-gray-200"
@@ -386,15 +402,15 @@ const InvoicePreview = ({
                 <span>Subtotal?:</span>
                 <span>{calculations.subtotal}</span>
               </div>
-              {invoiceData.discountValue > 0 && (
+              {invoiceData?.discountValue > 0 && (
                 <div className="flex justify-between text-green-600">
                   <span>Discount ({invoiceData.discountValue}%):</span>
-                  <span>-{formatCurrency(invoiceData.discountAmount)}</span>
+                  <span>-{formatCurrency(calculations.discountAmount)}</span>
                 </div>
               )}
               <div className="flex justify-between">
                 <span>Tax ({invoiceData.taxRate}%):</span>
-                <span>{formatCurrency(invoiceData.taxRate)}</span>
+                <span>{formatCurrency(calculations.taxAmount)}</span>
               </div>
               <Separator />
               <div

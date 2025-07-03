@@ -45,7 +45,7 @@
 
 // 📁 src/models/ServiceItem.ts
 
-import mongoose, { Document, model, Schema } from "mongoose";
+import { Document, model, models, Schema } from "mongoose";
 
 export interface IServiceItem extends Document {
   _id: string;
@@ -138,6 +138,6 @@ ServiceItemSchema.pre("save", function (this: IServiceItem) {
 
 // export default mongoose.models.ServiceItem ||
 //   mongoose.model<IServiceItem>("ServiceItem", ServiceItemSchema);
-const ServiceItem =
+const ServiceItemModel =
   models?.ServiceItem || model<IServiceItem>("Template", ServiceItemSchema);
-export default InvoiceTemplate;
+export default ServiceItemModel;

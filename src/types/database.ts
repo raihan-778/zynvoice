@@ -243,11 +243,12 @@ interface InvoiceItem {
   amount: number;
   taxRate?: number;
 }
-
 export interface InvoicePreviewProps {
-  invoiceData: InvoiceFormData;
-  companyData: ICompany;
-  clientData: IClient;
+  invoiceData: InvoiceFormData | null;
+  selectedClient: any;
+  selectedCompany: any;
+  clientData: any;
+  companies: any;
   calculations: InvoiceCalculations;
   onBack: () => void;
   onSubmit: () => void;

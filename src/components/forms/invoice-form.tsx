@@ -1,6 +1,8 @@
+"use client";
+
 import { InvoiceFormData } from "@/lib/validations/validation";
 import { InvoiceApiResponse } from "@/types/apiResponse";
-import { IClient, InvoiceCalculations } from "@/types/database";
+import { InvoiceCalculations } from "@/types/database";
 import {
   Building2,
   Calculator,
@@ -14,104 +16,101 @@ import {
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useFieldArray, useForm } from "react-hook-form";
-import InvoicePreview from "./InvoicePreview";
+import { InvoicePreview } from "./InvoicePreview";
 
 // Form data interface matching your invoice schema
 
-
-
 export default function InvoiceFormBuilder() {
+  const mockClients = [
+    {
+      _id: "1",
+      name: "John Doe",
+      email: "john@example.com",
+      company: "Client Corp",
+      paymentTerms: 30,
+      status: "active",
+      address: {
+        street: "789 Client Rd",
+        city: "Boston",
+        state: "MA",
+        zipCode: "02101",
+        country: "USA",
+      },
+    },
+    {
+      _id: "2",
+      name: "Jane Smith",
+      email: "jane@business.com",
+      company: "Business Inc",
+      paymentTerms: 15,
+      status: "active",
+      address: {
+        street: "321 Business Blvd",
+        city: "Chicago",
+        state: "IL",
+        zipCode: "60601",
+        country: "USA",
+      },
+    },
+    {
+      _id: "3",
+      name: "Bob Johnson",
+      email: "bob@startup.com",
+      company: "Startup LLC",
+      paymentTerms: 45,
+      status: "active",
+      address: {
+        street: "654 Startup St",
+        city: "Austin",
+        state: "TX",
+        zipCode: "73301",
+        country: "USA",
+      },
+    },
+  ];
 
-   const mockClients = [
-  {
-    _id: "1",
-    name: "John Doe",
-    email: "john@example.com",
-    company: "Client Corp",
-    paymentTerms: 30,
-    status: "active",
-    address: {
-      street: "789 Client Rd",
-      city: "Boston",
-      state: "MA",
-      zipCode: "02101",
-      country: "USA",
+  // Mock data with proper typing
+  const mockCompanies = [
+    {
+      _id: "1",
+      name: "Acme Corp",
+      email: "info@acme.com",
+      address: {
+        street: "123 Business St",
+        city: "New York",
+        state: "NY",
+        zipCode: "10001",
+        country: "USA",
+      },
     },
-  },
-  {
-    _id: "2",
-    name: "Jane Smith",
-    email: "jane@business.com",
-    company: "Business Inc",
-    paymentTerms: 15,
-    status: "active",
-    address: {
-      street: "321 Business Blvd",
-      city: "Chicago",
-      state: "IL",
-      zipCode: "60601",
-      country: "USA",
+    {
+      _id: "2",
+      name: "Tech Solutions Ltd",
+      email: "hello@techsolutions.com",
+      address: {
+        street: "456 Tech Ave",
+        city: "San Francisco",
+        state: "CA",
+        zipCode: "94102",
+        country: "USA",
+      },
     },
-  },
-  {
-    _id: "3",
-    name: "Bob Johnson",
-    email: "bob@startup.com",
-    company: "Startup LLC",
-    paymentTerms: 45,
-    status: "active",
-    address: {
-      street: "654 Startup St",
-      city: "Austin",
-      state: "TX",
-      zipCode: "73301",
-      country: "USA",
-    },
-  },
-];
+  ];
 
-// Mock data with proper typing
- const mockCompanies = [
-  {
-    _id: "1",
-    name: "Acme Corp",
-    email: "info@acme.com",
-    address: {
-      street: "123 Business St",
-      city: "New York",
-      state: "NY",
-      zipCode: "10001",
-      country: "USA",
-    },
-  },
-  {
-    _id: "2",
-    name: "Tech Solutions Ltd",
-    email: "hello@techsolutions.com",
-    address: {
-      street: "456 Tech Ave",
-      city: "San Francisco",
-      state: "CA",
-      zipCode: "94102",
-      country: "USA",
-    },
-  },
-];
+  const currencies = [
+    { code: "USD", symbol: "$", name: "US Dollar" },
+    { code: "EUR", symbol: "€", name: "Euro" },
+    { code: "GBP", symbol: "£", name: "British Pound" },
+    { code: "CAD", symbol: "C$", name: "Canadian Dollar" },
+    { code: "JPY", symbol: "¥", name: "Japanese Yen" },
+  ];
 
-const currencies = [
-  { code: "USD", symbol: "$", name: "US Dollar" },
-  { code: "EUR", symbol: "€", name: "Euro" },
-  { code: "GBP", symbol: "£", name: "British Pound" },
-  { code: "CAD", symbol: "C$", name: "Canadian Dollar" },
-  { code: "JPY", symbol: "¥", name: "Japanese Yen" },
-];
-
-const frequencyOptions = [
-  { value: "weekly", label: "Weekly" },
-  { value: "monthly", label: "Monthly" },
-  { value: "quarterly", label: "Quarterly" },
-  { value: "yearly", label: "Yearly" },
-];
+  const frequencyOptions = [
+    { value: "weekly", label: "Weekly" },
+    { value: "monthly", label: "Monthly" },
+    { value: "quarterly", label: "Quarterly" },
+    { value: "yearly", label: "Yearly" },
+  ];
 
   // Add loading state to your component
   const [isLoading, setIsLoading] = useState(false);
@@ -120,7 +119,9 @@ const frequencyOptions = [
   const [clients] = useState(mockClients);
   const [clientSearch, setClientSearch] = useState<string>("");
   const [showClientDropdown, setShowClientDropdown] = useState<boolean>(false);
-  const [selectedClient, setSelectedClient] = useState< | null>(null);
+  const [selectedClient, setSelectedClient] = useState<
+    (typeof mockClients)[0] | null
+  >(null);
   const [selectedCompany, setSelectedCompany] = useState<
     (typeof mockCompanies)[0] | null
   >(null);
@@ -132,7 +133,6 @@ const frequencyOptions = [
     taxAmount: 0,
     total: 0,
   });
-
 
   const form = useForm<InvoiceFormData>({
     defaultValues: {
@@ -225,7 +225,7 @@ const frequencyOptions = [
           client.company.toLowerCase().includes(clientSearch.toLowerCase())))
   );
 
-  const handleClientSelect = (client:) => {
+  const handleClientSelect = (client: any) => {
     setSelectedClient(client);
     form.setValue("clientId", client._id.toString());
     form.setValue("paymentTerms", client.paymentTerms);
@@ -349,7 +349,13 @@ const frequencyOptions = [
 
       <div>
         {previewMode ? (
-          <InvoicePreview calculations={calculations} companyData={companies} clientData={clients} invoice={invoiceData} onBack={handleBackToEdit} />
+          <InvoicePreview
+            invoiceData={invoiceData}
+            calculations={calculations}
+            selectedClient={selectedClient}
+            selectedCompany={selectedCompany}
+            onBack={handleBackToEdit}
+          />
         ) : (
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
             {/* Company & Client Selection */}
