@@ -1,42 +1,48 @@
+import { CompanyInfo } from "@/lib/validations/validation";
+import { ApiResponse } from "@/types/apiResponse";
 import { NextRequest, NextResponse } from "next/server";
-import type { Company, ApiResponse } from "@/types/invoice";
 
 interface CompaniesResponse {
-  companies: Company[];
+  companies: CompanyInfo[];
 }
 
 export async function GET(request: NextRequest) {
   try {
     // Replace with your database query
-    const companies: Company[] = [
+    const companies: CompanyInfo[] = [
       {
-        id: 1,
+        _id: "1",
         name: "Acme Corp",
         address: "123 Business St, City, State 12345",
-        email: "billing@acme.com",
-        phone: "+1-555-0123",
-        taxId: "TAX123456",
+        contact: {
+          email: "billing@acme.com",
+          phone: "+1-555-0123",
+        },
       },
       {
-        id: 2,
+        _id: "2",
         name: "Tech Solutions",
         address: "456 Tech Ave, Tech City, State 67890",
-        email: "accounts@techsol.com",
-        phone: "+1-555-0456",
-        taxId: "TAX789012",
+
+        contact: {
+          phone: "+1-555-0456",
+          email: "accounts@techsol.com",
+        },
       },
       {
-        id: 3,
+        _id: "3",
         name: "Global Industries",
         address: "789 Global Blvd, Global City, State 11111",
-        email: "finance@global.com",
-        phone: "+1-555-0789",
-        taxId: "TAX345678",
+        contact: {
+          email: "finance@global.com",
+          phone: "+1-555-0789",
+        },
       },
     ];
 
     const response: ApiResponse<CompaniesResponse> = {
       success: true,
+      message: "Company Data Retrived Successfully",
       data: { companies },
     };
 

@@ -1,4 +1,6 @@
+import { CompanyInfo, InvoiceFormData } from "@/lib/validations/validation";
 // types/database.ts
+import { ClientInfo } from "@/lib/validations/validation";
 import { Document, Types } from "mongoose";
 
 // Base interface for all documents
@@ -33,8 +35,8 @@ export interface IUser extends BaseDocument {
 }
 
 // Company Types
-export interface ICompany extends BaseDocument {
-  userId: Types.ObjectId;
+export interface CompanyInfo extends BaseDocument {
+  userId?: Types.ObjectId;
   name: string;
   logo?: string;
   email: string;
@@ -64,8 +66,8 @@ export interface ICompany extends BaseDocument {
 }
 
 // Client Types
-export interface IClient extends BaseDocument {
-  userId: Types.ObjectId;
+export interface ClientInfo extends BaseDocument {
+  userId?: Types.ObjectId;
   name: string;
   email: string;
   phone?: string;
@@ -88,6 +90,7 @@ export interface IClient extends BaseDocument {
 
 // Invoice Types
 export interface IInvoiceItem {
+  id?: string;
   description: string;
   quantity: number;
   rate: number;
@@ -96,7 +99,7 @@ export interface IInvoiceItem {
 }
 
 export interface IInvoice extends BaseDocument {
-  userId: Types.ObjectId;
+  userId?: Types.ObjectId;
   companyId: Types.ObjectId;
   clientId: Types.ObjectId;
   invoiceNumber: string;
@@ -137,38 +140,12 @@ export interface InvoiceCalculations {
 
 // In your types file, create a type for the populated document it is for pdfId route
 export type PopulatedInvoice = IInvoice & {
-  companyId: ICompany;
-  clientId: IClient;
+  companyId: CompanyInfo;
+  clientId: CompanyInfo;
   _id: string;
   __v: number;
 };
 
-export interface InvoiceFormData {
-  discountAmount: number;
-  subtotal: number;
-  status: "draft" | "sent" | "viewed" | "paid" | "overdue" | "cancelled";
-  companyId: string;
-  clientId: string;
-  invoiceNumber: string;
-  invoiceDate: string;
-  dueDate: string;
-  items: IInvoiceItem[];
-  taxRate: number;
-  discountType: "percentage" | "fixed";
-  discountValue: number;
-  currency: string;
-  notes?: string;
-  terms?: string;
-  paymentTerms: number;
-  total: number;
-  recurring?: {
-    isRecurring: boolean;
-    frequency: "weekly" | "monthly" | "quarterly" | "yearly";
-    nextDate?: string;
-    endDate?: string;
-  };
-}
-// Template Types
 export interface ITemplate extends BaseDocument {
   userId?: Types.ObjectId;
   name: string;
@@ -243,12 +220,19 @@ interface InvoiceItem {
 }
 export interface InvoicePreviewProps {
   invoiceData: InvoiceFormData | null;
-  selectedClient: any;
-  selectedCompany: any;
-  clientData: any;
-  companies: any;
+  selectedClient: ClientInfo;
+  selectedCompany: CompanyInfo;
+  clientData: ClientInfo[];
+  companyData: CompanyInfo[];
   calculations: InvoiceCalculations;
   onBack: () => void;
   onSubmit: () => void;
   onExportPDF: () => void;
+}
+export interface InvoicePdfProps {
+  invoiceData: InvoiceFormData | null;
+  selectedClient: ClientInfo;
+  selectedCompany: CompanyInfo;
+  calculations: InvoiceCalculations;
+  template: ITemplate;
 }

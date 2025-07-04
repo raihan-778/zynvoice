@@ -26,7 +26,7 @@ interface InvoiceStore {
   error: string | null;
 
   // Actions
-  setInvoiceData: (data: Partial<InvoiceData>) => void;
+  setInvoiceData: (data: Partial<InvoiceFormData>) => void;
   setSelectedCompany: (company: CompanyInfo | null) => void;
   setSelectedClient: (client: ClientInfo | null) => void;
   setCalculations: (calculations: InvoiceCalculations) => void;
@@ -60,7 +60,7 @@ interface InvoiceStore {
 }
 
 // Default values
-const defaultTemplate: ITemplate = {
+const defaultTemplate: Partial<ITemplate> = {
   name: "Default",
   primaryColor: "#2563eb",
   secondaryColor: "#64748b",
@@ -74,9 +74,11 @@ const defaultTemplate: ITemplate = {
   showPaymentTerms: true,
   showNotes: true,
   showTerms: true,
+  createdAt: new Date(),
+  updatedAt: new Date(),
 };
 
-const defaultInvoiceData: InvoiceFormData = {
+const defaultInvoiceData: Partial<InvoiceFormData> = {
   invoiceNumber: "",
   invoiceDate: new Date(),
   dueDate: new Date(),

@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
-import type { Client, ApiResponse } from "@/types/invoice";
-import { ClientSearchSchema } from "@/lib/validations/validation";
+
+import { ClientInfo, ClientSearchSchema } from "@/lib/validations/validation";
+import { ApiResponse } from "@/types/apiResponse";
 
 interface ClientsResponse {
-  clients: Client[];
+  clients: ClientInfo[];
 }
 
 export async function GET(request: NextRequest) {
@@ -38,38 +39,42 @@ export async function GET(request: NextRequest) {
     const { search = "", limit = 50 } = validation.data;
 
     // Replace with your database query
-    const allClients: Client[] = [
+    const allClients: ClientInfo[] = [
       {
-        id: 1,
-        name: "John Smith",
+        _id: "1",
+        name: "John Doe",
         email: "john@example.com",
-        company: "Smith LLC",
-        phone: "+1-555-1001",
-        address: "123 Client St, City, State 12345",
+        address: {
+          street: "789 Client Rd",
+          city: "Boston",
+          state: "MA",
+          zipCode: "02101",
+          country: "USA",
+        },
       },
       {
-        id: 2,
-        name: "Sarah Johnson",
-        email: "sarah@corp.com",
-        company: "Johnson Corp",
-        phone: "+1-555-1002",
-        address: "456 Business Ave, City, State 67890",
+        _id: "2",
+        name: "Jane Smith",
+        email: "jane@business.com",
+        address: {
+          street: "321 Business Blvd",
+          city: "Chicago",
+          state: "IL",
+          zipCode: "60601",
+          country: "USA",
+        },
       },
       {
-        id: 3,
-        name: "Mike Davis",
-        email: "mike@startup.io",
-        company: "Davis Startup",
-        phone: "+1-555-1003",
-        address: "789 Startup Blvd, Tech City, State 11111",
-      },
-      {
-        id: 4,
-        name: "Emily Wilson",
-        email: "emily@design.com",
-        company: "Wilson Design",
-        phone: "+1-555-1004",
-        address: "321 Design Ave, Creative City, State 22222",
+        _id: "3",
+        name: "Bob Johnson",
+        email: "bob@startup.com",
+        address: {
+          street: "654 Startup St",
+          city: "Austin",
+          state: "TX",
+          zipCode: "73301",
+          country: "USA",
+        },
       },
     ];
 
@@ -77,13 +82,13 @@ export async function GET(request: NextRequest) {
       .filter(
         (client) =>
           client.name.toLowerCase().includes(search.toLowerCase()) ||
-          client.email.toLowerCase().includes(search.toLowerCase()) ||
-          client.company.toLowerCase().includes(search.toLowerCase())
+          client.email?.toLowerCase().includes(search.toLowerCase())
       )
       .slice(0, limit);
 
     const response: ApiResponse<ClientsResponse> = {
       success: true,
+      message: "Client Data Retrived Successfully",
       data: { clients: filteredClients },
     };
 

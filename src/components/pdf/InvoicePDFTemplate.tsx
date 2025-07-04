@@ -2,7 +2,8 @@
 // npm install @react-pdf/renderer
 
 // 1. PDF Document Component - /components/pdf/InvoicePDF.tsx
-import { InvoicePDFProps } from "@/types/pdf";
+
+import { InvoicePdfProps, ITemplate } from "@/types/database";
 import {
   Document,
   Font,
@@ -28,7 +29,7 @@ Font.register({
 });
 
 // Create PDF styles with default fallbacks
-const createStyles = (template: InvoicePDFProps["template"]) => {
+const createStyles = (template: ITemplate) => {
   // Provide default values if template is null or undefined
   const safeTemplate = {
     name: template?.name || "Modern",
@@ -40,10 +41,10 @@ const createStyles = (template: InvoicePDFProps["template"]) => {
     showCompanyAddress: template?.showCompanyAddress !== false,
     showClientAddress: template?.showClientAddress !== false,
     showInvoiceNumber: template?.showInvoiceNumber !== false,
-    showDates: template?.showDates !== false,
-    showPaymentTerms: template?.showPaymentTerms !== false,
-    showNotes: template?.showNotes !== false,
-    showTerms: template?.showTerms !== false,
+    showDates: true,
+    showPaymentTerms: true,
+    showNotes: true,
+    showTerms: true,
   };
 
   return StyleSheet.create({
@@ -237,7 +238,7 @@ const createStyles = (template: InvoicePDFProps["template"]) => {
   });
 };
 
-export const InvoicePDF: React.FC<InvoicePDFProps> = ({
+export const InvoicePDF: React.FC<InvoicePdfProps> = ({
   invoiceData,
   selectedCompany,
   selectedClient,
@@ -272,7 +273,7 @@ export const InvoicePDF: React.FC<InvoicePDFProps> = ({
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat("en-US", {
       style: "currency",
-      currency: invoiceData.currency,
+      currency: invoiceData?.currency,
     }).format(amount);
   };
 
@@ -316,16 +317,16 @@ export const InvoicePDF: React.FC<InvoicePDFProps> = ({
             <Text style={styles.invoiceTitle}>INVOICE</Text>
             {template.showInvoiceNumber && (
               <Text style={styles.invoiceNumber}>
-                {invoiceData.invoiceNumber}
+                {invoiceData?.invoiceNumber}
               </Text>
             )}
             <Text
               style={[
                 styles.status,
-                { color: getStatusColor(invoiceData.status) },
+                { color: getStatusColor(invoiceData?.status ?? "draft") },
               ]}
             >
-              {invoiceData.status}
+              {invoiceData?.status}
             </Text>
           </View>
         </View>
@@ -336,21 +337,14 @@ export const InvoicePDF: React.FC<InvoicePDFProps> = ({
             <View style={styles.addressBlock}>
               <Text style={styles.addressTitle}>From:</Text>
               <Text style={styles.companyName}>{selectedCompany.name}</Text>
+              <Text style={styles.addressText}>{selectedCompany?.address}</Text>
+
               <Text style={styles.addressText}>
-                {selectedCompany.address.street}
+                {selectedCompany?.contact?.email}
               </Text>
               <Text style={styles.addressText}>
-                {selectedCompany.address.city}, {selectedCompany.address.state}{" "}
-                {selectedCompany.address.zipCode}
+                {selectedCompany?.contact?.phone}
               </Text>
-              <Text style={styles.addressText}>
-                {selectedCompany.address.country}
-              </Text>
-              <Text style={styles.addressText}>{selectedCompany.email}</Text>
-              <Text style={styles.addressText}>{selectedCompany.phone}</Text>
-              {selectedCompany.taxId && (
-                <Text style={styles.addressText}>{selectedCompany.taxId}</Text>
-              )}
             </View>
           )}
 
@@ -359,14 +353,14 @@ export const InvoicePDF: React.FC<InvoicePDFProps> = ({
               <Text style={styles.addressTitle}>Bill To:</Text>
               <Text style={styles.companyName}>{selectedClient.name}</Text>
               <Text style={styles.addressText}>
-                {selectedClient.address.street}
+                {selectedClient.address?.street}
               </Text>
               <Text style={styles.addressText}>
-                {selectedClient.address.city}, {selectedClient.address.state}{" "}
-                {selectedClient.address.zipCode}
+                {selectedClient.address?.city}, {selectedClient.address?.state}{" "}
+                {selectedClient.address?.zipCode}
               </Text>
               <Text style={styles.addressText}>
-                {selectedClient.address.country}
+                {selectedClient.address?.country}
               </Text>
               <Text style={styles.addressText}>{selectedClient.email}</Text>
               <Text style={styles.addressText}>{selectedClient.phone}</Text>
@@ -380,20 +374,22 @@ export const InvoicePDF: React.FC<InvoicePDFProps> = ({
             <View style={styles.detailBlock}>
               <Text style={styles.detailTitle}>Invoice Date:</Text>
               <Text style={styles.detailText}>
-                {formatDate(invoiceData.invoiceDate)}
+                {invoiceData?.invoiceDate
+                  ? formatDate(invoiceData.invoiceDate)
+                  : "N?A"}
               </Text>
             </View>
             <View style={styles.detailBlock}>
               <Text style={styles.detailTitle}>Due Date:</Text>
               <Text style={styles.detailText}>
-                {formatDate(invoiceData.dueDate)}
+                {invoiceData?.dueDate ? formatDate(invoiceData.dueDate) : "N/A"}
               </Text>
             </View>
             {template.showPaymentTerms && (
               <View style={styles.detailBlock}>
                 <Text style={styles.detailTitle}>Payment Terms:</Text>
                 <Text style={styles.detailText}>
-                  Net {invoiceData.paymentTerms} days
+                  Net {invoiceData?.paymentTerms} days
                 </Text>
               </View>
             )}
@@ -415,7 +411,7 @@ export const InvoicePDF: React.FC<InvoicePDFProps> = ({
             </Text>
           </View>
 
-          {invoiceData.items.map((item, index) => (
+          {invoiceData?.items.map((item, index) => (
             <View key={index} style={styles.tableRow}>
               <Text style={[styles.tableCell, styles.descriptionCell]}>
                 {item.description}
@@ -473,7 +469,7 @@ export const InvoicePDF: React.FC<InvoicePDFProps> = ({
         </View>
 
         {/* Notes */}
-        {template.showNotes && invoiceData.notes && (
+        {template.showNotes && invoiceData?.notes && (
           <View style={styles.notesSection}>
             <Text style={styles.notesTitle}>Notes:</Text>
             <Text style={styles.notesText}>{invoiceData.notes}</Text>
@@ -481,7 +477,7 @@ export const InvoicePDF: React.FC<InvoicePDFProps> = ({
         )}
 
         {/* Terms */}
-        {template.showTerms && invoiceData.terms && (
+        {template.showTerms && invoiceData?.terms && (
           <View style={styles.notesSection}>
             <Text style={styles.notesTitle}>Terms & Conditions:</Text>
             <Text style={styles.notesText}>{invoiceData.terms}</Text>

@@ -4,7 +4,7 @@ import { z } from "zod";
 
 // Company Information Schema
 export const CompanyInfoSchema = z.object({
-  id: z.string().optional(),
+  _id: z.string().optional(),
   name: z.string().min(1, "Company name is required"),
   logo: z.string().optional(),
   address: z.string().optional(),
@@ -18,7 +18,7 @@ export const CompanyInfoSchema = z.object({
 
 // Client Information Schema
 export const ClientInfoSchema = z.object({
-  id: z.string().optional(),
+  _id: z.string().optional(),
   name: z.string().min(1, "Client name is required"),
   email: z.string().email().optional(),
   phone: z.string().optional(),
@@ -33,27 +33,8 @@ export const ClientInfoSchema = z.object({
     .optional(),
 });
 
-// Invoice Item Schema
-
-// export const InvoiceItemSchema = z.object({
-//   id: z.number().optional(),
-//   description: z
-//     .string()
-//     .min(1, "Description is required")
-//     .max(500, "Description too long"),
-//   quantity: z
-//     .number()
-//     .min(0.01, "Quantity must be greater than 0")
-//     .max(10000, "Quantity too large"),
-//   rate: z
-//     .number()
-//     .min(0.01, "Rate must be greater than 0")
-//     .max(1000000, "Rate too large"),
-//   amount: z.number().optional(),
-// });
-
 export const InvoiceItemSchema = z.object({
-  id: z.number().optional(),
+  id: z.string().optional(),
   description: z
     .string()
     .min(1, "Description is required")
@@ -66,7 +47,7 @@ export const InvoiceItemSchema = z.object({
     .number()
     .min(0, "Rate cannot be negative") // Changed from 0.01 to 0
     .max(1000000, "Rate too large"),
-  amount: z.number().optional(),
+  amount: z.number(),
 });
 
 // Assuming you already have InvoiceItemSchema

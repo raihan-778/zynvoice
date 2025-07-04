@@ -30,7 +30,7 @@ export default function Header({ onMenuClick }: HeaderProps) {
 
           <Link href="/" className="flex items-center space-x-2">
             <FileText className="h-8 w-8 text-blue-600" />
-            <span className="text-xl font-bold text-gray-900">InvoiceGen</span>
+            <span className="text-xl font-bold text-gray-900">ZynVoice</span>
           </Link>
         </div>
 
