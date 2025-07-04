@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Download, Loader2 } from "lucide-react";
 import React from "react";
 
-import { usePDFGeneration } from "@/hooks/useInvoicePdfGeneration";
+import { usePDFGeneration } from "@/hooks/useInvoicePdf";
 import { InvoicePDFData } from "@/types/pdf";
 import { toast } from "sonner";
 

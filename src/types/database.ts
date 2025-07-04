@@ -170,27 +170,25 @@ export interface InvoiceFormData {
 }
 // Template Types
 export interface ITemplate extends BaseDocument {
-  userId: Types.ObjectId;
+  userId?: Types.ObjectId;
   name: string;
   description?: string;
-  design: {
-    layout: "modern" | "classic" | "minimal";
-    primaryColor: string;
-    secondaryColor: string;
-    fontFamily: string;
-    fontSize: number;
-    logoPosition: "left" | "center" | "right";
-    showLogo: boolean;
-    showCompanyAddress: boolean;
-    showClientAddress: boolean;
-    showInvoiceNumber: boolean;
-    showDates: boolean;
-    showPaymentTerms: boolean;
-    showNotes: boolean;
-    showTerms: boolean;
-  };
-  isDefault: boolean;
-  isPublic: boolean;
+  layout?: "modern" | "classic" | "minimal";
+  primaryColor: string;
+  secondaryColor: string;
+  fontFamily: string;
+  fontSize: number;
+  logoPosition?: "left" | "center" | "right";
+  showLogo: boolean;
+  showDates: true;
+  showNotes: true;
+  showTerms: true;
+  showCompanyAddress: boolean;
+  showClientAddress: boolean;
+  showInvoiceNumber: boolean;
+  showPaymentTerms: true;
+  isDefault?: boolean;
+  isPublic?: boolean;
 }
 
 // Audit Log Types

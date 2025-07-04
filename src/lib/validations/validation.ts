@@ -1,4 +1,5 @@
 // 📁 src/lib/validations/validation.ts
+import { InvoiceFormErrors } from "@/types/database";
 import { z } from "zod";
 
 // Company Information Schema
@@ -34,19 +35,36 @@ export const ClientInfoSchema = z.object({
 
 // Invoice Item Schema
 
+// export const InvoiceItemSchema = z.object({
+//   id: z.number().optional(),
+//   description: z
+//     .string()
+//     .min(1, "Description is required")
+//     .max(500, "Description too long"),
+//   quantity: z
+//     .number()
+//     .min(0.01, "Quantity must be greater than 0")
+//     .max(10000, "Quantity too large"),
+//   rate: z
+//     .number()
+//     .min(0.01, "Rate must be greater than 0")
+//     .max(1000000, "Rate too large"),
+//   amount: z.number().optional(),
+// });
+
 export const InvoiceItemSchema = z.object({
   id: z.number().optional(),
   description: z
     .string()
     .min(1, "Description is required")
     .max(500, "Description too long"),
-  quantity: z
+  quantity: z.coerce
     .number()
     .min(0.01, "Quantity must be greater than 0")
     .max(10000, "Quantity too large"),
-  rate: z
+  rate: z.coerce
     .number()
-    .min(0.01, "Rate must be greater than 0")
+    .min(0, "Rate cannot be negative") // Changed from 0.01 to 0
     .max(1000000, "Rate too large"),
   amount: z.number().optional(),
 });
@@ -54,7 +72,7 @@ export const InvoiceItemSchema = z.object({
 // Assuming you already have InvoiceItemSchema
 
 export const InvoiceFormDataSchema = z.object({
-  userId: z.string(),
+  userId: z.string().optional(),
   companyId: z.string(),
   clientId: z.string(),
 
@@ -192,13 +210,11 @@ export const ClientSearchSchema = z.object({
   limit: z.number().min(1).max(100).optional(),
 });
 
-import type { FormErrors, Invoice, InvoiceItem } from "@/types/invoice";
-
 export const validateInvoiceForm = (
-  formData: Partial<Invoice>
+  formData: Partial<InvoiceFormData>
 ): {
   isValid: boolean;
-  errors: FormErrors;
+  errors: InvoiceFormErrors;
 } => {
   const result = InvoiceSchema.safeParse(formData);
 
@@ -206,7 +222,7 @@ export const validateInvoiceForm = (
     return { isValid: true, errors: {} };
   }
 
-  const errors: FormErrors = {};
+  const errors: Record<string, string> = {};
   result.error.errors.forEach((error) => {
     const path = error.path.join(".");
     errors[path] = error.message;

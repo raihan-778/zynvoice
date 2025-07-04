@@ -116,3 +116,159 @@ export function useReducedMotion() {
 
   return prefersReducedMotion;
 }
+
+// Section 2: Input Validation Functions
+// function validateInvoiceData(data: InvoiceRequestBody): ValidationError[] {
+//   const errors: ValidationError[] = [];
+
+//   // Required fields validation
+//   if (!data.companyId?.trim()) {
+//     errors.push({ field: "companyId", message: "Company ID is required" });
+//   }
+
+//   if (!data.clientId?.trim()) {
+//     errors.push({ field: "clientId", message: "Client ID is required" });
+//   }
+
+//   if (!data.invoiceNumber?.trim()) {
+//     errors.push({
+//       field: "invoiceNumber",
+//       message: "Invoice number is required",
+//     });
+//   }
+
+//   if (!data.invoiceDate) {
+//     errors.push({ field: "invoiceDate", message: "Invoice date is required" });
+//   }
+
+//   if (!data.dueDate) {
+//     errors.push({ field: "dueDate", message: "Due date is required" });
+//   }
+
+//   // Validate ObjectId format
+//   if (data.companyId && !mongoose.Types.ObjectId.isValid(data.companyId)) {
+//     errors.push({ field: "companyId", message: "Invalid company ID format" });
+//   }
+
+//   if (data.clientId && !mongoose.Types.ObjectId.isValid(data.clientId)) {
+//     errors.push({ field: "clientId", message: "Invalid client ID format" });
+//   }
+
+//   // Validate dates
+//   if (data.invoiceDate && isNaN(Date.parse(data.invoiceDate))) {
+//     errors.push({
+//       field: "invoiceDate",
+//       message: "Invalid invoice date format",
+//     });
+//   }
+
+//   if (data.dueDate && isNaN(Date.parse(data.dueDate))) {
+//     errors.push({ field: "dueDate", message: "Invalid due date format" });
+//   }
+
+//   // Validate due date is after invoice date
+//   if (data.invoiceDate && data.dueDate) {
+//     const invoiceDate = new Date(data.invoiceDate);
+//     const dueDate = new Date(data.dueDate);
+//     if (dueDate <= invoiceDate) {
+//       errors.push({
+//         field: "dueDate",
+//         message: "Due date must be after invoice date",
+//       });
+//     }
+//   }
+
+//   // Validate items array
+//   if (!data.items || !Array.isArray(data.items) || data.items.length === 0) {
+//     errors.push({ field: "items", message: "At least one item is required" });
+//   } else {
+//     data.items.forEach(
+//       (
+//         item: { description: string; quantity: number; rate: number },
+//         index: unknown
+//       ) => {
+//         if (!item.description?.trim()) {
+//           errors.push({
+//             field: `items[${index}].description`,
+//             message: "Item description is required",
+//           });
+//         }
+//         if (!item.quantity || item.quantity <= 0) {
+//           errors.push({
+//             field: `items[${index}].quantity`,
+//             message: "Item quantity must be greater than 0",
+//           });
+//         }
+//         if (item.rate < 0) {
+//           errors.push({
+//             field: `items[${index}].rate`,
+//             message: "Item rate cannot be negative",
+//           });
+//         }
+//       }
+//     );
+//   }
+
+//   // Validate numeric fields
+//   if (data.taxRate < 0 || data.taxRate > 100) {
+//     errors.push({
+//       field: "taxRate",
+//       message: "Tax rate must be between 0 and 100",
+//     });
+//   }
+
+//   if (data.discountValue < 0) {
+//     errors.push({
+//       field: "discountValue",
+//       message: "Discount value cannot be negative",
+//     });
+//   }
+
+//   if (data.discountType === "percentage" && data.discountValue > 100) {
+//     errors.push({
+//       field: "discountValue",
+//       message: "Percentage discount cannot exceed 100%",
+//     });
+//   }
+
+//   if (data.paymentTerms < 0) {
+//     errors.push({
+//       field: "paymentTerms",
+//       message: "Payment terms cannot be negative",
+//     });
+//   }
+
+//   if (data.total < 0) {
+//     errors.push({ field: "total", message: "Total amount cannot be negative" });
+//   }
+
+//   // Validate recurring settings
+//   if (data.recurring?.isRecurring) {
+//     if (!data.recurring.frequency) {
+//       errors.push({
+//         field: "recurring.frequency",
+//         message: "Frequency is required for recurring invoices",
+//       });
+//     }
+//     if (!data.recurring.nextDate) {
+//       errors.push({
+//         field: "recurring.nextDate",
+//         message: "Next date is required for recurring invoices",
+//       });
+//     }
+//     if (data.recurring.nextDate && isNaN(Date.parse(data.recurring.nextDate))) {
+//       errors.push({
+//         field: "recurring.nextDate",
+//         message: "Invalid next date format",
+//       });
+//     }
+//     if (data.recurring.endDate && isNaN(Date.parse(data.recurring.endDate))) {
+//       errors.push({
+//         field: "recurring.endDate",
+//         message: "Invalid end date format",
+//       });
+//     }
+//   }
+
+//   return errors;
+// }

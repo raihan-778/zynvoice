@@ -68,3 +68,78 @@ export interface InvoicePDFData {
     };
   };
 }
+// Define types for our PDF component
+export interface InvoicePDFProps {
+  invoiceData: {
+    invoiceNumber: string;
+    invoiceDate: string | Date;
+    dueDate: string | Date;
+    status: string;
+    currency: string;
+    items: Array<{
+      description: string;
+      quantity: number;
+      rate: number;
+      amount: number;
+      taxRate: number;
+    }>;
+    subtotal: number;
+    taxRate: number;
+    taxAmount: number;
+    discountType: string;
+    discountValue: number;
+    discountAmount: number;
+    total: number;
+    notes?: string;
+    terms?: string;
+    paymentTerms: number;
+  };
+  selectedCompany: {
+    name: string;
+    email: string;
+    phone: string;
+    website?: string;
+    address: {
+      street: string;
+      city: string;
+      state: string;
+      zipCode: string;
+      country: string;
+    };
+    taxId?: string;
+  };
+  selectedClient: {
+    name: string;
+    email: string;
+    phone: string;
+    company?: string;
+    address: {
+      street: string;
+      city: string;
+      state: string;
+      zipCode: string;
+      country: string;
+    };
+  };
+  calculations: {
+    subtotal: number;
+    taxAmount: number;
+    discountAmount: number;
+    total: number;
+  };
+  template: {
+    name: string;
+    primaryColor: string;
+    secondaryColor: string;
+    fontFamily: string;
+    fontSize: number;
+    showLogo: boolean;
+    showCompanyAddress: boolean;
+    showClientAddress: boolean;
+    showInvoiceNumber: boolean;
+    showDates: boolean;
+    showPaymentTerms: boolean;
+    showNotes: boolean;
+    showTerms: boolean;
+  };
+}

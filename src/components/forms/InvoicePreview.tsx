@@ -16,80 +16,6 @@ import {
 import { useEffect, useState } from "react";
 
 // Sample data based on your database types
-const invoiceData = {
-  invoiceNumber: `INV-${Date.now()}`,
-  invoiceDate: new Date("2025-07-02"),
-  dueDate: new Date("2025-08-01"),
-  status: "draft" as const,
-  currency: "USD",
-  items: [
-    {
-      description: "Web Design & Development",
-      quantity: 1,
-      rate: 2500.0,
-      amount: 2500.0,
-      taxRate: 10,
-    },
-    {
-      description: "SEO Optimization",
-      quantity: 3,
-      rate: 300.0,
-      amount: 900.0,
-      taxRate: 10,
-    },
-    {
-      description: "Monthly Maintenance",
-      quantity: 6,
-      rate: 150.0,
-      amount: 900.0,
-      taxRate: 10,
-    },
-  ],
-  subtotal: 4300.0,
-  taxRate: 10,
-  taxAmount: 430.0,
-  discountType: "percentage" as const,
-  discountValue: 5,
-  discountAmount: 215.0,
-  total: 4515.0,
-  notes: "Thank you for your business! Payment is due within 30 days.",
-  terms: "Net 30 days. Late payments may incur a 1.5% monthly service charge.",
-  paymentTerms: 30,
-};
-
-const sampleCompany = {
-  name: "Digital Solutions Inc.",
-  email: "billing@digitalsolutions.com",
-  phone: "+1 (555) 123-4567",
-  website: "www.digitalsolutions.com",
-  address: {
-    street: "123 Business Ave, Suite 100",
-    city: "San Francisco",
-    state: "CA",
-    zipCode: "94102",
-    country: "United States",
-  },
-  taxId: "EIN: 12-3456789",
-  branding: {
-    primaryColor: "#3b82f6",
-    secondaryColor: "#1e40af",
-    fontFamily: "Inter",
-  },
-};
-
-const sampleClient = {
-  name: "Acme Corporation",
-  email: "accounts@acmecorp.com",
-  phone: "+1 (555) 987-6543",
-  company: "Acme Corp",
-  address: {
-    street: "456 Client Street",
-    city: "Los Angeles",
-    state: "CA",
-    zipCode: "90210",
-    country: "United States",
-  },
-};
 
 // Template configurations
 const templates = {
@@ -150,11 +76,14 @@ const templates = {
 };
 
 export const InvoicePreview = ({
-  invoiceData,
-
   selectedClient,
   selectedCompany,
   calculations,
+  invoiceData,
+
+  previewPDF,
+  downloadPDF,
+  generatePDF,
 
   onBack,
   onSubmit,
@@ -177,6 +106,28 @@ export const InvoicePreview = ({
     (typeof templates)[keyof typeof templates]
   >(templates.modern);
   const [previewMode, setPreviewMode] = useState<"edit" | "preview">("preview");
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [error, setError] = useState("");
+
+  // const handleDownloadPDF = async () => {
+  //   await downloadPDF({
+  //     invoiceData,
+  //     selectedCompany,
+  //     selectedClient,
+  //     calculations,
+  //     template: customization,
+  //   });
+  // };
+
+  // const handlePreviewPDF = async () => {
+  //   await previewPDF({
+  //     invoiceData,
+  //     selectedCompany,
+  //     selectedClient,
+  //     calculations,
+  //     template: customization,
+  //   });
+  // };
 
   useEffect(() => {
     return setCustomization(templates[selectedTemplate]);
@@ -272,13 +223,15 @@ export const InvoicePreview = ({
             </h1>
             {customization.showInvoiceNumber && (
               <p className="text-lg font-semibold">
-                {invoiceData.invoiceNumber}
+                {invoiceData?.invoiceNumber}
               </p>
             )}
             <Badge
-              className={`mt-2 ${getStatusColor(invoiceData.status as string)}`}
+              className={`mt-2 ${getStatusColor(
+                invoiceData?.status as string
+              )}`}
             >
-              {invoiceData.status}
+              {invoiceData?.status}
             </Badge>
           </div>
         </div>
@@ -341,7 +294,7 @@ export const InvoicePreview = ({
               >
                 Invoice Date:
               </h4>
-              <p>{formatDate(new Date(invoiceData.invoiceDate as string))}</p>
+              <p>{formatDate(new Date(invoiceData?.invoiceDate as string))}</p>
             </div>
             <div>
               <h4
@@ -350,7 +303,7 @@ export const InvoicePreview = ({
               >
                 Due Date:
               </h4>
-              <p>{formatDate(new Date(invoiceData.dueDate as string))}</p>
+              <p>{formatDate(new Date(invoiceData?.dueDate as string))}</p>
             </div>
             {customization.showPaymentTerms && (
               <div>
@@ -360,7 +313,7 @@ export const InvoicePreview = ({
                 >
                   Payment Terms:
                 </h4>
-                <p>Net {invoiceData.paymentTerms} days</p>
+                <p>Net {invoiceData?.paymentTerms} days</p>
               </div>
             )}
           </div>
@@ -404,12 +357,12 @@ export const InvoicePreview = ({
               </div>
               {invoiceData?.discountValue > 0 && (
                 <div className="flex justify-between text-green-600">
-                  <span>Discount ({invoiceData.discountValue}%):</span>
+                  <span>Discount ({invoiceData?.discountValue}%):</span>
                   <span>-{formatCurrency(calculations.discountAmount)}</span>
                 </div>
               )}
               <div className="flex justify-between">
-                <span>Tax ({invoiceData.taxRate}%):</span>
+                <span>Tax ({invoiceData?.taxRate}%):</span>
                 <span>{formatCurrency(calculations.taxAmount)}</span>
               </div>
               <Separator />
@@ -425,7 +378,7 @@ export const InvoicePreview = ({
         </div>
 
         {/* Notes & Terms */}
-        {customization.showNotes && invoiceData.notes && (
+        {customization.showNotes && invoiceData?.notes && (
           <div className="mb-6">
             <h4
               className="font-semibold mb-2"
@@ -437,7 +390,7 @@ export const InvoicePreview = ({
           </div>
         )}
 
-        {customization.showTerms && invoiceData.terms && (
+        {customization.showTerms && invoiceData?.terms && (
           <div>
             <h4
               className="font-semibold mb-2"
@@ -477,9 +430,22 @@ export const InvoicePreview = ({
             <Copy className="w-4 h-4 mr-2" />
             Duplicate
           </Button>
-          <Button variant="outline">
+          <Button
+            variant="outline"
+            onClick={previewPDF}
+            disabled={isGenerating}
+          >
+            <Eye className="w-4 h-4 mr-2" />
+            {isGenerating ? "Generating..." : "Preview PDF"}
+          </Button>
+          <Button
+            variant="outline"
+            onClick={downloadPDF}
+            disabled={isGenerating}
+          >
             <Download className="w-4 h-4 mr-2" />
-            Download PDF
+            <Eye className="w-4 h-4 mr-2" />
+            {isGenerating ? "Generating..." : "Download PDF"}
           </Button>
           <Button>
             <Send className="w-4 h-4 mr-2" />

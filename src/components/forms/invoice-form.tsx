@@ -3,6 +3,9 @@
 import { InvoiceFormData } from "@/lib/validations/validation";
 import { InvoiceApiResponse } from "@/types/apiResponse";
 import { InvoiceCalculations } from "@/types/database";
+
+import { InvoicePDFProps } from "@/types/pdf";
+import { pdf } from "@react-pdf/renderer";
 import {
   Building2,
   Calculator,
@@ -14,8 +17,9 @@ import {
   Trash2,
   User,
 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useFieldArray, useForm } from "react-hook-form";
+import { InvoicePDF } from "../pdf/InvoicePDFTemplate";
 import { InvoicePreview } from "./InvoicePreview";
 
 // Form data interface matching your invoice schema
@@ -118,6 +122,8 @@ export default function InvoiceFormBuilder() {
   const [companies] = useState(mockCompanies);
   const [clients] = useState(mockClients);
   const [clientSearch, setClientSearch] = useState<string>("");
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [showClientDropdown, setShowClientDropdown] = useState<boolean>(false);
   const [selectedClient, setSelectedClient] = useState<
     (typeof mockClients)[0] | null
@@ -173,9 +179,7 @@ export default function InvoiceFormBuilder() {
   // Update selected company when companyId changes
   useEffect(() => {
     if (watchedCompanyId) {
-      const company = companies.find(
-        (c) => c._id.toString() === watchedCompanyId
-      );
+      const company = companies.find((c) => c._id === watchedCompanyId);
       setSelectedCompany(company ?? null);
     }
   }, [watchedCompanyId, companies]);
@@ -227,7 +231,7 @@ export default function InvoiceFormBuilder() {
 
   const handleClientSelect = (client: any) => {
     setSelectedClient(client);
-    form.setValue("clientId", client._id.toString());
+    form.setValue("clientId", client._id);
     form.setValue("paymentTerms", client.paymentTerms);
     setClientSearch(client.name);
     setShowClientDropdown(false);
@@ -235,14 +239,16 @@ export default function InvoiceFormBuilder() {
     const dueDate = new Date(
       Date.now() + client.paymentTerms * 24 * 60 * 60 * 1000
     );
-    form.setValue("dueDate", dueDate);
+    // ✅ Convert Date to YYYY-MM-DD format
+    const dueDateString = dueDate.toISOString().split("T")[0];
+    form.setValue("dueDate", dueDateString);
   };
 
-  const addLineItem = () => {
+  const addItems = () => {
     append({ description: "", quantity: 1, rate: 0, amount: 0 });
   };
 
-  const removeLineItem = (index: number) => {
+  const removeItem = (index: number) => {
     if (fields.length > 1) {
       remove(index);
     }
@@ -278,6 +284,7 @@ export default function InvoiceFormBuilder() {
 
   // Updated onSubmit function
   const onSubmit = async (data: InvoiceFormData) => {
+    console.log(data);
     setIsLoading(true);
     setApiErrors({});
 
@@ -290,7 +297,12 @@ export default function InvoiceFormBuilder() {
         total: calculations.total,
       };
 
-      const response = await fetch("/api/invoices", {
+      console.log("=== FRONTEND DEBUG ===");
+      console.log("invoiceData:", invoiceData);
+      console.log("JSON.stringify result:", JSON.stringify(invoiceData));
+      console.log("typeof invoiceData:", typeof invoiceData);
+
+      const response = await fetch("/api/invoices/send-invoice", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -299,6 +311,7 @@ export default function InvoiceFormBuilder() {
       });
 
       const result: InvoiceApiResponse = await response.json();
+      console.log(result);
 
       if (!response.ok) {
         if (result.errors) {
@@ -332,6 +345,108 @@ export default function InvoiceFormBuilder() {
     }
   };
 
+  const generatePDF = useCallback(
+    async ({
+      invoiceData,
+      selectedCompany,
+      selectedClient,
+      calculations,
+      template,
+    }: InvoicePDFProps) => {
+      setIsGenerating(true);
+      setError(null);
+
+      // Debug log to see what's null
+      console.log("Data check:", {
+        selectedCompany,
+        selectedClient,
+        template,
+        invoiceData,
+        calculations,
+      });
+      try {
+        // Add these checks at the beginning
+
+        if (!invoiceData) {
+          console.error("Invoice data is null/undefined");
+          return;
+        }
+        if (!template) {
+          console.error("Template is null/undefined");
+          return;
+        }
+
+        if (!selectedClient) {
+          console.error("Selected client is null/undefined");
+          return;
+        }
+
+        if (!selectedCompany) {
+          console.error("Selected company is null/undefined");
+          return;
+        }
+        // Generate PDF blob
+        const doc = (
+          <InvoicePDF
+            invoiceData={invoiceData}
+            selectedCompany={selectedCompany}
+            selectedClient={selectedClient}
+            calculations={calculations}
+            template={template}
+          />
+        );
+
+        const blob = await pdf(doc).toBlob();
+        return blob;
+      } catch (err) {
+        const errorMessage =
+          err instanceof Error ? err.message : "Failed to generate PDF";
+        setError(errorMessage);
+        throw new Error(errorMessage);
+      } finally {
+        setIsGenerating(false);
+      }
+    },
+    []
+  );
+
+  const downloadPDF = useCallback(
+    async (props: InvoicePDFProps, filename?: string) => {
+      try {
+        const blob = await generatePDF(props);
+        const url = URL.createObjectURL(blob);
+
+        const link = document.createElement("a");
+        link.href = url;
+        link.download =
+          filename || `invoice-${props.invoiceData.invoiceNumber}.pdf`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+      } catch (err) {
+        console.error("Error downloading PDF:", err);
+        setError(null);
+      }
+    },
+    [generatePDF]
+  );
+
+  const previewPDF = useCallback(
+    async (props: UseInvoicePDFProps) => {
+      try {
+        const blob = await generatePDF(props);
+        const url = URL.createObjectURL(blob);
+        window.open(url, "_blank");
+        // Clean up URL after a delay to allow the browser to load it
+        setTimeout(() => URL.revokeObjectURL(url), 1000);
+      } catch (err) {
+        console.error("Error previewing PDF:", err);
+      }
+    },
+    [generatePDF]
+  );
+
   const selectedCurrency = currencies.find(
     (c) => c.code === form.watch("currency")
   );
@@ -355,6 +470,10 @@ export default function InvoiceFormBuilder() {
             selectedClient={selectedClient}
             selectedCompany={selectedCompany}
             onBack={handleBackToEdit}
+            previewPDF={previewPDF}
+            downloadPDF={downloadPDF}
+            generatePDF={generatePDF}
+            error={error}
           />
         ) : (
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
@@ -664,7 +783,7 @@ export default function InvoiceFormBuilder() {
                 </div>
                 <button
                   type="button"
-                  onClick={addLineItem}
+                  onClick={addItems}
                   className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
                 >
                   <Plus className="w-4 h-4" />
@@ -705,13 +824,14 @@ export default function InvoiceFormBuilder() {
                       <input
                         type="number"
                         step="0.01"
-                        min="0.01"
+                        min="0"
                         {...form.register(`items.${index}.quantity`, {
                           required: "Quantity is required",
                           min: {
                             value: 0.01,
                             message: "Quantity must be greater than 0",
                           },
+                          valueAsNumber: true, // Added this line
                         })}
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-center"
                       />
@@ -731,6 +851,7 @@ export default function InvoiceFormBuilder() {
                               value: 0,
                               message: "Rate cannot be negative",
                             },
+                            valueAsNumber: true,
                           })}
                           className="flex-1 px-3 py-2 border border-gray-300 rounded-r-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-center"
                         />
@@ -746,7 +867,7 @@ export default function InvoiceFormBuilder() {
                     <div className="col-span-1 flex justify-center">
                       <button
                         type="button"
-                        onClick={() => removeLineItem(index)}
+                        onClick={() => removeItem(index)}
                         disabled={fields.length === 1}
                         className="p-2 text-red-600 hover:bg-red-50 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                       >
@@ -776,7 +897,7 @@ export default function InvoiceFormBuilder() {
                         step="0.01"
                         min="0"
                         max="100"
-                        {...form.register("taxRate")}
+                        {...form.register("taxRate", { valueAsNumber: true })}
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                       />
                     </div>
@@ -809,7 +930,9 @@ export default function InvoiceFormBuilder() {
                             type="number"
                             step="0.01"
                             min="0"
-                            {...form.register("discountValue")}
+                            {...form.register("discountValue", {
+                              valueAsNumber: true,
+                            })}
                             className="flex-1 px-3 py-2 border border-gray-300 rounded-r-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                           />
                         </div>
