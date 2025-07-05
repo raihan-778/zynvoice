@@ -3,6 +3,7 @@ import React, { useCallback, useEffect } from "react";
 
 import { useInvoiceStore } from "@/stors/invoiceStore";
 import { pdf } from "@react-pdf/renderer";
+import { RefreshCw } from "lucide-react";
 import { InvoicePDF } from "../pdf/InvoicePDFTemplate";
 
 export const InvoiceFormBuilder: React.FC = () => {
@@ -19,6 +20,7 @@ export const InvoiceFormBuilder: React.FC = () => {
     templates,
     isGenerating,
     error,
+    invoiceNumber,
 
     // Actions
     setInvoiceData,
@@ -33,6 +35,7 @@ export const InvoiceFormBuilder: React.FC = () => {
     setIsGenerating,
     setError,
     getInvoicePDFProps,
+    generateInvoiceNumber,
     calculateTotals,
     resetInvoice,
   } = useInvoiceStore();
@@ -43,33 +46,23 @@ export const InvoiceFormBuilder: React.FC = () => {
       try {
         // Load companies
         const companiesResponse = await fetch("/api/companies/get-company");
-        const companiesData = await companiesResponse.json();
-        console.log(companiesData);
+        const companyData = await companiesResponse.json();
+        const companies = await companyData.data.companies;
 
-        // Verify and set companies data
-        if (companiesData && Array.isArray(companiesData)) {
-          setCompanies(companiesData);
-
-          // Auto-select first company if available
-          if (companiesData.length > 0) {
-            setCompanies(companiesData);
-            setSelectedCompany(companiesData[0]);
-          }
-        }
+        console.log(companies);
+        setCompanies(companies);
         console.log(companies);
 
         // Load clients
         const clientsResponse = await fetch("/api/clients/get-client");
-        const clientsData = await clientsResponse.json();
+        const data = await clientsResponse.json();
+        console.log(data);
+        const clientsData = await data.data;
+        setClients(clientsData);
 
-        // Auto-select first company if available
-        if (clientsData && Array.isArray(clientsData)) {
-          setClients(clientsData);
-          if (clientsData.length > 0) {
-            setSelectedClient(clientsData[0]);
-          }
-        }
-        console.log(companies, clients);
+        console.log("clients Data", clients);
+
+        console.log("Companies:", companies, "Clients:", clients);
       } catch (error) {
         console.error("Error loading initial data:", error);
         setError("Failed to load initial data");
@@ -78,8 +71,6 @@ export const InvoiceFormBuilder: React.FC = () => {
 
     loadInitialData();
   }, [
-    companies,
-    clients,
     setClients,
     setCompanies,
     setSelectedCompany,
@@ -201,6 +192,10 @@ export const InvoiceFormBuilder: React.FC = () => {
     [updateItem, invoiceData.items]
   );
 
+  const handleGenerateInvoiceNumber = () => {
+    generateInvoiceNumber();
+  };
+
   // Check if all required data is available
   const canGeneratePDF =
     selectedCompany && selectedClient && invoiceData.items.length > 0;
@@ -271,15 +266,23 @@ export const InvoiceFormBuilder: React.FC = () => {
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Invoice Number
             </label>
-            <input
-              type="text"
-              value={invoiceData.invoiceNumber}
-              onChange={(e) =>
-                setInvoiceData({ invoiceNumber: e.target.value })
-              }
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="INV-001"
-            />
+            <div className="flex">
+              {" "}
+              <input
+                type="text"
+                value={invoiceNumber}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="INV-001"
+              />{" "}
+              <button
+                type="button"
+                onClick={generateInvoiceNumber}
+                className="px-3 py-2 bg-gray-200 border border-l-0 border-gray-300 rounded-r-lg hover:bg-gray-300 transition-colors"
+                title="Generate new invoice number"
+              >
+                <RefreshCw className="w-4 h-4" />
+              </button>
+            </div>
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -366,7 +369,7 @@ export const InvoiceFormBuilder: React.FC = () => {
                   />
                 </div>
                 <button
-                  onClick={() => removeItem(item.id)}
+                  onClick={() => removeItem(item?.id)}
                   className="text-red-500 hover:text-red-700 p-2"
                 >
                   Remove

@@ -13,6 +13,7 @@ import { devtools } from "zustand/middleware";
 interface InvoiceStore {
   // State
   invoiceData: InvoiceFormData;
+
   selectedCompany: CompanyInfo | null;
   selectedClient: ClientInfo | null;
   calculations: InvoiceCalculations;
@@ -24,6 +25,12 @@ interface InvoiceStore {
   // UI State
   isGenerating: boolean;
   error: string | null;
+  isLoading: boolean;
+  previewMode: boolean;
+  showClientDropdown: boolean;
+  clientSearch: string;
+  apiErrors: ApiErrors;
+  invoiceNumber: string;
 
   // Actions
   setInvoiceData: (data: Partial<InvoiceFormData>) => void;
@@ -34,6 +41,19 @@ interface InvoiceStore {
   setCompanies: (companies: CompanyInfo[]) => void;
   setClients: (clients: ClientInfo[]) => void;
   setTemplates: (templates: ITemplate[]) => void;
+
+  resetForm: () => void;
+  updateFormData: (data: Partial<InvoiceFormData>) => void;
+
+  setIsLoading: (loading: boolean) => void;
+
+  setPreviewMode: (preview: boolean) => void;
+  setShowClientDropdown: (show: boolean) => void;
+  setClientSearch: (value: string) => void;
+
+  setApiErrors: (errors: ApiErrors) => void;
+
+  generateInvoiceNumber: () => void;
 
   // Invoice Items
   addItem: (item: InvoiceItem) => void;
@@ -199,6 +219,18 @@ export const useInvoiceStore = create<InvoiceStore>()(
           false,
           "clearItems"
         ),
+      invoiceNumber: "",
+
+      generateInvoiceNumber: () => {
+        const timestamp = Date.now();
+        const randomSuffix = Math.floor(Math.random() * 1000)
+          .toString()
+          .padStart(3, "0");
+
+        const generated = `INV-${timestamp}-${randomSuffix}`;
+
+        set({ invoiceNumber: generated }, false, "generateInvoiceNumber");
+      },
 
       // UI Actions
       setIsGenerating: (isGenerating) =>

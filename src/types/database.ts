@@ -236,3 +236,6 @@ export interface InvoicePdfProps {
   calculations: InvoiceCalculations;
   template: ITemplate;
 }
+export type ClientsResponse = {
+  clients: ClientInfo[];
+};
