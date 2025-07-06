@@ -1,7 +1,7 @@
 // 📁 src/app/invoice/page.tsx
 "use client";
 
-import InvoiceForm1 from "@/components/forms/invoiceForm1";
+import InvoiceForm from "@/components/forms/invoice-form";
 // import InvoiceFormBuilder from "@/components/forms/invoiceFormBuilder";
 import MainLayout from "@/components/layout/Main-Layout";
 
@@ -20,7 +20,7 @@ export default function InvoicePage() {
           </p>
         </div>
 
-        <InvoiceForm1 />
+        <InvoiceForm />
       </div>
     </MainLayout>
   );

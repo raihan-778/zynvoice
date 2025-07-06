@@ -2,7 +2,7 @@
 
 import { InvoiceFormData } from "@/lib/validations/validation";
 import { InvoiceApiResponse } from "@/types/apiResponse";
-import { InvoiceCalculations } from "@/types/database";
+import { InvoiceCalculations, InvoicePdfProps } from "@/types/database";
 
 import { InvoicePDFProps } from "@/types/pdf";
 import { pdf } from "@react-pdf/renderer";
@@ -21,6 +21,7 @@ import { useCallback, useEffect, useState } from "react";
 import { useFieldArray, useForm } from "react-hook-form";
 import { InvoicePDF } from "../pdf/InvoicePDFTemplate";
 import { InvoicePreview } from "./InvoicePreview";
+import { useInvoiceStore } from "@/stors/invoiceStore";
 
 // Form data interface matching your invoice schema
 
@@ -115,6 +116,7 @@ export default function InvoiceForm() {
     { value: "quarterly", label: "Quarterly" },
     { value: "yearly", label: "Yearly" },
   ];
+  const {getInvoicePDFProps}=useInvoiceStore()
 
   // Add loading state to your component
   const [isLoading, setIsLoading] = useState(false);
@@ -433,7 +435,7 @@ export default function InvoiceForm() {
   );
 
   const previewPDF = useCallback(
-    async (props: UseInvoicePDFProps) => {
+    async (props: InvoicePdfProps) => {
       try {
         const blob = await generatePDF(props);
         const url = URL.createObjectURL(blob);
@@ -473,6 +475,7 @@ export default function InvoiceForm() {
             previewPDF={previewPDF}
             downloadPDF={downloadPDF}
             generatePDF={generatePDF}
+            getInvoicePDFProps={getInvoicePDFProps}
             error={error}
           />
         ) : (

@@ -34,22 +34,24 @@ export const ClientInfoSchema = z.object({
     .optional(),
 });
 
-export const InvoiceItemSchema = z.object({
-  id: z.string().optional(),
-  description: z
-    .string()
-    .min(1, "Description is required")
-    .max(500, "Description too long"),
-  quantity: z.coerce
-    .number()
-    .min(0.01, "Quantity must be greater than 0")
-    .max(10000, "Quantity too large"),
-  rate: z.coerce
-    .number()
-    .min(0, "Rate cannot be negative") // Changed from 0.01 to 0
-    .max(1000000, "Rate too large"),
-  amount: z.number(),
-});
+export const InvoiceItemSchema = z
+  .object({
+    id: z.string().optional(),
+    description: z
+      .string()
+      .min(1, "Description is required")
+      .max(500, "Description too long"),
+    quantity: z.coerce
+      .number()
+      .min(0.01, "Quantity must be greater than 0")
+      .max(10000, "Quantity too large"),
+    rate: z.coerce
+      .number()
+      .min(0, "Rate cannot be negative") // Changed from 0.01 to 0
+      .max(1000000, "Rate too large"),
+    amount: z.number(),
+  })
+  .optional();
 
 const dateString = z.string().refine(
   (date) => {

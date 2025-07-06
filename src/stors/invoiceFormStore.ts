@@ -4,6 +4,7 @@ import {
   InvoiceFormData,
   InvoiceItem,
 } from "@/lib/validations/validation";
+
 import { create } from "zustand";
 import { devtools } from "zustand/middleware";
 
@@ -38,8 +39,10 @@ export interface InvoiceState {
   selectedCompany: CompanyInfo | null;
   error: string | null;
 
-  // Validation errors
+  // errorHandelingState
   formErrors: FormErrors;
+  apiErrors: Record<string, string>; // ✅ This handles your {apiErrors.companyId}
+  generalError: string | null;
 }
 
 export interface InvoiceActions {
@@ -50,6 +53,11 @@ export interface InvoiceActions {
   updateItem: (index: number, field: keyof InvoiceItem, value: any) => void;
   addItem: () => void;
   removeItem: (index: number) => void;
+  setApiErrors: (errors: Record<string, string>) => void;
+  clearApiErrors: () => void;
+  setGeneralError: (error: string | null) => void;
+  updateFormData: (data: Partial<InvoiceFormData>) => void;
+  submitForm: () => Promise<void>;
 
   // UI actions
 
@@ -89,8 +97,7 @@ export interface InvoiceActions {
 
 export type InvoiceStore = InvoiceState & InvoiceActions;
 
-// Default form state
-const defaultInvoiceForm: InvoiceFormData = {
+const defaultInvoiceForm: Partial<InvoiceFormData> = {
   companyId: "",
   clientId: "",
   invoiceNumber: "",
@@ -112,7 +119,7 @@ const defaultInvoiceForm: InvoiceFormData = {
 };
 
 // Create the store
-const useInvoiceStore = create<InvoiceStore>()(
+const useInvoiceFormStore = create<InvoiceStore>()(
   devtools(
     (set, get) => ({
       // Initial state
@@ -176,31 +183,56 @@ const useInvoiceStore = create<InvoiceStore>()(
         }),
 
       addItem: () =>
-        set((state) => ({
-          invoiceForm: {
-            ...state.invoiceForm,
-            items: [
-              ...state.invoiceForm.items,
-              {
-                description: "",
-                quantity: 1,
-                rate: 0,
-                amount: 0,
-              },
-            ],
-          },
-        })),
+        set((state) => {
+          const newItem = {
+            id: crypto.randomUUID(),
+            description: "New Item",
+            quantity: 1,
+            rate: 0,
+            amount: 0,
+          };
 
-      removeItem: (index) =>
-        set((state) => ({
-          invoiceForm: {
-            ...state.invoiceForm,
-            items:
-              state.invoiceForm.items.length > 1
-                ? state.invoiceForm.items.filter((_, i) => i !== index)
-                : state.invoiceForm.items,
-          },
-        })),
+          const newState = {
+            invoiceForm: {
+              ...state.invoiceForm,
+              items: [...state.invoiceForm.items, newItem],
+            },
+          };
+
+          // Calculate totals for the new item
+          const updatedItems = newState.invoiceForm.items.map((item) => ({
+            ...item,
+            amount: item.quantity * item.rate,
+          }));
+
+          return {
+            ...newState,
+            invoiceForm: {
+              ...newState.invoiceForm,
+              items: updatedItems,
+            },
+          };
+        }),
+
+      removeItem: (index: number) =>
+        set((state) => {
+          // Don't remove if it's the last item
+          if (state.invoiceForm?.items?.length <= 1) {
+            return state;
+          }
+
+          // Remove the item at the specified index
+          const updatedItems = state.invoiceForm?.items?.filter(
+            (_, i) => i !== index
+          );
+
+          return {
+            invoiceForm: {
+              ...state.invoiceForm,
+              items: updatedItems,
+            },
+          };
+        }),
 
       // UI actions
       setPreviewMode: (mode) => set({ previewMode: mode }),
@@ -229,7 +261,7 @@ const useInvoiceStore = create<InvoiceStore>()(
         if (!invoiceForm.dueDate) errors.dueDate = "Due date is required";
 
         // Validate items
-        invoiceForm.items.forEach((item, index) => {
+        invoiceForm?.items?.forEach((item, index) => {
           if (!item.description.trim()) {
             errors[`items.${index}.description`] = "Description is required";
           }
@@ -273,6 +305,83 @@ const useInvoiceStore = create<InvoiceStore>()(
         };
       },
 
+      updateFormData: (data: Partial<InvoiceFormData>) =>
+        set((state) => {
+          const newApiErrors = { ...state.apiErrors };
+
+          // Clear errors for updated fields
+          Object.keys(data).forEach((key) => {
+            delete newApiErrors[key];
+          });
+
+          return {
+            invoiceForm: {
+              ...state.invoiceForm,
+              ...data,
+            },
+            apiErrors: newApiErrors,
+          };
+        }),
+      setApiErrors: (errors: Record<string, string>) =>
+        set(() => ({ apiErrors: errors })),
+
+      clearApiErrors: () => set(() => ({ apiErrors: {} })),
+
+      // Form submission with error handling
+      submitForm: async () => {
+        const { invoiceForm, setIsLoading, setApiErrors, setGeneralError } =
+          get();
+
+        // Clear previous errors
+        setApiErrors({});
+        setGeneralError(null);
+        setIsLoading(true);
+
+        try {
+          const response = await fetch("/api/invoices/send-invoice", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify(invoiceForm),
+          });
+
+          const result = await response.json();
+
+          if (!response.ok) {
+            // Handle field-specific errors
+            if (result.errors) {
+              setApiErrors(result.errors); // ✅ This sets the errors your JSX displays
+            }
+
+            // Handle general error
+            if (result.message) {
+              setGeneralError(result.message);
+            }
+
+            throw new Error(result.message || "Failed to create invoice");
+          }
+
+          // Success - clear all errors
+          setApiErrors({});
+          setGeneralError(null);
+
+          // Handle success (maybe redirect or show success message)
+          console.log("Invoice created successfully:", result.data);
+        } catch (error) {
+          // Handle network or other errors
+          if (!get().generalError) {
+            setGeneralError(
+              error instanceof Error
+                ? error.message
+                : "An unexpected error occurred"
+            );
+          }
+        } finally {
+          setIsLoading(false);
+        }
+      },
+
       // Reset form
       resetForm: () =>
         set({
@@ -307,4 +416,4 @@ const useInvoiceStore = create<InvoiceStore>()(
   )
 );
 
-export default useInvoiceStore;
+export default useInvoiceFormStore;

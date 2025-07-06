@@ -20,6 +20,9 @@ import {
   User,
 } from "lucide-react";
 import { InvoicePDF } from "../pdf/InvoicePDFTemplate";
+import { Label } from "../ui/label";
+import { useInvoiceFormStore } from "@/stors/invoiceFormStore";
+import { CompanyInfo } from "@/lib/validations/validation";
 
 // Form data interface matching your invoice schema
 
@@ -32,6 +35,7 @@ export default function InvoiceForm1() {
     formErrors,
     selectedClient,
     selectedCompany,
+
     clientSearch,
     showClientDropdown,
     isLoading,
@@ -50,7 +54,48 @@ export default function InvoiceForm1() {
     validateForm,
     resetForm,
     setPreviewMode,
-  } = useStore();
+  } = useInvoiceFormStore();
+
+  const [clients, setClients] = useState([]);
+  const [companies, setCompanies] = useState([]);
+
+  // Load initial data
+  useEffect(() => {
+    const loadInitialData = async () => {
+      try {
+        // Load companies
+        const companiesResponse = await fetch("/api/companies/get-company");
+        const companyData = await companiesResponse.json();
+        const companies = await companyData.data.companies;
+
+        console.log(companies);
+        setCompanies(companies);
+        console.log(companies);
+
+        // Load clients
+        const clientsResponse = await fetch("/api/clients/get-client");
+        const data = await clientsResponse.json();
+        console.log(data);
+        const clientsData = await data.data;
+        setClients(clientsData);
+
+        console.log("clients Data", clients);
+
+        console.log("Companies:", companies, "Clients:", clients);
+      } catch (error) {
+        console.error("Error loading initial data:", error);
+        setError("Failed to load initial data");
+      }
+    };
+
+    loadInitialData();
+  }, [
+    setClients,
+    setCompanies,
+    setSelectedCompany,
+    setSelectedClient,
+    setError,
+  ]);
 
   // Helper functions
   const handleInputChange = (field, value) => {
@@ -115,7 +160,7 @@ export default function InvoiceForm1() {
       <div>
         {previewMode ? (
           <InvoicePreview
-            invoiceData={invoiceData}
+            invoiceData={invoiceForm}
             calculations={calculations}
             selectedClient={selectedClient}
             selectedCompany={selectedCompany}
@@ -138,30 +183,33 @@ export default function InvoiceForm1() {
                   </h2>
                 </div>
 
+                {/* // Company Selection Form - Updated for Zustand */}
                 <div className="space-y-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <Label className="block text-sm font-medium text-gray-700 mb-2">
                       Select Company *
-                    </label>
+                    </Label>
                     <select
-                      {...form.register("companyId", {
-                        required: "Company selection is required",
-                      })}
+                      value={invoiceForm.companyId}
+                      onChange={(e) =>
+                        handleInputChange("companyId", e.target.value)
+                      }
                       className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
+                      required
                     >
                       <option value="">Choose your company...</option>
-                      {companies.map((company) => (
+                      {companies.map((company: CompanyInfo) => (
                         <option
-                          key={company._id.toString()}
-                          value={company._id.toString()}
+                          key={company?._id?.toString()}
+                          value={company?._id?.toString()}
                         >
                           {company.name}
                         </option>
                       ))}
                     </select>
-                    {form.formState.errors.companyId && (
+                    {apiErrors.companyId && (
                       <p className="text-red-500 text-sm mt-1">
-                        {form.formState.errors.companyId.message}
+                        {apiErrors.companyId}
                       </p>
                     )}
                   </div>

@@ -79,37 +79,42 @@ const templates = {
 
 const {
   // State
-  invoiceData,
-  selectedCompany,
-  selectedClient,
-  calculations,
-  template,
-  companies,
-  clients,
-
-  isGenerating,
-  error,
-  invoiceNumber,
-
+  // invoiceData,
+  // selectedCompany,
+  // selectedClient,
+  // calculations,
+  // template,
+  // companies,
+  // clients,
+  // isGenerating,
+  // error,
+  // invoiceNumber,
   // Actions
-  setInvoiceData,
-  setSelectedCompany,
-  setSelectedClient,
-  setTemplate,
-  setCompanies,
-  setClients,
-  addItem,
-  updateItem,
-  removeItem,
-  setIsGenerating,
-  setError,
-  getInvoicePDFProps,
-  generateInvoiceNumber,
-  calculateTotals,
-  resetInvoice,
+  // setInvoiceData,
+  // setSelectedCompany,
+  // setSelectedClient,
+  // setTemplate,
+  // setCompanies,
+  // setClients,
+  // addItem,
+  // updateItem,
+  // removeItem,
+  // setIsGenerating,
+  // setError,
+  // generateInvoiceNumber,
+  // calculateTotals,
+  // getInvoicePDFProps,
+  // resetInvoice,
 } = useInvoiceStore;
 
-export const InvoicePreview = ({}) => {
+export const InvoicePreview = ({
+  invoiceData,
+  calculations,
+  selectedClient,
+  selectedCompany,
+  onBack,
+  template,
+}) => {
   const [selectedTemplate, setSelectedTemplate] =
     useState<keyof typeof templates>("modern");
   const [customization, setCustomization] = useState<
@@ -119,14 +124,19 @@ export const InvoicePreview = ({}) => {
   const [isGenerating, setIsGenerating] = useState(false);
   const [error, setError] = useState("");
 
-  // Generate PDF function - now much simpler!
   const generatePDF = useCallback(async () => {
     setIsGenerating(true);
     setError("");
 
     try {
       // Get all required data from store
-      const pdfProps = getInvoicePDFProps();
+      const pdfProps = {
+        invoiceData,
+        selectedClient,
+        selectedCompany,
+        calculations,
+        template,
+      };
 
       if (!pdfProps) {
         throw new Error(
@@ -139,10 +149,10 @@ export const InvoicePreview = ({}) => {
       const doc = (
         <InvoicePDF
           calculations={pdfProps.calculations}
-          template={pdfProps.template}
           invoiceData={pdfProps.invoiceData}
           selectedCompany={pdfProps.selectedCompany}
           selectedClient={pdfProps.selectedClient}
+          template={pdfProps.template}
         />
       );
 
@@ -187,7 +197,7 @@ export const InvoicePreview = ({}) => {
     } catch (error) {
       console.error("Error downloading PDF:", error);
     }
-  }, [generatePDF]);
+  }, [generatePDF, invoiceData?.invoiceNumber]);
 
   useEffect(() => {
     return setCustomization(templates[selectedTemplate]);
@@ -500,7 +510,7 @@ export const InvoicePreview = ({}) => {
           </Button>
           <Button
             variant="outline"
-            onClick={downloadPDF}
+            onClick={() => downloadPDF}
             disabled={isGenerating}
           >
             <Download className="w-4 h-4 mr-2" />

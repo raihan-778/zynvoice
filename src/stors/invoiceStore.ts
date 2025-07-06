@@ -109,11 +109,11 @@ const defaultTemplate: Partial<ITemplate> = {
 
 const defaultInvoiceData: Partial<InvoiceFormData> = {
   invoiceNumber: "",
-  invoiceDate: new Date(),
-  dueDate: new Date(),
+  invoiceDate: new Date().toISOString().split("T")[0],
+  dueDate: "",
   status: "draft",
   currency: "USD",
-  items: [],
+  items: { id: "", description: "", quantity: 1, rate: 0, amount: 0 },
   subtotal: 0,
   taxRate: 0,
   taxAmount: 0,
@@ -125,6 +125,14 @@ const defaultInvoiceData: Partial<InvoiceFormData> = {
   terms: "",
 
   paymentTerms: 30,
+  companyId: "",
+  clientId: "",
+  recurring: {
+    isRecurring: false,
+    frequency: "monthly",
+    nextDate: "",
+    endDate: "",
+  },
 };
 
 const defaultCalculations: InvoiceCalculations = {
@@ -189,8 +197,8 @@ export const useInvoiceStore = create<InvoiceStore>()(
         set(
           (state) => ({
             invoiceData: {
-              ...state.invoiceData,
-              items: [...state.invoiceData.items, item],
+              ...state?.invoiceData,
+              items: [...state.invoiceData?.items, item],
             },
           }),
           false,
@@ -202,7 +210,7 @@ export const useInvoiceStore = create<InvoiceStore>()(
           (state) => ({
             invoiceData: {
               ...state.invoiceData,
-              items: state.invoiceData.items.map((item) =>
+              items: state?.invoiceData?.items?.map((item) =>
                 item.id === id ? { ...item, ...updates } : item
               ),
             },
