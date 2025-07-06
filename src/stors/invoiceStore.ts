@@ -5,7 +5,12 @@ import {
   InvoiceFormData,
   InvoiceItem,
 } from "@/lib/validations/validation";
-import { InvoiceCalculations, ITemplate } from "@/types/database";
+import { ErrorResponse } from "@/types/apiResponse";
+import {
+  InvoiceCalculations,
+  InvoiceFormErrors,
+  ITemplate,
+} from "@/types/database";
 import { create } from "zustand";
 import { devtools } from "zustand/middleware";
 
@@ -24,12 +29,13 @@ interface InvoiceStore {
 
   // UI State
   isGenerating: boolean;
+  validationErrors: InvoiceFormErrors;
   error: string | null;
   isLoading: boolean;
   previewMode: boolean;
   showClientDropdown: boolean;
   clientSearch: string;
-  apiErrors: ApiErrors;
+  apiErrors: ErrorResponse;
   invoiceNumber: string;
 
   // Actions
@@ -51,7 +57,7 @@ interface InvoiceStore {
   setShowClientDropdown: (show: boolean) => void;
   setClientSearch: (value: string) => void;
 
-  setApiErrors: (errors: ApiErrors) => void;
+  setApiErrors: (errors: ErrorResponse) => void;
 
   generateInvoiceNumber: () => void;
 
@@ -64,6 +70,7 @@ interface InvoiceStore {
   // UI Actions
   setIsGenerating: (isGenerating: boolean) => void;
   setError: (error: string | null) => void;
+  setvalidationErrors: (formValidationError: InvoiceFormErrors) => void;
 
   // Computed getters
   getInvoicePDFProps: () => {
@@ -114,6 +121,7 @@ const defaultInvoiceData: Partial<InvoiceFormData> = {
   total: 0,
   notes: "",
   terms: "",
+
   paymentTerms: 30,
 };
 
@@ -141,6 +149,7 @@ export const useInvoiceStore = create<InvoiceStore>()(
       // UI State
       isGenerating: false,
       error: null,
+      formValidationError: false,
 
       // Actions
       setInvoiceData: (data) =>
@@ -237,7 +246,8 @@ export const useInvoiceStore = create<InvoiceStore>()(
         set({ isGenerating }, false, "setIsGenerating"),
 
       setError: (error) => set({ error }, false, "setError"),
-
+      setvalidationErrors: (validationErrors: InvoiceFormErrors) =>
+        set({ validationErrors }, false, "setFormValidationError"),
       // Computed getters
       getInvoicePDFProps: () => {
         const state = get();

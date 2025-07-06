@@ -1,6 +1,5 @@
-import { CompanyInfo, InvoiceFormData } from "@/lib/validations/validation";
 // types/database.ts
-import { ClientInfo } from "@/lib/validations/validation";
+
 import { Document, Types } from "mongoose";
 
 // Base interface for all documents

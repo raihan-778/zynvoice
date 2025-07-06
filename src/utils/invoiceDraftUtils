@@ -1,0 +1,454 @@
+// types/invoice.ts
+export interface InvoiceItem {
+  id: string;
+  description: string;
+  quantity: number;
+  rate: number;
+  amount: number;
+}
+
+export interface InvoiceData {
+  companyId: string;
+  clientId: string;
+  invoiceNumber: string;
+  invoiceDate: string;
+  dueDate: string;
+  currency: string;
+  items: InvoiceItem[];
+  taxRate: number;
+  discountType: "percentage" | "fixed";
+  discountValue: number;
+  notes: string;
+  terms: string;
+  recurring: {
+    isRecurring: boolean;
+    frequency: string;
+    nextDate: string;
+    endDate: string;
+  };
+  paymentTerms: number;
+}
+
+export interface InvoiceDraft extends InvoiceData {
+  draftId: string;
+  status: "draft";
+  isDraft: true;
+  createdAt: string;
+  updatedAt: string;
+  userId?: string;
+}
+
+export interface DraftResponse {
+  success: boolean;
+  message: string;
+  draft?: InvoiceDraft;
+  error?: string;
+}
+
+// stores/invoiceStore.ts
+import { create } from "zustand";
+import { persist, createJSONStorage } from "zustand/middleware";
+
+interface InvoiceStore {
+  invoiceData: InvoiceData;
+  validationErrors: Record<string, string>;
+  isLoading: boolean;
+  drafts: InvoiceDraft[];
+
+  // Actions
+  setInvoiceData: (data: Partial<InvoiceData>) => void;
+  setValidationErrors: (errors: Record<string, string>) => void;
+  setIsLoading: (loading: boolean) => void;
+  setDrafts: (drafts: InvoiceDraft[]) => void;
+  handleFieldChange: (field: string, value: any) => void;
+  resetForm: () => void;
+
+  // Draft specific actions
+  saveAsDraft: (saveToServer?: boolean) => Promise<DraftResponse>;
+  loadDrafts: () => Promise<InvoiceDraft[]>;
+  loadDraft: (draftId: string) => Promise<boolean>;
+  deleteDraft: (draftId: string) => Promise<boolean>;
+}
+
+const initialInvoiceData: InvoiceData = {
+  companyId: "",
+  clientId: "",
+  invoiceNumber: "",
+  invoiceDate: "",
+  dueDate: "",
+  currency: "USD",
+  items: [],
+  taxRate: 0,
+  discountType: "percentage",
+  discountValue: 0,
+  notes: "",
+  terms: "",
+  recurring: {
+    isRecurring: false,
+    frequency: "monthly",
+    nextDate: "",
+    endDate: "",
+  },
+  paymentTerms: 30,
+};
+
+export const useInvoiceStore = create<InvoiceStore>()(
+  persist(
+    (set, get) => ({
+      invoiceData: initialInvoiceData,
+      validationErrors: {},
+      isLoading: false,
+      drafts: [],
+
+      setInvoiceData: (data) =>
+        set((state) => ({
+          invoiceData: { ...state.invoiceData, ...data },
+        })),
+
+      setValidationErrors: (errors) => set({ validationErrors: errors }),
+
+      setIsLoading: (loading) => set({ isLoading: loading }),
+
+      setDrafts: (drafts) => set({ drafts }),
+
+      handleFieldChange: (field, value) =>
+        set((state) => ({
+          invoiceData: { ...state.invoiceData, [field]: value },
+        })),
+
+      resetForm: () =>
+        set({
+          invoiceData: initialInvoiceData,
+          validationErrors: {},
+        }),
+
+      // Save as draft with both local and server options
+      saveAsDraft: async (saveToServer = true): Promise<DraftResponse> => {
+        const { invoiceData, setIsLoading } = get();
+
+        try {
+          setIsLoading(true);
+
+          const draftData: InvoiceDraft = {
+            ...invoiceData,
+            draftId: `draft_${Date.now()}_${Math.random()
+              .toString(36)
+              .substr(2, 9)}`,
+            status: "draft",
+            isDraft: true,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+          };
+
+          // Always save to localStorage first (for offline support)
+          const localResult = await saveToLocalStorage(draftData);
+          if (!localResult.success) {
+            throw new Error(localResult.error);
+          }
+
+          // Save to server if requested and online
+          if (saveToServer && navigator.onLine) {
+            try {
+              const serverResult = await saveToServer(draftData);
+              if (serverResult.success) {
+                return {
+                  success: true,
+                  message: "Draft saved successfully to server and locally",
+                  draft: draftData,
+                };
+              } else {
+                // Server failed but local succeeded
+                return {
+                  success: true,
+                  message: "Draft saved locally (server unavailable)",
+                  draft: draftData,
+                };
+              }
+            } catch (serverError) {
+              console.warn(
+                "Server save failed, draft saved locally:",
+                serverError
+              );
+              return {
+                success: true,
+                message: "Draft saved locally (server error)",
+                draft: draftData,
+              };
+            }
+          }
+
+          return {
+            success: true,
+            message: "Draft saved locally",
+            draft: draftData,
+          };
+        } catch (error) {
+          console.error("Error saving draft:", error);
+          return {
+            success: false,
+            message: "Failed to save draft",
+            error: error instanceof Error ? error.message : "Unknown error",
+          };
+        } finally {
+          setIsLoading(false);
+        }
+      },
+
+      // Load drafts from both local and server
+      loadDrafts: async (): Promise<InvoiceDraft[]> => {
+        try {
+          const localDrafts = await loadFromLocalStorage();
+          let serverDrafts: InvoiceDraft[] = [];
+
+          if (navigator.onLine) {
+            try {
+              serverDrafts = await loadFromServer();
+            } catch (error) {
+              console.warn("Failed to load server drafts:", error);
+            }
+          }
+
+          // Merge and deduplicate drafts (server drafts take precedence)
+          const allDrafts = mergeDrafts(localDrafts, serverDrafts);
+
+          set({ drafts: allDrafts });
+          return allDrafts;
+        } catch (error) {
+          console.error("Error loading drafts:", error);
+          return [];
+        }
+      },
+
+      // Load specific draft
+      loadDraft: async (draftId: string): Promise<boolean> => {
+        try {
+          const { drafts } = get();
+          let draft = drafts.find((d) => d.draftId === draftId);
+
+          if (!draft) {
+            // Try to load from storage
+            const allDrafts = await get().loadDrafts();
+            draft = allDrafts.find((d) => d.draftId === draftId);
+          }
+
+          if (draft) {
+            set({ invoiceData: draft });
+            return true;
+          }
+
+          return false;
+        } catch (error) {
+          console.error("Error loading draft:", error);
+          return false;
+        }
+      },
+
+      // Delete draft
+      deleteDraft: async (draftId: string): Promise<boolean> => {
+        try {
+          const { drafts } = get();
+
+          // Delete from local storage
+          const localResult = await deleteFromLocalStorage(draftId);
+
+          // Delete from server if online
+          if (navigator.onLine) {
+            try {
+              await deleteFromServer(draftId);
+            } catch (error) {
+              console.warn("Failed to delete from server:", error);
+            }
+          }
+
+          // Update local state
+          const updatedDrafts = drafts.filter(
+            (draft) => draft.draftId !== draftId
+          );
+          set({ drafts: updatedDrafts });
+
+          return localResult;
+        } catch (error) {
+          console.error("Error deleting draft:", error);
+          return false;
+        }
+      },
+    }),
+    {
+      name: "invoice-storage",
+      storage: createJSONStorage(() => localStorage),
+      partialize: (state) => ({
+        invoiceData: state.invoiceData,
+        drafts: state.drafts,
+      }),
+    }
+  )
+);
+
+// Local Storage Functions
+async function saveToLocalStorage(draft: InvoiceDraft): Promise<DraftResponse> {
+  try {
+    const existingDrafts = JSON.parse(
+      localStorage.getItem("invoiceDrafts") || "[]"
+    );
+    const existingIndex = existingDrafts.findIndex(
+      (d: InvoiceDraft) =>
+        d.draftId === draft.draftId ||
+        (d.invoiceNumber === draft.invoiceNumber && draft.invoiceNumber)
+    );
+
+    if (existingIndex !== -1) {
+      existingDrafts[existingIndex] = {
+        ...draft,
+        updatedAt: new Date().toISOString(),
+      };
+    } else {
+      existingDrafts.push(draft);
+    }
+
+    localStorage.setItem("invoiceDrafts", JSON.stringify(existingDrafts));
+
+    return { success: true, message: "Draft saved locally", draft };
+  } catch (error) {
+    return {
+      success: false,
+      message: "Failed to save draft locally",
+      error: error instanceof Error ? error.message : "Unknown error",
+    };
+  }
+}
+
+async function loadFromLocalStorage(): Promise<InvoiceDraft[]> {
+  try {
+    const drafts = JSON.parse(localStorage.getItem("invoiceDrafts") || "[]");
+    return drafts;
+  } catch (error) {
+    console.error("Error loading local drafts:", error);
+    return [];
+  }
+}
+
+async function deleteFromLocalStorage(draftId: string): Promise<boolean> {
+  try {
+    const existingDrafts = JSON.parse(
+      localStorage.getItem("invoiceDrafts") || "[]"
+    );
+    const updatedDrafts = existingDrafts.filter(
+      (draft: InvoiceDraft) => draft.draftId !== draftId
+    );
+    localStorage.setItem("invoiceDrafts", JSON.stringify(updatedDrafts));
+    return true;
+  } catch (error) {
+    console.error("Error deleting local draft:", error);
+    return false;
+  }
+}
+
+// Server Functions
+async function saveToServer(draft: InvoiceDraft): Promise<DraftResponse> {
+  const response = await fetch("/api/invoices/drafts", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(draft),
+  });
+
+  if (!response.ok) {
+    throw new Error(`Server error: ${response.status}`);
+  }
+
+  return await response.json();
+}
+
+async function loadFromServer(): Promise<InvoiceDraft[]> {
+  const response = await fetch("/api/invoices/drafts");
+
+  if (!response.ok) {
+    throw new Error(`Server error: ${response.status}`);
+  }
+
+  const data = await response.json();
+  return data.drafts || [];
+}
+
+async function deleteFromServer(draftId: string): Promise<boolean> {
+  const response = await fetch(`/api/invoices/drafts/${draftId}`, {
+    method: "DELETE",
+  });
+
+  return response.ok;
+}
+
+// Utility function to merge drafts
+function mergeDrafts(
+  localDrafts: InvoiceDraft[],
+  serverDrafts: InvoiceDraft[]
+): InvoiceDraft[] {
+  const draftMap = new Map<string, InvoiceDraft>();
+
+  // Add local drafts first
+  localDrafts.forEach((draft) => {
+    draftMap.set(draft.draftId, draft);
+  });
+
+  // Add server drafts (they take precedence)
+  serverDrafts.forEach((draft) => {
+    draftMap.set(draft.draftId, draft);
+  });
+
+  return Array.from(draftMap.values()).sort(
+    (a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
+  );
+}
+
+// Component Usage Example
+export const InvoiceFormComponent = () => {
+  const {
+    invoiceData,
+    validationErrors,
+    isLoading,
+    saveAsDraft,
+    handleFieldChange,
+  } = useInvoiceStore();
+
+  const handleSaveAsDraft = async () => {
+    const result = await saveAsDraft(true); // true = save to server + local
+
+    if (result.success) {
+      // Show success toast
+      console.log(result.message);
+    } else {
+      // Show error toast
+      console.error(result.error);
+    }
+  };
+
+  const handleSaveLocalOnly = async () => {
+    const result = await saveAsDraft(false); // false = save to local only
+
+    if (result.success) {
+      console.log("Saved locally only");
+    }
+  };
+
+  return (
+    <div className="flex flex-col sm:flex-row gap-4 justify-end pt-8 border-t border-gray-200">
+      <button
+        type="button"
+        onClick={handleSaveLocalOnly}
+        disabled={isLoading}
+        className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium disabled:opacity-50"
+      >
+        Save Local Draft
+      </button>
+      <button
+        type="button"
+        onClick={handleSaveAsDraft}
+        disabled={isLoading}
+        className="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium disabled:opacity-50"
+      >
+        {isLoading ? "Saving..." : "Save as Draft"}
+      </button>
+    </div>
+  );
+};

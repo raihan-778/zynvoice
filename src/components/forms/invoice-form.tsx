@@ -24,7 +24,7 @@ import { InvoicePreview } from "./InvoicePreview";
 
 // Form data interface matching your invoice schema
 
-export default function InvoiceFormBuilder() {
+export default function InvoiceForm() {
   const mockClients = [
     {
       _id: "1",

@@ -78,16 +78,16 @@ export const InvoiceFormBuilder: React.FC = () => {
     setError,
   ]);
 
-  // Recalculate totals when items change
-  useEffect(() => {
-    calculateTotals();
-  }, [
-    invoiceData.items,
-    invoiceData.taxRate,
-    invoiceData.discountType,
-    invoiceData.discountValue,
-    calculateTotals,
-  ]);
+  // // Recalculate totals when items change
+  // useEffect(() => {
+  //   calculateTotals();
+  // }, [
+  //   invoiceData.items,
+  //   invoiceData.taxRate,
+  //   invoiceData.discountType,
+  //   invoiceData.discountValue,
+  //   calculateTotals,
+  // ]);
 
   // Generate PDF function - now much simpler!
   const generatePDF = useCallback(async () => {
@@ -191,10 +191,6 @@ export const InvoiceFormBuilder: React.FC = () => {
     },
     [updateItem, invoiceData.items]
   );
-
-  const handleGenerateInvoiceNumber = () => {
-    generateInvoiceNumber();
-  };
 
   // Check if all required data is available
   const canGeneratePDF =

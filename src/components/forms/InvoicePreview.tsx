@@ -3,7 +3,8 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { InvoicePreviewProps } from "@/types/database";
+import { useInvoiceStore } from "@/stors/invoiceStore";
+import { pdf } from "@react-pdf/renderer";
 import {
   Copy,
   Download,
@@ -13,7 +14,8 @@ import {
   Send,
   Settings,
 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
+import { InvoicePDF } from "../pdf/InvoicePDFTemplate";
 
 // Sample data based on your database types
 
@@ -75,31 +77,39 @@ const templates = {
   },
 };
 
-export const InvoicePreview = ({
-  selectedClient,
-  selectedCompany,
-  calculations,
+const {
+  // State
   invoiceData,
+  selectedCompany,
+  selectedClient,
+  calculations,
+  template,
+  companies,
+  clients,
 
-  previewPDF,
-  downloadPDF,
-  generatePDF,
+  isGenerating,
+  error,
+  invoiceNumber,
 
-  onBack,
-  onSubmit,
-  onExportPDF,
-}: InvoicePreviewProps) => {
-  console.log(
-    selectedClient,
-    "Clients1",
+  // Actions
+  setInvoiceData,
+  setSelectedCompany,
+  setSelectedClient,
+  setTemplate,
+  setCompanies,
+  setClients,
+  addItem,
+  updateItem,
+  removeItem,
+  setIsGenerating,
+  setError,
+  getInvoicePDFProps,
+  generateInvoiceNumber,
+  calculateTotals,
+  resetInvoice,
+} = useInvoiceStore;
 
-    selectedCompany,
-    "Companise",
-    invoiceData,
-    "subTotal",
-    calculations.subtotal
-  );
-
+export const InvoicePreview = ({}) => {
   const [selectedTemplate, setSelectedTemplate] =
     useState<keyof typeof templates>("modern");
   const [customization, setCustomization] = useState<
@@ -109,25 +119,75 @@ export const InvoicePreview = ({
   const [isGenerating, setIsGenerating] = useState(false);
   const [error, setError] = useState("");
 
-  // const handleDownloadPDF = async () => {
-  //   await downloadPDF({
-  //     invoiceData,
-  //     selectedCompany,
-  //     selectedClient,
-  //     calculations,
-  //     template: customization,
-  //   });
-  // };
+  // Generate PDF function - now much simpler!
+  const generatePDF = useCallback(async () => {
+    setIsGenerating(true);
+    setError("");
 
-  // const handlePreviewPDF = async () => {
-  //   await previewPDF({
-  //     invoiceData,
-  //     selectedCompany,
-  //     selectedClient,
-  //     calculations,
-  //     template: customization,
-  //   });
-  // };
+    try {
+      // Get all required data from store
+      const pdfProps = getInvoicePDFProps();
+
+      if (!pdfProps) {
+        throw new Error(
+          "Missing required data. Please ensure company and client are selected."
+        );
+      }
+
+      console.log("Generating PDF with data:", pdfProps);
+
+      const doc = (
+        <InvoicePDF
+          calculations={pdfProps.calculations}
+          template={pdfProps.template}
+          invoiceData={pdfProps.invoiceData}
+          selectedCompany={pdfProps.selectedCompany}
+          selectedClient={pdfProps.selectedClient}
+        />
+      );
+
+      const blob = await pdf(doc).toBlob();
+      return blob;
+    } catch (err) {
+      const errorMessage =
+        err instanceof Error ? err.message : "Failed to generate PDF";
+      setError(errorMessage);
+      throw new Error(errorMessage);
+    } finally {
+      setIsGenerating(false);
+    }
+  }, [setIsGenerating, setError]);
+
+  // Preview PDF
+  const previewPDF = useCallback(async () => {
+    try {
+      const blob = await generatePDF();
+      if (blob) {
+        const url = URL.createObjectURL(blob);
+        window.open(url, "_blank");
+        setTimeout(() => URL.revokeObjectURL(url), 1000);
+      }
+    } catch (error) {
+      console.error("Error previewing PDF:", error);
+    }
+  }, [generatePDF]);
+
+  // Download PDF
+  const downloadPDF = useCallback(async () => {
+    try {
+      const blob = await generatePDF();
+      if (blob) {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `invoice-${invoiceData.invoiceNumber}.pdf`;
+        a.click();
+        URL.revokeObjectURL(url);
+      }
+    } catch (error) {
+      console.error("Error downloading PDF:", error);
+    }
+  }, [generatePDF]);
 
   useEffect(() => {
     return setCustomization(templates[selectedTemplate]);

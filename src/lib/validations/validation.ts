@@ -22,6 +22,7 @@ export const ClientInfoSchema = z.object({
   name: z.string().min(1, "Client name is required"),
   email: z.string().email().optional(),
   phone: z.string().optional(),
+  paymentTerms: z.number().optional(),
   address: z
     .object({
       street: z.string().optional(),
@@ -114,7 +115,9 @@ export const InvoiceFormDataSchema = z.object({
   recurring: z
     .object({
       isRecurring: z.boolean(),
-      frequency: z.enum(["weekly", "monthly", "quarterly", "yearly"]),
+      frequency: z
+        .enum(["weekly", "monthly", "quarterly", "yearly"])
+        .optional(),
       nextDate: z
         .string()
         .optional()
