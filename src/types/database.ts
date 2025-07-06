@@ -1,5 +1,6 @@
 // types/database.ts
 
+import { InvoiceFormData } from "@/lib/validations/validation";
 import { Document, Types } from "mongoose";
 
 // Base interface for all documents
@@ -180,8 +181,6 @@ export interface IAuditLog extends BaseDocument {
   ipAddress: string;
   userAgent: string;
 }
-
-export type InvoiceFormErrors = Partial<InvoiceFormData>;
 
 // / Request body interface
 export interface InvoiceRequestBody {

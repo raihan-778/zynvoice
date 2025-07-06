@@ -63,6 +63,8 @@ interface InvoiceStore {
 
   // Invoice Items
   addItem: (item: InvoiceItem) => void;
+  setSelectedInvoiceClient: (client: []) => void;
+  updateInvoiceData: (data: []) => void;
   updateItem: (id: string, updates: Partial<InvoiceItem>) => void;
   removeItem: (id: string) => void;
   clearItems: () => void;
@@ -139,6 +141,8 @@ export const useInvoiceStore = create<InvoiceStore>()(
       // Initial state
       invoiceData: defaultInvoiceData,
       selectedCompany: null,
+      invoiceDate: null,
+      dueDate: null,
       selectedClient: null,
       calculations: defaultCalculations,
       template: defaultTemplate,
@@ -160,6 +164,8 @@ export const useInvoiceStore = create<InvoiceStore>()(
           false,
           "setInvoiceData"
         ),
+
+      // / Method 1: Enhanced updateInvoiceData method
 
       setSelectedCompany: (company) =>
         set({ selectedCompany: company }, false, "setSelectedCompany"),
@@ -262,6 +268,42 @@ export const useInvoiceStore = create<InvoiceStore>()(
           calculations: state.calculations,
           template: state.template,
         };
+      },
+
+      updateInvoiceData: (data) => {
+        set((state) => {
+          const newInvoiceData = { ...state.invoiceData, ...data };
+
+          // Auto-calculate due date when invoice date changes
+          if (data.invoiceDate && state.selectedClient) {
+            const invoiceDate = new Date(data.invoiceDate);
+            const dueDate = new Date(
+              invoiceDate.getTime() +
+                state?.selectedClient?.paymentTerms * 24 * 60 * 60 * 1000
+            );
+            newInvoiceData.dueDate = dueDate;
+          }
+
+          return { invoiceData: newInvoiceData };
+        });
+      },
+
+      // Method 2: Enhanced setSelectedClient method
+      setSelectedInvoiceClient: (client) => {
+        set((state) => {
+          const newState = { selectedClient: client };
+
+          // Recalculate due date when client changes
+          if (client && state.invoiceData.invoiceDate) {
+            const invoiceDate = new Date(state.invoiceData.invoiceDate);
+            const dueDate = new Date(
+              invoiceDate.getTime() + client.paymentTerms * 24 * 60 * 60 * 1000
+            );
+            newState.invoiceData = { ...state.invoiceData, dueDate };
+          }
+
+          return newState;
+        });
       },
 
       // Utility actions

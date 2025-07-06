@@ -1,5 +1,5 @@
 // 📁 src/lib/validations/validation.ts
-import { InvoiceFormErrors } from "@/types/database";
+
 import { z } from "zod";
 
 // Company Information Schema
@@ -51,26 +51,114 @@ export const InvoiceItemSchema = z.object({
   amount: z.number(),
 });
 
+const dateString = z.string().refine(
+  (date) => {
+    // Check if it's a valid date string in YYYY-MM-DD format
+    const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+    if (!dateRegex.test(date)) return false;
+
+    // Check if it's a valid date
+    const parsedDate = new Date(date);
+    return parsedDate instanceof Date && !isNaN(parsedDate.getTime());
+  },
+  {
+    message: "Invalid date format. Expected YYYY-MM-DD",
+  }
+);
+
+// Validation for invoice date specifically
+const invoiceDateSchema = dateString.refine(
+  (date) => {
+    const parsedDate = new Date(date);
+    const today = new Date();
+    const oneYearAgo = new Date();
+    oneYearAgo.setFullYear(today.getFullYear() - 1);
+
+    // Allow dates from one year ago to today
+    return parsedDate >= oneYearAgo && parsedDate <= today;
+  },
+  {
+    message: "Invoice date must be within the last year and not in the future",
+  }
+);
+
+// Validation for due date
+const dueDateSchema = dateString;
+
+// // Invoice item schema
+// const invoiceItemSchema = z.object({
+//   description: z
+//     .string()
+//     .min(1, "Description is required")
+//     .max(500, "Description cannot exceed 500 characters")
+//     .trim(),
+//   quantity: z
+//     .number()
+//     .min(1, "Quantity must be greater than 0")
+//     .max(999999, "Quantity cannot exceed 999,999")
+//     .multipleOf(0.01, "Quantity can have at most 2 decimal places"),
+//   rate: z
+//     .number()
+//     .min(0, "Rate cannot be negative")
+//     .max(999999.99, "Rate cannot exceed 999,999.99")
+//     .multipleOf(0.01, "Rate can have at most 2 decimal places"),
+//   amount: z
+//     .number()
+//     .min(0, "Amount cannot be negative")
+//     .multipleOf(0.01, "Amount can have at most 2 decimal places"),
+// });
+
+// Recurring settings schema
+const recurringSchema = z
+  .object({
+    isRecurring: z.boolean(),
+    frequency: z.enum(["weekly", "monthly", "quarterly", "yearly"]),
+    nextDate: z.string().optional(),
+    endDate: z.string().optional(),
+  })
+  .refine(
+    (data) => {
+      // If recurring is enabled, nextDate is required
+      if (data.isRecurring && !data.nextDate) {
+        return false;
+      }
+
+      // If nextDate is provided, it should be a valid date
+      if (data.nextDate && !dateString.safeParse(data.nextDate).success) {
+        return false;
+      }
+
+      // If endDate is provided, it should be a valid date
+      if (data.endDate && !dateString.safeParse(data.endDate).success) {
+        return false;
+      }
+
+      // If both nextDate and endDate are provided, endDate should be after nextDate
+      if (data.nextDate && data.endDate) {
+        return new Date(data.endDate) > new Date(data.nextDate);
+      }
+
+      return true;
+    },
+    {
+      message:
+        "Invalid recurring settings. Check dates and ensure end date is after next date.",
+    }
+  );
+
 // Assuming you already have InvoiceItemSchema
 
 export const InvoiceFormDataSchema = z.object({
   userId: z.string().optional(),
   companyId: z.string(),
   clientId: z.string(),
+  items: InvoiceItemSchema,
 
   invoiceNumber: z.string().min(1, "Invoice number is required"),
 
-  invoiceDate: z
-    .string()
-    .min(1, "Invoice date is required")
-    .transform((val) => new Date(val)),
+  invoiceDate: invoiceDateSchema,
 
-  dueDate: z
-    .string()
-    .min(1, "Due date is required")
-    .transform((val) => new Date(val)),
-
-  items: z.array(InvoiceItemSchema).min(1, "At least one item is required"),
+  dueDate: dueDateSchema,
 
   subtotal: z.number().min(0),
   taxRate: z.number().min(0).max(100).default(0),
@@ -112,22 +200,12 @@ export const InvoiceFormDataSchema = z.object({
 
   templateId: z.string().optional(),
 
-  recurring: z
-    .object({
-      isRecurring: z.boolean(),
-      frequency: z
-        .enum(["weekly", "monthly", "quarterly", "yearly"])
-        .optional(),
-      nextDate: z
-        .string()
-        .optional()
-        .transform((val) => (val ? new Date(val) : undefined)),
-      endDate: z
-        .string()
-        .optional()
-        .transform((val) => (val ? new Date(val) : undefined)),
-    })
-    .optional(),
+  recurring: recurringSchema.default({
+    isRecurring: false,
+    frequency: "monthly",
+    nextDate: "",
+    endDate: "",
+  }),
 });
 
 // TypeScript types
@@ -139,20 +217,6 @@ export type InvoiceFormData = z.infer<typeof InvoiceFormDataSchema>;
 // Validation function
 export function validateInvoiceData(data: unknown): InvoiceFormData {
   return InvoiceFormDataSchema.parse(data);
-}
-
-// Partial validation for form fields
-export function validateInvoiceField<T extends keyof InvoiceFormData>(
-  field: T,
-  value: InvoiceFormData[T]
-): boolean {
-  try {
-    const fieldSchema = InvoiceFormDataSchema.shape[field];
-    fieldSchema.parse(value);
-    return true;
-  } catch {
-    return false;
-  }
 }
 
 export const InvoiceSchema = z
@@ -194,27 +258,6 @@ export const ClientSearchSchema = z.object({
   limit: z.number().min(1).max(100).optional(),
 });
 
-export const validateInvoiceForm = (
-  formData: Partial<InvoiceFormData>
-): {
-  isValid: boolean;
-  errors: InvoiceFormErrors;
-} => {
-  const result = InvoiceSchema.safeParse(formData);
-
-  if (result.success) {
-    return { isValid: true, errors: {} };
-  }
-
-  const errors: Record<string, string> = {};
-  result.error.errors.forEach((error) => {
-    const path = error.path.join(".");
-    errors[path] = error.message;
-  });
-
-  return { isValid: false, errors };
-};
-
 export const formatCurrency = (amount: number): string => {
   return new Intl.NumberFormat("en-US", {
     style: "currency",
@@ -241,4 +284,75 @@ export const calculateTaxAmount = (
   taxRate: number
 ): number => {
   return Number((subtotal * (taxRate || 0)).toFixed(2));
+};
+
+// Validation function
+export const validateInvoiceForm = (data: unknown) => {
+  return InvoiceFormDataSchema.safeParse(data);
+};
+
+// Partial validation for individual fields
+export const validateInvoiceField = (
+  field: keyof InvoiceFormData,
+  value: unknown
+) => {
+  const fieldSchema = InvoiceFormDataSchema.shape[field];
+  return fieldSchema.safeParse(value);
+};
+
+// Specific validators for common use cases
+export const validators = {
+  invoiceDate: (date: string) => {
+    return invoiceDateSchema.safeParse(date);
+  },
+
+  dueDate: (date: string) => {
+    return dueDateSchema.safeParse(date);
+  },
+
+  invoiceNumber: (number: string) => {
+    return InvoiceFormDataSchema.shape.invoiceNumber.safeParse(number);
+  },
+
+  currency: (currency: string) => {
+    return InvoiceFormDataSchema.shape.currency.safeParse(currency);
+  },
+
+  taxRate: (rate: number) => {
+    return InvoiceFormDataSchema.shape.taxRate.safeParse(rate);
+  },
+
+  discountValue: (value: number, type: "percentage" | "fixed") => {
+    const baseValidation =
+      InvoiceFormDataSchema.shape.discountValue.safeParse(value);
+    if (!baseValidation.success) return baseValidation;
+
+    if (type === "percentage" && value > 100) {
+      return {
+        success: false,
+        error: { message: "Percentage discount cannot exceed 100%" },
+      };
+    }
+    return baseValidation;
+  },
+
+  item: (item: unknown) => {
+    return InvoiceItemSchema.safeParse(item);
+  },
+
+  recurring: (settings: unknown) => {
+    return recurringSchema.safeParse(settings);
+  },
+};
+
+// Error formatter
+export const formatValidationErrors = (error: z.ZodError) => {
+  const formattedErrors: Record<string, string> = {};
+
+  error.errors.forEach((err) => {
+    const path = err.path.join(".");
+    formattedErrors[path] = err.message;
+  });
+
+  return formattedErrors;
 };
