@@ -135,7 +135,7 @@ export const InvoicePreview = ({
         selectedClient,
         selectedCompany,
         calculations,
-        template,
+        templates,
       };
 
       if (!pdfProps) {
@@ -152,7 +152,7 @@ export const InvoicePreview = ({
           invoiceData={pdfProps.invoiceData}
           selectedCompany={pdfProps.selectedCompany}
           selectedClient={pdfProps.selectedClient}
-          template={pdfProps.template}
+          template={pdfProps.template.classic}
         />
       );
 

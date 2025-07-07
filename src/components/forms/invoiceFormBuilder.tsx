@@ -110,9 +110,12 @@ export const InvoiceFormBuilder: React.FC = () => {
         <InvoicePDF
           calculations={pdfProps.calculations}
           template={pdfProps.template}
+          templates={pdfProps.templates}
           invoiceData={pdfProps.invoiceData}
           selectedCompany={pdfProps.selectedCompany}
           selectedClient={pdfProps.selectedClient}
+          generatePDF={generatePDF}
+          downloadPDF={downloadPDF}
         />
       );
 
@@ -179,7 +182,7 @@ export const InvoiceFormBuilder: React.FC = () => {
 
       // Calculate amount if quantity or rate changed
       if (field === "quantity" || field === "rate") {
-        const item = invoiceData.items.find((item) => item.id === id);
+        const item = invoiceData?.items?.find((item) => item.id === id);
         if (item) {
           const quantity = field === "quantity" ? value : item.quantity;
           const rate = field === "rate" ? value : item.rate;

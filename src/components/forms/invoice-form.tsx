@@ -2,8 +2,13 @@
 
 import { InvoiceFormData } from "@/lib/validations/validation";
 import { InvoiceApiResponse } from "@/types/apiResponse";
-import { InvoiceCalculations, InvoicePdfProps } from "@/types/database";
+import {
+  InvoiceCalculations,
+  InvoicePdfProps,
+  ITemplate,
+} from "@/types/database";
 
+import { useInvoiceStore } from "@/stors/invoiceStore";
 import { InvoicePDFProps } from "@/types/pdf";
 import { pdf } from "@react-pdf/renderer";
 import {
@@ -21,11 +26,28 @@ import { useCallback, useEffect, useState } from "react";
 import { useFieldArray, useForm } from "react-hook-form";
 import { InvoicePDF } from "../pdf/InvoicePDFTemplate";
 import { InvoicePreview } from "./InvoicePreview";
-import { useInvoiceStore } from "@/stors/invoiceStore";
 
 // Form data interface matching your invoice schema
 
 export default function InvoiceForm() {
+  // Default values
+  const defaultTemplate: Partial<ITemplate> = {
+    name: "Default",
+    primaryColor: "#2563eb",
+    secondaryColor: "#64748b",
+    fontFamily: "Helvetica",
+    fontSize: 12,
+    showLogo: true,
+    showCompanyAddress: true,
+    showClientAddress: true,
+    showInvoiceNumber: true,
+    showDates: true,
+    showPaymentTerms: true,
+    showNotes: true,
+    showTerms: true,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+  };
   const mockClients = [
     {
       _id: "1",
@@ -116,7 +138,7 @@ export default function InvoiceForm() {
     { value: "quarterly", label: "Quarterly" },
     { value: "yearly", label: "Yearly" },
   ];
-  const {getInvoicePDFProps}=useInvoiceStore()
+  const { getInvoicePDFProps } = useInvoiceStore();
 
   // Add loading state to your component
   const [isLoading, setIsLoading] = useState(false);
@@ -353,7 +375,7 @@ export default function InvoiceForm() {
       selectedCompany,
       selectedClient,
       calculations,
-      template,
+      template = { defaultTemplate },
     }: InvoicePDFProps) => {
       setIsGenerating(true);
       setError(null);

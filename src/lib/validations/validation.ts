@@ -22,6 +22,8 @@ export const ClientInfoSchema = z.object({
   name: z.string().min(1, "Client name is required"),
   email: z.string().email().optional(),
   phone: z.string().optional(),
+  company:z.string().optional(),
+  status:z.enum(["active","inactive"]),
   paymentTerms: z.number().optional(),
   address: z
     .object({
@@ -51,6 +53,8 @@ export const InvoiceItemSchema = z
       .max(1000000, "Rate too large"),
     amount: z.number(),
   })
+
+  .array()
   .optional();
 
 const dateString = z.string().refine(

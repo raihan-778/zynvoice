@@ -113,7 +113,7 @@ const defaultInvoiceData: Partial<InvoiceFormData> = {
   dueDate: "",
   status: "draft",
   currency: "USD",
-  items: { id: "", description: "", quantity: 1, rate: 0, amount: 0 },
+  items: [{ id: "", description: "", quantity: 1, rate: 0, amount: 0 }],
   subtotal: 0,
   taxRate: 0,
   taxAmount: 0,
@@ -164,14 +164,16 @@ export const useInvoiceStore = create<InvoiceStore>()(
       formValidationError: false,
 
       // Actions
-      setInvoiceData: (data) =>
+      setInvoiceData: (data) => {
         set(
           (state) => ({
             invoiceData: { ...state.invoiceData, ...data },
           }),
           false,
           "setInvoiceData"
-        ),
+        );
+        get().calculateTotals();
+      },
 
       // / Method 1: Enhanced updateInvoiceData method
 
@@ -193,19 +195,21 @@ export const useInvoiceStore = create<InvoiceStore>()(
       setTemplates: (templates) => set({ templates }, false, "setTemplates"),
 
       // Invoice Items
-      addItem: (item) =>
+      addItem: (item) => {
         set(
           (state) => ({
             invoiceData: {
               ...state?.invoiceData,
-              items: [...state.invoiceData?.items, item],
+              items: [...state?.invoiceData?.items, item],
             },
           }),
           false,
           "addItem"
-        ),
+        );
+        get().calculateTotals();
+      },
 
-      updateItem: (id, updates) =>
+      updateItem: (id, updates) => {
         set(
           (state) => ({
             invoiceData: {
@@ -217,21 +221,25 @@ export const useInvoiceStore = create<InvoiceStore>()(
           }),
           false,
           "updateItem"
-        ),
+        );
+        get().calculateTotals();
+      },
 
-      removeItem: (id) =>
+      removeItem: (id) => {
         set(
           (state) => ({
             invoiceData: {
               ...state.invoiceData,
-              items: state.invoiceData.items.filter((item) => item.id !== id),
+              items: state.invoiceData?.items?.filter((item) => item.id !== id),
             },
           }),
           false,
           "removeItem"
-        ),
+        );
+        get().calculateTotals();
+      },
 
-      clearItems: () =>
+      clearItems: () => {
         set(
           (state) => ({
             invoiceData: {
@@ -241,7 +249,10 @@ export const useInvoiceStore = create<InvoiceStore>()(
           }),
           false,
           "clearItems"
-        ),
+        );
+        get().calculateTotals();
+      },
+
       invoiceNumber: "",
 
       generateInvoiceNumber: () => {
@@ -275,43 +286,8 @@ export const useInvoiceStore = create<InvoiceStore>()(
           selectedClient: state.selectedClient,
           calculations: state.calculations,
           template: state.template,
+          templates: state.templates,
         };
-      },
-
-      updateInvoiceData: (data) => {
-        set((state) => {
-          const newInvoiceData = { ...state.invoiceData, ...data };
-
-          // Auto-calculate due date when invoice date changes
-          if (data.invoiceDate && state.selectedClient) {
-            const invoiceDate = new Date(data.invoiceDate);
-            const dueDate = new Date(
-              invoiceDate.getTime() +
-                state?.selectedClient?.paymentTerms * 24 * 60 * 60 * 1000
-            );
-            newInvoiceData.dueDate = dueDate;
-          }
-
-          return { invoiceData: newInvoiceData };
-        });
-      },
-
-      // Method 2: Enhanced setSelectedClient method
-      setSelectedInvoiceClient: (client) => {
-        set((state) => {
-          const newState = { selectedClient: client };
-
-          // Recalculate due date when client changes
-          if (client && state.invoiceData.invoiceDate) {
-            const invoiceDate = new Date(state.invoiceData.invoiceDate);
-            const dueDate = new Date(
-              invoiceDate.getTime() + client.paymentTerms * 24 * 60 * 60 * 1000
-            );
-            newState.invoiceData = { ...state.invoiceData, dueDate };
-          }
-
-          return newState;
-        });
       },
 
       // Utility actions
@@ -333,11 +309,15 @@ export const useInvoiceStore = create<InvoiceStore>()(
       calculateTotals: () =>
         set(
           (state) => {
-            const { items, taxRate, discountType, discountValue } =
-              state.invoiceData;
+            const {
+              items = [],
+              taxRate = 0,
+              discountType = "percentage",
+              discountValue = 0,
+            } = state.invoiceData || {};
 
             // Calculate subtotal
-            const subtotal = items.reduce((sum, item) => sum + item.amount, 0);
+            const subtotal = items?.reduce((sum, item) => sum + item.amount, 0);
 
             // Calculate discount
             let discountAmount = 0;

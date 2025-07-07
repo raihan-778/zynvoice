@@ -157,13 +157,13 @@ export interface ITemplate extends BaseDocument {
   fontSize: number;
   logoPosition?: "left" | "center" | "right";
   showLogo: boolean;
-  showDates: true;
-  showNotes: true;
-  showTerms: true;
+  showDates: boolean;
+  showNotes: boolean;
+  showTerms: boolean;
   showCompanyAddress: boolean;
   showClientAddress: boolean;
   showInvoiceNumber: boolean;
-  showPaymentTerms: true;
+  showPaymentTerms: boolean;
   isDefault?: boolean;
   isPublic?: boolean;
 }
@@ -232,7 +232,8 @@ export interface InvoicePdfProps {
   selectedClient: ClientInfo;
   selectedCompany: CompanyInfo;
   calculations: InvoiceCalculations;
-  template: ITemplate;
+  template: Partial<ITemplate>;
+  templates?: Partial<ITemplate[]>;
 }
 export type ClientsResponse = {
   clients: ClientInfo[];

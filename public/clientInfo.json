@@ -3,6 +3,7 @@
     "_id": "1",
     "name": "John Doe",
     "email": "john@example.com",
+    "status": "active",
     "address": {
       "street": "789 Client Rd",
       "city": "Boston",
@@ -27,6 +28,7 @@
     "_id": "3",
     "name": "Bob Johnson",
     "email": "bob@startup.com",
+    "status": "active",
     "address": {
       "street": "654 Startup St",
       "city": "Austin",

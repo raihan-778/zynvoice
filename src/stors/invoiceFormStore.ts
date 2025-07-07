@@ -2,267 +2,502 @@ import {
   ClientInfo,
   CompanyInfo,
   InvoiceFormData,
-  InvoiceItem,
 } from "@/lib/validations/validation";
-
+import {
+  InvoiceCalculations,
+  InvoicePdfProps,
+  ITemplate,
+} from "@/types/database";
 import { create } from "zustand";
 import { devtools } from "zustand/middleware";
 
-export interface FormErrors {
+// Types for our store
+interface InvoiceItem {
+  description: string;
+  quantity: number;
+  rate: number;
+  amount: number;
+}
+
+interface RecurringSettings {
+  isRecurring: boolean;
+  frequency: "weekly" | "monthly" | "quarterly" | "yearly";
+  nextDate?: string;
+  endDate?: string;
+}
+
+interface FormErrors {
   [key: string]: string;
 }
 
-export interface InvoiceTotals {
-  subtotal: number;
-  discount: number;
-  tax: number;
-  total: number;
-}
+interface InvoiceStoreState {
+  // Form Data
+  formData: InvoiceFormData;
 
-export interface InvoiceState {
-  // Form state
-  // Form state
-
-  // UI state
-
-  isFormValid: boolean;
-  touchedFields: Set<string>;
-
-  invoiceForm: InvoiceFormData;
-
-  // UI state
-  previewMode: boolean;
+  // UI State
   isLoading: boolean;
-  clientSearch: string;
+  isGenerating: boolean;
+  previewMode: boolean;
   showClientDropdown: boolean;
-  selectedClient: ClientInfo | null;
-  selectedCompany: CompanyInfo | null;
-  error: string | null;
+  clientSearch: string;
+  isInitialLoading: boolean;
+  invoiceNumber: string;
 
-  // errorHandelingState
-  formErrors: FormErrors;
-  apiErrors: Record<string, string>; // ✅ This handles your {apiErrors.companyId}
-  generalError: string | null;
-}
-
-export interface InvoiceActions {
-  // Form actions
-
-  updateInvoiceField: (field: keyof InvoiceFormData, value: any) => void;
-  updateNestedField: (path: string, value: any) => void;
-  updateItem: (index: number, field: keyof InvoiceItem, value: any) => void;
-  addItem: () => void;
-  removeItem: (index: number) => void;
-  setApiErrors: (errors: Record<string, string>) => void;
-  clearApiErrors: () => void;
-  setGeneralError: (error: string | null) => void;
-  updateFormData: (data: Partial<InvoiceFormData>) => void;
-  submitForm: () => Promise<void>;
-
-  // UI actions
-
-  setPreviewMode: (mode: boolean) => void;
-  setLoading: (loading: boolean) => void;
-  setClientSearch: (search: string) => void;
-  setShowClientDropdown: (show: boolean) => void;
-  setSelectedClient: (client: ClientInfo | null) => void;
-  setSelectedCompany: (company: CompanyInfo | null) => void;
-  setError: (error: string | null) => void;
-
-  // Validation
-  validateForm: () => boolean;
-  validateField: (field: keyof InvoiceFormData, value: any) => boolean;
-  validateItem: (
-    index: number,
-    field: keyof InvoiceItem,
-    value: any
-  ) => boolean;
-  setTouchedField: (field: string) => void;
-  clearFieldError: (field: string) => void;
-  setFormErrors: (errors: FormErrors) => void;
+  // Selected entities
+  selectedClient: any | null;
+  selectedCompany: any | null;
 
   // Calculations
-  calculateTotals: () => InvoiceTotals;
+  calculations: InvoiceCalculations;
 
-  // Utility
+  // Error handling
+  formErrors: FormErrors;
+  apiErrors: Record<string, string>;
+  generalError: string | null;
 
-  resetForm: () => void;
-  loadInvoice: (
-    invoiceData: Partial<InvoiceFormData> & {
-      client?: ClientInfo;
-      company?: CompanyInfo;
-    }
-  ) => void;
+  // API data
+  companies: CompanyInfo[];
+  clients: ClientInfo[];
+  currencies: Array<{ code: string; symbol: string; name: string }>;
+
+  // Default template
+  defaultTemplate: Partial<ITemplate>;
 }
 
-export type InvoiceStore = InvoiceState & InvoiceActions;
+interface InvoiceStoreActions {
+  // Form field updates
+  updateFormField: (field: keyof InvoiceFormData, value: any) => void;
+  updateNestedField: (path: string, value: any) => void;
 
-const defaultInvoiceForm: Partial<InvoiceFormData> = {
+  // Item management
+  addItem: () => void;
+  removeItem: (index: number) => void;
+  updateItem: (index: number, field: keyof InvoiceItem, value: any) => void;
+
+  // Client/Company management
+  setSelectedClient: (client: ClientInfo) => void;
+  setSelectedCompany: (company: CompanyInfo) => void;
+  setClientSearch: (search: string) => void;
+  setShowClientDropdown: (show: boolean) => void;
+
+  // Data loading
+  setCompanies: (companies: CompanyInfo[]) => void;
+  setClients: (clients: ClientInfo[]) => void;
+  loadInitialData: () => Promise<void>;
+  setInitialLoading: (loading: boolean) => void;
+
+  // UI state management
+  setLoading: (loading: boolean) => void;
+  setGenerating: (generating: boolean) => void;
+  setPreviewMode: (preview: boolean) => void;
+
+  // Error management
+  setFormError: (field: string, message: string) => void;
+  clearFormError: (field: string) => void;
+  setApiErrors: (errors: Record<string, string>) => void;
+  setGeneralError: (error: string | null) => void;
+  clearAllErrors: () => void;
+
+  // Calculations
+  calculateAmounts: () => void;
+
+  // Utility functions
+  generateInvoiceNumber: () => void;
+  resetForm: () => void;
+  validateForm: () => boolean;
+
+  // PDF functions
+  getInvoicePDFProps: () => InvoicePdfProps;
+
+  // Form submission
+  getFormData: () => InvoiceFormData;
+}
+
+type InvoiceStore = InvoiceStoreState & InvoiceStoreActions;
+
+// Default form data
+const defaultFormData: InvoiceFormData = {
   companyId: "",
   clientId: "",
-  invoiceNumber: "",
-  invoiceDate: new Date().toISOString().split("T")[0],
-  dueDate: "",
-  currency: "USD",
+  invoiceNumber: `INV-${Date.now()}`,
+  invoiceDate: new Date().toISOString(),
+  dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+  items: [{ description: "", quantity: 1, rate: 0, amount: 0 }],
   taxRate: 0,
   discountType: "percentage",
   discountValue: 0,
+  currency: "USD",
   notes: "",
   terms: "",
+  paymentTerms: 30,
   recurring: {
     isRecurring: false,
     frequency: "monthly",
-    nextDate: "",
-    endDate: "",
+    nextDate: undefined,
+    endDate: undefined,
   },
-  items: { id: "", description: "", quantity: 1, rate: 0, amount: 0 },
+  status: "draft",
+  subtotal: 0,
+  taxAmount: 0,
+  discountAmount: 0,
+  total: 0,
+  paidAmount: 0,
 };
 
-// Create the store
-const useInvoiceFormStore = create<InvoiceStore>()(
+const currencies = [
+  { code: "USD", symbol: "$", name: "US Dollar" },
+  { code: "EUR", symbol: "€", name: "Euro" },
+  { code: "GBP", symbol: "£", name: "British Pound" },
+  { code: "CAD", symbol: "C$", name: "Canadian Dollar" },
+  { code: "JPY", symbol: "¥", name: "Japanese Yen" },
+];
+
+const defaultTemplate: Partial<ITemplate> = {
+  name: "Default",
+  primaryColor: "#2563eb",
+  secondaryColor: "#64748b",
+  fontFamily: "Helvetica",
+  fontSize: 12,
+  showLogo: true,
+  showCompanyAddress: true,
+  showClientAddress: true,
+  showInvoiceNumber: true,
+  showDates: true,
+  showPaymentTerms: true,
+  showNotes: true,
+  showTerms: true,
+  createdAt: new Date(),
+  updatedAt: new Date(),
+};
+
+// Helper function to set nested values
+const setNestedValue = (obj: any, path: string, value: any) => {
+  const keys = path.split(".");
+  let current = obj;
+
+  for (let i = 0; i < keys.length - 1; i++) {
+    const key = keys[i];
+    if (!(key in current)) {
+      current[key] = {};
+    }
+    current = current[key];
+  }
+
+  current[keys[keys.length - 1]] = value;
+};
+
+
+
+export const useInvoiceFormStore = create<InvoiceStore>()(
   devtools(
     (set, get) => ({
       // Initial state
-      invoiceForm: defaultInvoiceForm,
-      previewMode: false,
+      formData: { ...defaultFormData },
       isLoading: false,
-      clientSearch: "",
+      isGenerating: false,
+      previewMode: false,
       showClientDropdown: false,
+      clientSearch: "",
+      isInitialLoading: true,
       selectedClient: null,
       selectedCompany: null,
-      error: null,
+      calculations: {
+        subtotal: 0,
+        discountAmount: 0,
+        taxAmount: 0,
+        total: 0,
+      },
       formErrors: {},
+      apiErrors: {},
+      generalError: null,
+      companies: [],
+      clients: [],
+      invoiceNumber: "",
+      currencies,
+      defaultTemplate,
 
-      // Form actions
-      updateInvoiceField: (field, value) =>
+      // Data loading actions
+      setCompanies: (companies) => {
+        set({ companies });
+      },
+
+      setClients: (clients) => {
+        set({ clients });
+      },
+
+      setInitialLoading: (loading) => {
+        set({ isInitialLoading: loading });
+      },
+
+      loadInitialData: async () => {
+        try {
+          set({ isInitialLoading: true });
+
+          // Load companies
+          const companiesResponse = await fetch("/api/companies/get-company");
+          const companyData = await companiesResponse.json();
+          const companies = companyData.data.companies;
+
+          console.log("Loaded companies:", companies);
+          get().setCompanies(companies);
+
+          // Load clients
+          const clientsResponse = await fetch("/api/clients/get-client");
+          const clientData = await clientsResponse.json();
+          const clients = clientData.data;
+
+          console.log("Loaded clients:", clients);
+          get().setClients(clients);
+
+          console.log(
+            "Initial data loaded successfully - Companies:",
+            companies,
+            "Clients:",
+            clients
+          );
+        } catch (error) {
+          console.error("Error loading initial data:", error);
+          get().setGeneralError("Failed to load initial data");
+        } finally {
+          set({ isInitialLoading: false });
+        }
+      },
+
+      // Actions
+      // Actions
+      updateFormField: (field, value) => {
         set((state) => ({
-          invoiceForm: {
-            ...state.invoiceForm,
+          formData: {
+            ...state.formData,
             [field]: value,
           },
-        })),
+        }));
 
-      updateNestedField: (path, value) =>
+        // Auto-calculate when relevant fields change
+        if (
+          ["items", "taxRate", "discountType", "discountValue"].includes(field)
+        ) {
+          get().calculateAmounts();
+        }
+
+        // Handle company selection
+        if (field === "companyId") {
+          const company = get().companies.find((c) => c._id === value);
+          get().setSelectedCompany(company || null);
+        }
+      },
+
+      updateNestedField: (path, value) => {
         set((state) => {
-          const pathArray = path.split(".");
-          const newForm = { ...state.invoiceForm };
+          const newFormData = { ...state.formData };
+          setNestedValue(newFormData, path, value);
+          return { formData: newFormData };
+        });
 
-          let current: any = newForm;
-          for (let i = 0; i < pathArray.length - 1; i++) {
-            current[pathArray[i]] = { ...current[pathArray[i]] };
-            current = current[pathArray[i]];
-          }
-          current[pathArray[pathArray.length - 1]] = value;
+        // Auto-calculate if items changed
+        if (path.startsWith("items")) {
+          get().calculateAmounts();
+        }
+      },
+      addItem: () => {
+        set((state) => ({
+          formData: {
+            ...state?.formData,
+            items: [
+              ...state?.formData?.items,
+              { description: "", quantity: 1, rate: 0, amount: 0 },
+            ],
+          },
+        }));
+      },
 
-          return { invoiceForm: newForm };
-        }),
-
-      updateItem: (index, field, value) =>
-        set((state) => {
-          const newItems = [...state.invoiceForm.items];
-          newItems[index] = {
-            ...newItems[index],
-            [field]: value,
-          };
-
-          // Auto-calculate amount
-          if (field === "quantity" || field === "rate") {
-            const quantity =
-              field === "quantity" ? Number(value) : newItems[index].quantity;
-            const rate =
-              field === "rate" ? Number(value) : newItems[index].rate;
-            newItems[index].amount = quantity * rate;
-          }
-
-          return {
-            invoiceForm: {
-              ...state.invoiceForm,
-              items: newItems,
+      removeItem: (index) => {
+        const { formData } = get();
+        if (formData.items && formData?.items?.length > 1) {
+          set((state) => ({
+            formData: {
+              ...state.formData,
+              items: state.formData.items?.filter((_, i) => i !== index),
             },
-          };
-        }),
-
-      addItem: () =>
-        set((state) => {
-          const newItem = {
-            id: crypto.randomUUID(),
-            description: "New Item",
-            quantity: 1,
-            rate: 0,
-            amount: 0,
-          };
-
-          const newState = {
-            invoiceForm: {
-              ...state.invoiceForm,
-              items: [...state.invoiceForm.items, newItem],
-            },
-          };
-
-          // Calculate totals for the new item
-          const updatedItems = newState.invoiceForm.items.map((item) => ({
-            ...item,
-            amount: item.quantity * item.rate,
           }));
+          get().calculateAmounts();
+        }
+      },
 
-          return {
-            ...newState,
-            invoiceForm: {
-              ...newState.invoiceForm,
-              items: updatedItems,
-            },
-          };
-        }),
+      updateItem: (index, field, value) => {
+        set((state) => ({
+          formData: {
+            ...state.formData,
+            items: state.formData.items?.map((item, i) =>
+              i === index ? { ...item, [field]: value } : item
+            ),
+          },
+        }));
+        get().calculateAmounts();
+      },
 
-      removeItem: (index: number) =>
+    
+
+     setSelectedClient: (client) => {
+  set({ selectedClient: client });
+  if (client) {
+    get().updateFormField("clientId", client._id);
+    get().updateFormField("paymentTerms", client.paymentTerms);
+
+    // Calculate due date safely to avoid hydration mismatch
+    const dueDateString = get().calculateDueDate(client.paymentTerms);
+    if (dueDateString) {
+      get().updateFormField("dueDate", dueDateString);
+    }
+
+
+      setSelectedCompany: (company) => {
+        set({ selectedCompany: company });
+      },
+
+      setClientSearch: (search) => {
+        set({ clientSearch: search });
+      },
+
+      setShowClientDropdown: (show) => {
+        set({ showClientDropdown: show });
+      },
+
+      setLoading: (loading) => {
+        set({ isLoading: loading });
+      },
+
+      setGenerating: (generating) => {
+        set({ isGenerating: generating });
+      },
+
+      setPreviewMode: (preview) => {
+        set({ previewMode: preview });
+      },
+
+      setFormError: (field, message) => {
+        set((state) => ({
+          formErrors: {
+            ...state.formErrors,
+            [field]: message,
+          },
+        }));
+      },
+
+      clearFormError: (field) => {
         set((state) => {
-          // Don't remove if it's the last item
-          if (state.invoiceForm?.items?.length <= 1) {
-            return state;
-          }
+          const newErrors = { ...state.formErrors };
+          delete newErrors[field];
+          return { formErrors: newErrors };
+        });
+      },
 
-          // Remove the item at the specified index
-          const updatedItems = state.invoiceForm?.items?.filter(
-            (_, i) => i !== index
-          );
+      setApiErrors: (errors) => {
+        set({ apiErrors: errors });
+      },
 
-          return {
-            invoiceForm: {
-              ...state.invoiceForm,
-              items: updatedItems,
-            },
-          };
-        }),
+      setGeneralError: (error) => {
+        set({ generalError: error });
+      },
 
-      // UI actions
-      setPreviewMode: (mode) => set({ previewMode: mode }),
-      setLoading: (loading) => set({ isLoading: loading }),
-      setClientSearch: (search) => set({ clientSearch: search }),
-      setShowClientDropdown: (show) => set({ showClientDropdown: show }),
-      setSelectedClient: (client) => set({ selectedClient: client }),
-      setSelectedCompany: (company) => set({ selectedCompany: company }),
-      setError: (error) => set({ error }),
+      clearAllErrors: () => {
+        set({
+          formErrors: {},
+          apiErrors: {},
+          generalError: null,
+        });
+      },
 
-      // Validation
-      setFormErrors: (errors) => set({ formErrors: errors }),
+      calculateAmounts: () => {
+        const { formData } = get();
+        const { items, taxRate, discountType, discountValue } = formData;
+
+        let subtotal = 0;
+
+        // Calculate subtotal and update item amounts
+        const updatedItems = items?.map((item) => {
+          const amount = (item.quantity || 0) * (item.rate || 0);
+          subtotal += amount;
+          return { ...item, amount };
+        });
+
+        // Update items with calculated amounts
+        set((state) => ({
+          formData: {
+            ...state.formData,
+            items: updatedItems,
+          },
+        }));
+
+        // Calculate discount
+        let discountAmount = 0;
+        if (discountType === "percentage") {
+          discountAmount = (subtotal * (discountValue || 0)) / 100;
+        } else {
+          discountAmount = discountValue || 0;
+        }
+
+        // Calculate tax
+        const taxableAmount = subtotal - discountAmount;
+        const taxAmount = (taxableAmount * (taxRate || 0)) / 100;
+        const total = taxableAmount + taxAmount;
+
+        // Update calculations
+        set({
+          calculations: {
+            subtotal,
+            discountAmount,
+            taxAmount,
+            total,
+          },
+        });
+      },
+
+      generateInvoiceNumber: () => {
+        const timestamp = Date.now();
+        const randomSuffix = Math.floor(Math.random() * 1000)
+          .toString()
+          .padStart(3, "0");
+        const invoiceNumber = `INV-${timestamp}-${randomSuffix}`;
+        get().updateFormField("invoiceNumber", invoiceNumber);
+      },
+
+      resetForm: () => {
+        set({
+          formData: { ...defaultFormData },
+          selectedClient: null,
+          selectedCompany: null,
+          clientSearch: "",
+          showClientDropdown: false,
+          previewMode: false,
+          calculations: {
+            subtotal: 0,
+            discountAmount: 0,
+            taxAmount: 0,
+            total: 0,
+          },
+        });
+        get().clearAllErrors();
+      },
 
       validateForm: () => {
-        const { invoiceForm } = get();
+        const { formData, selectedClient, selectedCompany } = get();
         const errors: FormErrors = {};
 
-        if (!invoiceForm.companyId)
+        // Required field validation
+        if (!formData.companyId)
           errors.companyId = "Company selection is required";
-        if (!invoiceForm.clientId)
+        if (!formData.clientId)
           errors.clientId = "Client selection is required";
-        if (!invoiceForm.invoiceNumber)
+        if (!formData.invoiceNumber)
           errors.invoiceNumber = "Invoice number is required";
-        if (!invoiceForm.invoiceDate)
+        if (!formData.invoiceDate)
           errors.invoiceDate = "Invoice date is required";
-        if (!invoiceForm.dueDate) errors.dueDate = "Due date is required";
+        if (!formData.dueDate) errors.dueDate = "Due date is required";
 
-        // Validate items
-        invoiceForm?.items?.forEach((item, index) => {
-          if (!item.description.trim()) {
+        // Items validation
+        formData?.items?.forEach((item, index) => {
+          if (!item.description) {
             errors[`items.${index}.description`] = "Description is required";
           }
           if (!item.quantity || item.quantity <= 0) {
@@ -278,142 +513,72 @@ const useInvoiceFormStore = create<InvoiceStore>()(
         return Object.keys(errors).length === 0;
       },
 
-      // Calculate totals
-      calculateTotals: (): InvoiceTotals => {
-        const { invoiceForm } = get();
-        const subtotal = invoiceForm.items.reduce(
-          (sum, item) => sum + item.amount,
-          0
-        );
-
-        let discount = 0;
-        if (invoiceForm.discountType === "percentage") {
-          discount = (subtotal * invoiceForm.discountValue) / 100;
-        } else {
-          discount = invoiceForm.discountValue;
-        }
-
-        const afterDiscount = subtotal - discount;
-        const tax = (afterDiscount * invoiceForm.taxRate) / 100;
-        const total = afterDiscount + tax;
+      getInvoicePDFProps: () => {
+        const {
+          formData,
+          selectedClient,
+          selectedCompany,
+          calculations,
+          defaultTemplate,
+        } = get();
 
         return {
-          subtotal: Math.round(subtotal * 100) / 100,
-          discount: Math.round(discount * 100) / 100,
-          tax: Math.round(tax * 100) / 100,
-          total: Math.round(total * 100) / 100,
+          invoiceData: formData,
+          selectedClient,
+          selectedCompany,
+          calculations,
+          template: defaultTemplate,
         };
       },
 
-      updateFormData: (data: Partial<InvoiceFormData>) =>
-        set((state) => {
-          const newApiErrors = { ...state.apiErrors };
-
-          // Clear errors for updated fields
-          Object.keys(data).forEach((key) => {
-            delete newApiErrors[key];
-          });
-
-          return {
-            invoiceForm: {
-              ...state.invoiceForm,
-              ...data,
-            },
-            apiErrors: newApiErrors,
-          };
-        }),
-      setApiErrors: (errors: Record<string, string>) =>
-        set(() => ({ apiErrors: errors })),
-
-      clearApiErrors: () => set(() => ({ apiErrors: {} })),
-
-      // Form submission with error handling
-      submitForm: async () => {
-        const { invoiceForm, setIsLoading, setApiErrors, setGeneralError } =
-          get();
-
-        // Clear previous errors
-        setApiErrors({});
-        setGeneralError(null);
-        setIsLoading(true);
-
-        try {
-          const response = await fetch("/api/invoices/send-invoice", {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify(invoiceForm),
-          });
-
-          const result = await response.json();
-
-          if (!response.ok) {
-            // Handle field-specific errors
-            if (result.errors) {
-              setApiErrors(result.errors); // ✅ This sets the errors your JSX displays
-            }
-
-            // Handle general error
-            if (result.message) {
-              setGeneralError(result.message);
-            }
-
-            throw new Error(result.message || "Failed to create invoice");
-          }
-
-          // Success - clear all errors
-          setApiErrors({});
-          setGeneralError(null);
-
-          // Handle success (maybe redirect or show success message)
-          console.log("Invoice created successfully:", result.data);
-        } catch (error) {
-          // Handle network or other errors
-          if (!get().generalError) {
-            setGeneralError(
-              error instanceof Error
-                ? error.message
-                : "An unexpected error occurred"
-            );
-          }
-        } finally {
-          setIsLoading(false);
-        }
+      getFormData: () => {
+        const { formData, calculations } = get();
+        return {
+          ...formData,
+          subtotal: calculations.subtotal,
+          discountAmount: calculations.discountAmount,
+          taxAmount: calculations.taxAmount,
+          total: calculations.total,
+        };
       },
-
-      // Reset form
-      resetForm: () =>
-        set({
-          invoiceForm: {
-            ...defaultInvoiceForm,
-            invoiceDate: new Date().toISOString().split("T")[0],
-          },
-          formErrors: {},
-          selectedClient: null,
-          selectedCompany: null,
-          clientSearch: "",
-          showClientDropdown: false,
-          error: null,
-        }),
-
-      // Load invoice data (for editing)
-      loadInvoice: (invoiceData) =>
-        set({
-          invoiceForm: {
-            ...defaultInvoiceForm,
-            ...invoiceData,
-            invoiceDate:
-              invoiceData.invoiceDate || new Date().toISOString().split("T")[0],
-          },
-          selectedClient: invoiceData.client || null,
-          selectedCompany: invoiceData.company || null,
-        }),
     }),
     {
-      name: "invoice-store", // Store name for devtools
+      name: "invoice-store",
     }
   )
 );
 
-export default useInvoiceFormStore;
+// Computed selectors (optional, for complex derived state)
+export const useInvoiceSelectors = () => {
+  const store = useInvoiceStore();
+
+  return {
+    // Filtered clients based on search
+    filteredClients: store.clients.filter(
+      (client) =>
+        client.status === "active" &&
+        (client.name.toLowerCase().includes(store.clientSearch.toLowerCase()) ||
+          client.email
+            .toLowerCase()
+            .includes(store.clientSearch.toLowerCase()) ||
+          (client.company &&
+            client.company
+              .toLowerCase()
+              .includes(store.clientSearch.toLowerCase())))
+    ),
+
+    // Selected currency info
+    selectedCurrency: store.currencies.find(
+      (c) => c.code === store.formData.currency
+    ),
+
+    // Form validation state
+    hasErrors: Object.keys(store.formErrors).length > 0,
+
+    // Ready to preview/submit
+    isFormReady:
+      store.formData.companyId &&
+      store.formData.clientId &&
+      store?.formData?.items.length > 0,
+  };
+};
