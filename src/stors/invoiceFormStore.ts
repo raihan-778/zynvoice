@@ -550,7 +550,7 @@ export const useInvoiceFormStore = create<InvoiceStore>()(
 
 // Computed selectors (optional, for complex derived state)
 export const useInvoiceSelectors = () => {
-  const store = useInvoiceStore();
+  const store = useInvoiceFormStore();
 
   return {
     // Filtered clients based on search
