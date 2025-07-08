@@ -4,15 +4,20 @@ import { ClientInfo, InvoiceFormData } from "@/lib/validations/validation";
 import { InvoiceApiResponse } from "@/types/apiResponse";
 
 import { useInvoiceFormStore } from "@/stors/invoiceFormStore";
-<<<<<<< HEAD
-import { Building2, Calculator, Calendar, FileText, Plus, RefreshCw, Search, Trash2, User } from "lucide-react";
-=======
-import { Building2, Calculator, RefreshCw, Search, User } from "lucide-react";
->>>>>>> f13c752af7bdacffb147a81d137f814bd4c750f5
+import {
+  Building2,
+  Calculator,
+  Calendar,
+  FileText,
+  Plus,
+  RefreshCw,
+  Search,
+  Trash2,
+  User,
+} from "lucide-react";
 import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { InvoicePreview } from "./InvoicePreview";
-import { EmailState } from "@/stors/invoiceStore";
 
 export default function InvoiceForm() {
   // Zustand store
@@ -22,7 +27,6 @@ export default function InvoiceForm() {
     isInitialLoading,
     generalError,
     loadInitialData,
-    updateFormField,
 
     setGeneralError,
     selectedCompany,
@@ -58,6 +62,7 @@ export default function InvoiceForm() {
     setClientSearch,
     generateInvoiceNumber,
     addItem,
+    formErrors,
     updateItem,
     removeItem,
     updateFormField,
@@ -70,8 +75,6 @@ export default function InvoiceForm() {
   const form = useForm<InvoiceFormData>({
     defaultValues: formData,
   });
-
-
 
   // Sync form with Zustand store
   useEffect(() => {
@@ -120,12 +123,6 @@ export default function InvoiceForm() {
     return <div>Error: {generalError}</div>;
   }
 
-  // Handle form changes and update Zustand store
-  const handleFormChange = (field: keyof InvoiceFormData, value: any) => {
-    setInvoiceData({ [field]: value });
-    form.setValue(field, value);
-  };
-
   // const handleFieldChange = (fieldName, value) => {
   //   // Update the field in state or form data
   //   setFormData((prevData) => ({
@@ -170,25 +167,6 @@ export default function InvoiceForm() {
         (client.company &&
           client.company?.toLowerCase().includes(clientSearch?.toLowerCase())))
   );
-  // Add item handler
-  const handleAddItem = () => {
-    const newItem = {
-      id: Date.now().toString(),
-      description: "",
-      quantity: 1,
-      rate: 0,
-      amount: 0,
-    };
-    addItem(newItem);
-  };
-
-  // Remove item handler
-  const handleRemoveItem = (index: number) => {
-    if (formData?.items && formData.items.length > 1) {
-      const itemToRemove = formData.items[index];
-      removeItem(itemToRemove.id);
-    }
-  };
 
   // Preview handler
   const handlePreview = () => {
@@ -604,7 +582,7 @@ export default function InvoiceForm() {
               </div>
             </div>
 
-             <div className="bg-purple-50 p-6 rounded-xl border border-purple-200">
+            <div className="bg-purple-50 p-6 rounded-xl border border-purple-200">
               <div className="flex items-center gap-3 mb-4">
                 <RefreshCw className="w-5 h-5 text-purple-600" />
                 <h3 className="text-lg font-semibold text-gray-900">
@@ -618,10 +596,7 @@ export default function InvoiceForm() {
                     type="checkbox"
                     checked={formData.recurring?.isRecurring || false}
                     onChange={(e) =>
-                      updateFormField(
-                        recurring.isRecurring,
-                        e.target.checked
-                      )
+                      updateFormField(recurring.isRecurring, e.target.checked)
                     }
                     className="h-4 w-4 text-purple-600 focus:ring-purple-500 border-gray-300 rounded"
                   />
@@ -639,10 +614,7 @@ export default function InvoiceForm() {
                       <select
                         value={formData.recurring?.frequency || "monthly"}
                         onChange={(e) =>
-                          handleItemChange(
-                            "recurring.frequency",
-                            e.target.value
-                          )
+                          updateFormField("recurring.frequency", e.target.value)
                         }
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                       >
@@ -662,10 +634,7 @@ export default function InvoiceForm() {
                         type="date"
                         value={formData.recurring?.nextDate || ""}
                         onChange={(e) =>
-                          handleFieldChange(
-                            "recurring.nextDate",
-                            e.target.value
-                          )
+                          updateFormField("recurring.nextDate", e.target.value)
                         }
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                       />
@@ -679,7 +648,7 @@ export default function InvoiceForm() {
                         type="date"
                         value={formData.recurring?.endDate || ""}
                         onChange={(e) =>
-                          handleFieldChange("recurring.endDate", e.target.value)
+                          updateFormField("recurring.endDate", e.target.value)
                         }
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                       />
@@ -700,7 +669,7 @@ export default function InvoiceForm() {
                 </div>
                 <button
                   type="button"
-                  onClick={handleAddItem}
+                  onClick={addItem}
                   className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
                 >
                   <Plus className="w-4 h-4" />
@@ -784,7 +753,7 @@ export default function InvoiceForm() {
                     <div className="col-span-1 flex justify-center">
                       <button
                         type="button"
-                        onClick={() => handleRemoveItem(index)}
+                        onClick={() => removeItem(index)}
                         disabled={formData?.items?.length === 1}
                         className="p-2 text-red-600 hover:bg-red-50 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                       >
@@ -816,7 +785,7 @@ export default function InvoiceForm() {
                         max="100"
                         value={formData.taxRate || ""}
                         onChange={(e) =>
-                          handleFieldChange(
+                          updateFormField(
                             "taxRate",
                             parseFloat(e.target.value) || 0
                           )
@@ -833,7 +802,7 @@ export default function InvoiceForm() {
                         <select
                           value={formData.discountType || "percentage"}
                           onChange={(e) =>
-                            handleFieldChange("discountType", e.target.value)
+                            updateFormField("discountType", e.target.value)
                           }
                           className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                         >
@@ -858,7 +827,7 @@ export default function InvoiceForm() {
                             min="0"
                             value={formData.discountValue || ""}
                             onChange={(e) =>
-                              handleFieldChange(
+                              updateFormField(
                                 "discountValue",
                                 parseFloat(e.target.value) || 0
                               )
@@ -879,9 +848,7 @@ export default function InvoiceForm() {
                     </label>
                     <textarea
                       value={formData.notes || ""}
-                      onChange={(e) =>
-                        handleFieldChange("notes", e.target.value)
-                      }
+                      onChange={(e) => updateFormField("notes", e.target.value)}
                       placeholder="Add any additional notes or special instructions..."
                       rows={4}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
@@ -894,9 +861,7 @@ export default function InvoiceForm() {
                     </label>
                     <textarea
                       value={formData.terms || ""}
-                      onChange={(e) =>
-                        handleFieldChange("terms", e.target.value)
-                      }
+                      onChange={(e) => updateFormField("terms", e.target.value)}
                       placeholder="Add payment terms, conditions, or other legal information..."
                       rows={4}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
