@@ -558,7 +558,7 @@ export const useInvoiceSelectors = () => {
       (client) =>
         client.status === "active" &&
         (client.name.toLowerCase().includes(store.clientSearch.toLowerCase()) ||
-          client.email
+          client?.email
             .toLowerCase()
             .includes(store.clientSearch.toLowerCase()) ||
           (client.company &&

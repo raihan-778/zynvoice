@@ -8,6 +8,7 @@ import { Building2, Calculator, RefreshCw, Search, User } from "lucide-react";
 import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { InvoicePreview } from "./InvoicePreview";
+import { EmailState } from "@/stors/invoiceStore";
 
 export default function InvoiceForm() {
   // Zustand store
@@ -63,6 +64,8 @@ export default function InvoiceForm() {
   const form = useForm<InvoiceFormData>({
     defaultValues: formData,
   });
+
+
 
   // Sync form with Zustand store
   useEffect(() => {

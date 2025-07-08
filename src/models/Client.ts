@@ -1,10 +1,11 @@
 // models/Client.ts
-import { IClient } from "@/types/database";
+import { ClientInfo } from "@/lib/validations/validation";
+
 import { Schema, model, models } from "mongoose";
 
-export const ClientSchema = new Schema<IClient>(
+export const ClientSchema = new Schema<ClientInfo>(
   {
-    userId: {
+    _id: {
       type: Schema.Types.ObjectId,
       ref: "User",
       required: true,
@@ -40,16 +41,7 @@ export const ClientSchema = new Schema<IClient>(
       zipCode: { type: String, trim: true },
       country: { type: String, trim: true },
     },
-    notes: {
-      type: String,
-      maxlength: [500, "Notes cannot exceed 500 characters"],
-    },
-    tags: [
-      {
-        type: String,
-        trim: true,
-      },
-    ],
+
     paymentTerms: {
       type: Number,
       default: 30,
@@ -60,20 +52,6 @@ export const ClientSchema = new Schema<IClient>(
       type: String,
       enum: ["active", "inactive"],
       default: "active",
-    },
-    totalInvoiced: {
-      type: Number,
-      default: 0,
-      min: 0,
-    },
-    totalPaid: {
-      type: Number,
-      default: 0,
-      min: 0,
-    },
-    lastInvoiceDate: {
-      type: Date,
-      default: null,
     },
   },
   {
@@ -89,11 +67,11 @@ ClientSchema.index({ userId: 1, email: 1 }, { unique: true });
 ClientSchema.index({ userId: 1, status: 1 });
 ClientSchema.index({ userId: 1, tags: 1 });
 
-// Virtual for outstanding balance
-ClientSchema.virtual("outstandingBalance").get(function () {
-  return this.totalInvoiced - this.totalPaid;
-});
+// // Virtual for outstanding balance
+// ClientSchema.virtual("outstandingBalance").get(function () {
+//   return this.totalInvoiced - this.totalPaid;
+// });
 
 // Export the model (handles both development and production environments)
-const ClientModel = models?.Client || model<IClient>("Client", ClientSchema);
+const ClientModel = models?.Client || model<ClientInfo>("Client", ClientSchema);
 export default ClientModel;

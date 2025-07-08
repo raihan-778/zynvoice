@@ -19,12 +19,12 @@ export const TemplateSchema = new Schema<ITemplate>(
       type: String,
       maxlength: [500, "Description cannot exceed 500 characters"],
     },
-    design: {
-      layout: {
-        type: String,
-        enum: ["modern", "classic", "minimal"],
-        default: "modern",
-      },
+
+    layout: {
+      type: String,
+      enum: ["modern", "classic", "minimal"],
+      default: "modern",
+
       primaryColor: {
         type: String,
         default: "#2563eb",

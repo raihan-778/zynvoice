@@ -7,12 +7,51 @@ import {
 } from "@/lib/validations/validation";
 import { ErrorResponse } from "@/types/apiResponse";
 import {
-  InvoiceCalculations,
-  InvoiceFormErrors,
+  IInvoiceCalculations,
+  IInvoiceFormErrors,
   ITemplate,
 } from "@/types/database";
 import { create } from "zustand";
 import { devtools } from "zustand/middleware";
+
+//Email State
+export interface EmailState {
+  isEmailSending: boolean;
+  emailError: string | null;
+  emailSuccess: boolean;
+  emailHistory: EmailRecord[];
+  emailTemplates: EmailTemplate[];
+  selectedEmailTemplate: EmailTemplate | null;
+}
+
+export interface EmailRecord {
+  id: string;
+  invoiceId: string;
+  recipientEmail: string;
+  subject: string;
+  status: "sent" | "failed" | "pending";
+  sentAt: Date;
+  error?: string;
+  attachmentType: "pdf" | "image";
+}
+
+export interface EmailTemplate {
+  id: string;
+  name: string;
+  subject: string;
+  htmlContent: string;
+  textContent: string;
+  isDefault: boolean;
+}
+
+interface SendEmailOptions {
+  recipientEmail: string;
+  subject: string;
+  message: string;
+  attachmentType: "pdf" | "image";
+  imageFormat?: "png" | "jpeg";
+  templateId?: string;
+}
 
 // Store interface
 interface InvoiceStore {
@@ -21,7 +60,7 @@ interface InvoiceStore {
 
   selectedCompany: CompanyInfo | null;
   selectedClient: ClientInfo | null;
-  calculations: InvoiceCalculations;
+  calculations: IInvoiceCalculations;
   template: ITemplate;
   companies: CompanyInfo[];
   clients: ClientInfo[];
@@ -29,7 +68,7 @@ interface InvoiceStore {
 
   // UI State
   isGenerating: boolean;
-  validationErrors: InvoiceFormErrors;
+  validationErrors: IInvoiceFormErrors;
   error: string | null;
   isLoading: boolean;
   previewMode: boolean;
@@ -37,6 +76,19 @@ interface InvoiceStore {
   clientSearch: string;
   apiErrors: ErrorResponse;
   invoiceNumber: string;
+
+  // Email State
+  emailState: EmailState;
+
+  // Email Actions
+  sendInvoiceEmail: (options: SendEmailOptions) => Promise<void>;
+  setEmailSending: (sending: boolean) => void;
+  setEmailError: (error: string | null) => void;
+  setEmailSuccess: (success: boolean) => void;
+  loadEmailHistory: (invoiceId: string) => Promise<void>;
+  loadEmailTemplates: () => Promise<void>;
+  setSelectedEmailTemplate: (template: EmailTemplate | null) => void;
+  exportInvoiceAsImage: (format: "png" | "jpeg") => Promise<Blob>;
 
   // Actions
   setInvoiceData: (data: Partial<InvoiceFormData>) => void;
@@ -72,7 +124,7 @@ interface InvoiceStore {
   // UI Actions
   setIsGenerating: (isGenerating: boolean) => void;
   setError: (error: string | null) => void;
-  setvalidationErrors: (formValidationError: InvoiceFormErrors) => void;
+  setvalidationErrors: (formValidationError: IInvoiceFormErrors) => void;
 
   // Computed getters
   getInvoicePDFProps: () => {
@@ -135,7 +187,7 @@ const defaultInvoiceData: Partial<InvoiceFormData> = {
   },
 };
 
-const defaultCalculations: InvoiceCalculations = {
+const defaultCalculations: IInvoiceCalculations = {
   subtotal: 0,
   taxAmount: 0,
   discountAmount: 0,
@@ -271,7 +323,7 @@ export const useInvoiceStore = create<InvoiceStore>()(
         set({ isGenerating }, false, "setIsGenerating"),
 
       setError: (error) => set({ error }, false, "setError"),
-      setvalidationErrors: (validationErrors: InvoiceFormErrors) =>
+      setvalidationErrors: (validationErrors: IInvoiceFormErrors) =>
         set({ validationErrors }, false, "setFormValidationError"),
       // Computed getters
       getInvoicePDFProps: () => {

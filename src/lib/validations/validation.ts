@@ -20,10 +20,10 @@ export const CompanyInfoSchema = z.object({
 export const ClientInfoSchema = z.object({
   _id: z.string().optional(),
   name: z.string().min(1, "Client name is required"),
-  email: z.string().email().optional(),
+  email: z.string().email(),
   phone: z.string().optional(),
-  company:z.string().optional(),
-  status:z.enum(["active","inactive"]),
+  company: z.string().optional(),
+  status: z.enum(["active", "inactive"]),
   paymentTerms: z.number().optional(),
   address: z
     .object({
@@ -158,6 +158,7 @@ export const InvoiceFormDataSchema = z.object({
   userId: z.string().optional(),
   companyId: z.string(),
   clientId: z.string(),
+
   items: InvoiceItemSchema,
 
   invoiceNumber: z.string().min(1, "Invoice number is required"),
@@ -245,7 +246,9 @@ export const InvoiceSchema = z
     taxAmount: z.number().optional(),
     totalAmount: z.number().min(0.01, "Total amount must be greater than 0"),
     notes: z.string().max(1000, "Notes too long").optional(),
-    status: z.enum(["draft", "sent", "paid", "overdue"]).optional(),
+    status: z
+      .enum(["draft", "sent", "paid", "overdue", "cancelled"])
+      .optional(),
   })
   .refine(
     (data) => {
