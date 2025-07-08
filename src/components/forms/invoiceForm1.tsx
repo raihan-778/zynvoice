@@ -1,10 +1,10 @@
 "use client";
 
-import { InvoiceFormData } from "@/lib/validations/validation";
+import { ClientInfo, InvoiceFormData } from "@/lib/validations/validation";
 import { InvoiceApiResponse } from "@/types/apiResponse";
 
 import { useInvoiceFormStore } from "@/stors/invoiceFormStore";
-import { Building2, Search, User } from "lucide-react";
+import { Building2, Calendar, RefreshCw, Search, User } from "lucide-react";
 import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { InvoicePreview } from "./InvoicePreview";
@@ -37,6 +37,7 @@ export default function InvoiceForm() {
 
     // Actions
     setInvoiceData,
+    setSelectedClientSafe,
     setSelectedCompany,
     setSelectedClient,
     setCalculations,
@@ -53,6 +54,7 @@ export default function InvoiceForm() {
     addItem,
     updateItem,
     removeItem,
+    updateFormField,
     calculateTotals,
     getInvoicePDFProps,
     resetInvoice,
@@ -69,6 +71,31 @@ export default function InvoiceForm() {
       form.reset(formData);
     }
   }, [formData, form]);
+
+  // Custom validation function that uses both RHF and Zustand
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+
+    // Clear previous errors
+    clearValidationErrors();
+
+    // Validate using RHF
+    const isRHFValid = await form.trigger();
+
+    // Validate using Zustand
+    const isZustandValid = validateForm();
+
+    if (isRHFValid && isZustandValid) {
+      // Submit the form
+      console.log("Form is valid, submitting...", formData);
+      // Call your submit function here
+    } else {
+      console.log("Form has errors", {
+        rhfErrors: form.formState.errors,
+        zustandErrors: validationErrors,
+      });
+    }
+  };
 
   // Load initial data on component mount
   useEffect(() => {
@@ -91,6 +118,14 @@ export default function InvoiceForm() {
     form.setValue(field, value);
   };
 
+  // const handleFieldChange = (fieldName, value) => {
+  //   // Update the field in state or form data
+  //   setFormData((prevData) => ({
+  //     ...prevData,
+  //     [fieldName]: value,
+  //   }));
+  // };
+
   // Handle item changes
   const handleItemChange = (
     index: number,
@@ -111,29 +146,11 @@ export default function InvoiceForm() {
     setInvoiceData({ items: currentItems });
   };
 
-  // Company selection handler
-  const handleCompanySelect = (companyId: string) => {
-    const company = companies.find((c) => c._id === companyId);
-    setSelectedCompany(company || null);
-    handleFormChange("companyId", companyId);
-  };
-
   // Client selection handler
-  const handleClientSelect = (client: any) => {
-    setSelectedClient(client);
-    setClientSearch(client.name);
-    setShowClientDropdown(false);
-
-    // Update form data
-    handleFormChange("clientId", client._id);
-    handleFormChange("paymentTerms", client.paymentTerms);
-
-    // Calculate due date
-    const dueDate = new Date(
-      Date.now() + client.paymentTerms * 24 * 60 * 60 * 1000
-    );
-    const dueDateString = dueDate.toISOString().split("T")[0];
-    handleFormChange("dueDate", dueDateString);
+  // Client selection handler - Updated to avoid hydration issues
+  const handleClientSelect = (client: ClientInfo) => {
+    // Use the safe version that doesn't calculate dates immediately
+    setSelectedClientSafe(client);
   };
 
   // Filter clients based on search
@@ -145,7 +162,6 @@ export default function InvoiceForm() {
         (client.company &&
           client.company?.toLowerCase().includes(clientSearch?.toLowerCase())))
   );
-
   // Add item handler
   const handleAddItem = () => {
     const newItem = {
@@ -467,8 +483,118 @@ export default function InvoiceForm() {
               </div>
             </div>
 
-            {/* Continue with the rest of your form JSX... */}
-            {/* I'll provide the rest in the next response to stay within limits */}
+            {/* Invoice Details */}
+
+            <div className="bg-gray-50 p-6 rounded-xl">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                Invoice Details
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Invoice Number *
+                  </label>
+                  <div className="flex">
+                    <input
+                      value={formData.invoiceNumber || ""}
+                      onChange={(e) =>
+                        updateFormField("invoiceNumber", e.target.value)
+                      }
+                      className={`flex-1 px-3 py-2 border ${
+                        validationErrors?.invoiceNumber
+                          ? "border-red-500 focus:ring-red-500"
+                          : "border-gray-300 focus:ring-blue-500"
+                      } rounded-l-lg focus:ring-2 focus:border-transparent`}
+                      placeholder="Enter invoice number"
+                    />
+                    <button
+                      type="button"
+                      onClick={generateInvoiceNumber}
+                      className="px-3 py-2 bg-gray-200 border border-l-0 border-gray-300 rounded-r-lg hover:bg-gray-300 transition-colors"
+                      title="Generate new invoice number"
+                    >
+                      <RefreshCw className="w-4 h-4" />
+                    </button>
+                  </div>
+                  {validationErrors?.invoiceNumber && (
+                    <p className="text-red-500 text-xs mt-1">
+                      {validationErrors.invoiceNumber}
+                    </p>
+                  )}
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Invoice Date *
+                  </label>
+                  <div className="relative">
+                    <input
+                      type="date"
+                      value={formData.invoiceDate || ""}
+                      onChange={(e) =>
+                        updateFormField("invoiceDate", e.target.value)
+                      }
+                      className={`w-full px-3 py-2 pl-10 border ${
+                        validationErrors?.invoiceDate
+                          ? "border-red-500 focus:ring-red-500"
+                          : "border-gray-300 focus:ring-blue-500"
+                      } rounded-lg focus:ring-2 focus:border-transparent`}
+                    />
+                    <Calendar className="w-4 h-4 text-gray-400 absolute left-3 top-3" />
+                  </div>
+                  {validationErrors?.invoiceDate && (
+                    <p className="text-red-500 text-xs mt-1">
+                      {validationErrors.invoiceDate}
+                    </p>
+                  )}
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Due Date *
+                  </label>
+                  <div className="relative">
+                    <input
+                      type="date"
+                      value={formData.dueDate || ""}
+                      onChange={(e) =>
+                        updateFormField("dueDate", e.target.value)
+                      }
+                      className={`w-full px-3 py-2 pl-10 border ${
+                        validationErrors?.dueDate
+                          ? "border-red-500 focus:ring-red-500"
+                          : "border-gray-300 focus:ring-blue-500"
+                      } rounded-lg focus:ring-2 focus:border-transparent`}
+                    />
+                    <Calendar className="w-4 h-4 text-gray-400 absolute left-3 top-3" />
+                  </div>
+                  {validationErrors?.dueDate && (
+                    <p className="text-red-500 text-xs mt-1">
+                      {validationErrors.dueDate}
+                    </p>
+                  )}
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Currency
+                  </label>
+                  <select
+                    value={formData.currency || "USD"}
+                    onChange={(e) =>
+                      updateFormField("currency", e.target.value)
+                    }
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  >
+                    {currencies?.map((currency) => (
+                      <option key={currency.code} value={currency.code}>
+                        {currency.code} - {currency.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+            </div>
           </form>
         )}
       </div>

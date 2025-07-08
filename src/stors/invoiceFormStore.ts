@@ -76,6 +76,7 @@ interface InvoiceStoreActions {
 
   // Client/Company management
   setSelectedClient: (client: ClientInfo) => void;
+  setSelectedClientSafe: (client: ClientInfo) => void;
   setSelectedCompany: (company: CompanyInfo) => void;
   setClientSearch: (search: string) => void;
   setShowClientDropdown: (show: boolean) => void;
@@ -105,6 +106,8 @@ interface InvoiceStoreActions {
   generateInvoiceNumber: () => void;
   resetForm: () => void;
   validateForm: () => boolean;
+
+  calculateDueDate: (field: number) => void;
 
   // PDF functions
   getInvoicePDFProps: () => InvoicePdfProps;
@@ -185,8 +188,6 @@ const setNestedValue = (obj: any, path: string, value: any) => {
 
   current[keys[keys.length - 1]] = value;
 };
-
-
 
 export const useInvoiceFormStore = create<InvoiceStore>()(
   devtools(
@@ -336,20 +337,41 @@ export const useInvoiceFormStore = create<InvoiceStore>()(
         get().calculateAmounts();
       },
 
-    
+      // Helper function to calculate due date safely
+      calculateDueDate: (paymentTerms) => {
+        // Only calculate if we're on the client side
+        if (typeof window === "undefined") return "";
 
-     setSelectedClient: (client) => {
-  set({ selectedClient: client });
-  if (client) {
-    get().updateFormField("clientId", client._id);
-    get().updateFormField("paymentTerms", client.paymentTerms);
+        const dueDate = new Date(
+          Date.now() + paymentTerms * 24 * 60 * 60 * 1000
+        );
+        return dueDate.toISOString().split("T")[0];
+      },
 
-    // Calculate due date safely to avoid hydration mismatch
-    const dueDateString = get().calculateDueDate(client.paymentTerms);
-    if (dueDateString) {
-      get().updateFormField("dueDate", dueDateString);
-    }
+      // Alternative approach: Set client without calculating due date immediately
+      setSelectedClientSafe: (client) => {
+        set({ selectedClient: client });
+        if (client) {
+          get().updateFormField("clientId", client._id);
+          get().updateFormField("paymentTerms", client.paymentTerms);
 
+          // Don't calculate due date immediately - let it be calculated when needed
+          // Or trigger it in a useEffect in the component
+
+          // Update UI
+          get().setClientSearch(client.name);
+          get().setShowClientDropdown(false);
+        }
+      },
+
+      // Function to update due date (call this from useEffect in component)
+      updateDueDate: (paymentTerms) => {
+        const dueDate = new Date(
+          Date.now() + paymentTerms * 24 * 60 * 60 * 1000
+        );
+        const dueDateString = dueDate.toISOString().split("T")[0];
+        get().updateFormField("dueDate", dueDateString);
+      },
 
       setSelectedCompany: (company) => {
         set({ selectedCompany: company });
@@ -461,25 +483,74 @@ export const useInvoiceFormStore = create<InvoiceStore>()(
         const invoiceNumber = `INV-${timestamp}-${randomSuffix}`;
         get().updateFormField("invoiceNumber", invoiceNumber);
       },
+      // Validation
+      // validateForm: () => {
+      //   const { formData } = get();
+      //   const errors = {};
 
-      resetForm: () => {
-        set({
-          formData: { ...defaultFormData },
-          selectedClient: null,
-          selectedCompany: null,
-          clientSearch: "",
-          showClientDropdown: false,
-          previewMode: false,
-          calculations: {
-            subtotal: 0,
-            discountAmount: 0,
-            taxAmount: 0,
-            total: 0,
-          },
-        });
-        get().clearAllErrors();
-      },
+      //   // Required fields validation
+      //   if (!formData.invoiceNumber) {
+      //     errors.invoiceNumber = "Invoice number is required";
+      //   }
 
+      //   if (!formData.invoiceDate) {
+      //     errors.invoiceDate = "Invoice date is required";
+      //   }
+
+      //   if (!formData.dueDate) {
+      //     errors.dueDate = "Due date is required";
+      //   }
+
+      //   if (!formData.clientId) {
+      //     errors.clientId = "Client selection is required";
+      //   }
+
+      //   // Items validation
+      //   if (!formData.items || formData.items.length === 0) {
+      //     errors.items = "At least one item is required";
+      //   } else {
+      //     const itemErrors = [];
+      //     formData.items.forEach((item, index) => {
+      //       const itemError = {};
+
+      //       if (!item.description) {
+      //         itemError.description = "Description is required";
+      //       }
+
+      //       if (!item.quantity || item.quantity <= 0) {
+      //         itemError.quantity = "Quantity must be greater than 0";
+      //       }
+
+      //       if (item.rate === undefined || item.rate < 0) {
+      //         itemError.rate = "Rate cannot be negative";
+      //       }
+
+      //       if (Object.keys(itemError).length > 0) {
+      //         itemErrors[index] = itemError;
+      //       }
+      //     });
+
+      //     if (itemErrors.length > 0) {
+      //       errors.items = itemErrors;
+      //     }
+      //   }
+
+      //   // Recurring validation
+      //   if (formData.recurring?.isRecurring) {
+      //     if (!formData.recurring.frequency) {
+      //       errors.recurringFrequency =
+      //         "Frequency is required for recurring invoices";
+      //     }
+
+      //     if (!formData.recurring.nextDate) {
+      //       errors.recurringNextDate =
+      //         "Next invoice date is required for recurring invoices";
+      //     }
+      //   }
+
+      //   set({ validationErrors: errors });
+      //   return Object.keys(errors).length === 0;
+      // },
       validateForm: () => {
         const { formData, selectedClient, selectedCompany } = get();
         const errors: FormErrors = {};
@@ -511,6 +582,29 @@ export const useInvoiceFormStore = create<InvoiceStore>()(
 
         set({ formErrors: errors });
         return Object.keys(errors).length === 0;
+      },
+
+      // Clear validation errors
+      // clearValidationErrors: () => {
+      //   set({ validationErrors: {} });
+      // },
+
+      resetForm: () => {
+        set({
+          formData: { ...defaultFormData },
+          selectedClient: null,
+          selectedCompany: null,
+          clientSearch: "",
+          showClientDropdown: false,
+          previewMode: false,
+          calculations: {
+            subtotal: 0,
+            discountAmount: 0,
+            taxAmount: 0,
+            total: 0,
+          },
+        });
+        get().clearAllErrors();
       },
 
       getInvoicePDFProps: () => {

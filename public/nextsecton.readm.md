@@ -109,3 +109,16 @@ Focus on a specific section that needs special attention?
 Move to the Preview component integration?
 
 Let me know what you'd like to see next!
+import { Calendar, RefreshCw, FileText, Plus, Trash2 } from 'lucide-react';
+
+// Invoice Details Section
+const InvoiceDetailsSection = () => {
+const {
+formData,
+currencies,
+generateInvoiceNumber,
+setInvoiceData,
+selectedCurrency,
+error,
+validationErrors
+} = useInvoiceFormStore();
