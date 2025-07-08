@@ -4,7 +4,7 @@ import { InvoiceFormData } from "@/lib/validations/validation";
 import { InvoiceApiResponse } from "@/types/apiResponse";
 
 import { useInvoiceFormStore } from "@/stors/invoiceFormStore";
-import { Building2, Calculator, Search, User } from "lucide-react";
+import { Building2, Calculator, RefreshCw, Search, User } from "lucide-react";
 import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { InvoicePreview } from "./InvoicePreview";
@@ -17,6 +17,7 @@ export default function InvoiceForm() {
     isInitialLoading,
     generalError,
     loadInitialData,
+    updateFormField,
 
     setGeneralError,
     selectedCompany,
@@ -481,8 +482,8 @@ export default function InvoiceForm() {
                     type="checkbox"
                     checked={formData.recurring?.isRecurring || false}
                     onChange={(e) =>
-                      handleFieldChange(
-                        "recurring.isRecurring",
+                      updateFormField(
+                        recurring.isRecurring,
                         e.target.checked
                       )
                     }
