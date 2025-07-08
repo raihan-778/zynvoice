@@ -1,7 +1,7 @@
 // components/InvoiceFormBuilder.tsx
 import React, { useCallback, useEffect } from "react";
 
-import { useInvoiceStore } from "@/stors/invoiceStore";
+import { EmailState, useInvoiceStore } from "@/stors/invoiceStore";
 import { pdf } from "@react-pdf/renderer";
 import { RefreshCw } from "lucide-react";
 import { InvoicePDF } from "../pdf/InvoicePDFTemplate";
@@ -77,6 +77,16 @@ export const InvoiceFormBuilder: React.FC = () => {
     setSelectedClient,
     setError,
   ]);
+
+  // Add these to your store implementation
+  const emailInitialState: EmailState = {
+    isEmailSending: false,
+    emailError: null,
+    emailSuccess: false,
+    emailHistory: [],
+    emailTemplates: [],
+    selectedEmailTemplate: null,
+  };
 
   // // Recalculate totals when items change
   // useEffect(() => {

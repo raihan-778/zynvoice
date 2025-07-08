@@ -4,10 +4,15 @@ import { ClientInfo, InvoiceFormData } from "@/lib/validations/validation";
 import { InvoiceApiResponse } from "@/types/apiResponse";
 
 import { useInvoiceFormStore } from "@/stors/invoiceFormStore";
+<<<<<<< HEAD
 import { Building2, Calendar, RefreshCw, Search, User } from "lucide-react";
+=======
+import { Building2, Calculator, RefreshCw, Search, User } from "lucide-react";
+>>>>>>> f13c752af7bdacffb147a81d137f814bd4c750f5
 import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { InvoicePreview } from "./InvoicePreview";
+import { EmailState } from "@/stors/invoiceStore";
 
 export default function InvoiceForm() {
   // Zustand store
@@ -17,6 +22,7 @@ export default function InvoiceForm() {
     isInitialLoading,
     generalError,
     loadInitialData,
+    updateFormField,
 
     setGeneralError,
     selectedCompany,
@@ -64,6 +70,8 @@ export default function InvoiceForm() {
   const form = useForm<InvoiceFormData>({
     defaultValues: formData,
   });
+
+
 
   // Sync form with Zustand store
   useEffect(() => {

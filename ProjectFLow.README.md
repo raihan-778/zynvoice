@@ -111,7 +111,7 @@ Skip: Don't include email sending yet
 
 Section 8: Email Integration
 SECTION 8: Email System
-Context: PDF export working
+Context: PDF export working but need image export also
 Need: Email invoice sending functionality
 Include: Nodemailer/SendGrid setup, email templates
 Skip: Don't include dashboard analytics yet

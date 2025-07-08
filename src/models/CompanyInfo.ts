@@ -1,10 +1,11 @@
 // models/Company.ts
-import { ICompany } from "@/types/database";
+
+import { CompanyInfo } from "@/lib/validations/validation";
 import mongoose, { model, models, Schema } from "mongoose";
 
-export const CompanySchema = new Schema<ICompany>(
+export const CompanySchema = new Schema<CompanyInfo>(
   {
-    userId: {
+    _id: {
       type: Schema.Types.ObjectId,
       ref: "User",
       required: true,
@@ -19,24 +20,27 @@ export const CompanySchema = new Schema<ICompany>(
       type: String,
       default: null,
     },
-    email: {
-      type: String,
-      required: [true, "Company email is required"],
-      lowercase: true,
-      trim: true,
-      match: [
-        /^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,3})+$/,
-        "Please enter a valid email",
-      ],
+    contact: {
+      email: {
+        type: String,
+        required: [true, "Company email is required"],
+        lowercase: true,
+        trim: true,
+        match: [
+          /^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,3})+$/,
+          "Please enter a valid email",
+        ],
+      },
+      phone: {
+        type: String,
+        trim: true,
+      },
+      website: {
+        type: String,
+        trim: true,
+      },
     },
-    phone: {
-      type: String,
-      trim: true,
-    },
-    website: {
-      type: String,
-      trim: true,
-    },
+
     address: {
       street: {
         type: String,
@@ -64,35 +68,35 @@ export const CompanySchema = new Schema<ICompany>(
         trim: true,
       },
     },
-    taxId: {
-      type: String,
-      trim: true,
-    },
-    bankDetails: {
-      bankName: String,
-      accountName: String,
-      accountNumber: String,
-      routingNumber: String,
-      swift: String,
-    },
-    branding: {
-      primaryColor: {
-        type: String,
-        default: "#2563eb",
-      },
-      secondaryColor: {
-        type: String,
-        default: "#64748b",
-      },
-      fontFamily: {
-        type: String,
-        default: "Inter",
-      },
-    },
-    isDefault: {
-      type: Boolean,
-      default: false,
-    },
+    // taxId: {
+    //   type: String,
+    //   trim: true,
+    // },
+    // bankDetails: {
+    //   bankName: String,
+    //   accountName: String,
+    //   accountNumber: String,
+    //   routingNumber: String,
+    //   swift: String,
+    // },
+    // branding: {
+    //   primaryColor: {
+    //     type: String,
+    //     default: "#2563eb",
+    //   },
+    //   secondaryColor: {
+    //     type: String,
+    //     default: "#64748b",
+    //   },
+    //   fontFamily: {
+    //     type: String,
+    //     default: "Inter",
+    //   },
+    // },
+    // isDefault: {
+    //   type: Boolean,
+    //   default: false,
+    // },
   },
   {
     timestamps: true,
@@ -111,7 +115,7 @@ CompanySchema.pre("save", async function (next) {
     await mongoose
       .model("Company")
       .updateMany(
-        { userId: this.userId, _id: { $ne: this._id } },
+        { userId: this._id, _id: { $ne: this._id } },
         { isDefault: false }
       );
   }
@@ -119,5 +123,5 @@ CompanySchema.pre("save", async function (next) {
 });
 // Export the model (handles both development and production environments)
 const CompanyModel =
-  models?.Company || model<ICompany>("Company", CompanySchema);
+  models?.Company || model<CompanyInfo>("Company", CompanySchema);
 export default CompanyModel;

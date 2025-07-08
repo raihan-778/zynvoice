@@ -1,9 +1,9 @@
 // ============================================================================
 
 // models/Invoice.ts
+import { InvoiceFormData } from "@/lib/validations/validation";
 import { IInvoice, IInvoiceItem } from "@/types/database";
-import { model } from "mongoose";
-import { models, Schema } from "mongoose";
+import { model, models, Schema } from "mongoose";
 
 const InvoiceItemSchema = new Schema<IInvoiceItem>(
   {
@@ -231,14 +231,15 @@ InvoiceItemSchema.pre("save", function (next) {
 });
 
 // Virtual for days overdue
-InvoiceSchema.virtual("daysOverdue").get(function () {
-  if (this.status !== "overdue") return 0;
-  const today = new Date();
-  const diffTime = today.getTime() - this.dueDate.getTime();
-  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-  return Math.max(0, diffDays);
-});
+// InvoiceSchema.virtual("daysOverdue").get(function () {
+//   if (this?.status !== "overdue") return 0;
+//   const today = new Date();
+//   const diffTime = today.getTime() - this.dueDate.getTime();
+//   const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+//   return Math.max(0, diffDays);
+// });
 
 // Export the model (handles both development and production environments)
-const InvoiceModel = models?.Invoice || model<IInvoice>("Invoice", InvoiceSchema);
+const InvoiceModel =
+  models?.Invoice || model<InvoiceFormData>("Invoice", InvoiceSchema);
 export default InvoiceModel;

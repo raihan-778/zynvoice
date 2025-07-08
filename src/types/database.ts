@@ -1,3 +1,4 @@
+
 // types/database.ts
 
 import { InvoiceFormData } from "@/lib/validations/validation";
@@ -35,7 +36,7 @@ export interface IUser extends BaseDocument {
 }
 
 // Company Types
-export interface CompanyInfo extends BaseDocument {
+export interface ICompany extends BaseDocument {
   userId?: Types.ObjectId;
   name: string;
   logo?: string;
@@ -66,7 +67,7 @@ export interface CompanyInfo extends BaseDocument {
 }
 
 // Client Types
-export interface ClientInfo extends BaseDocument {
+export interface IClient extends BaseDocument {
   userId?: Types.ObjectId;
   name: string;
   email: string;
@@ -80,7 +81,7 @@ export interface ClientInfo extends BaseDocument {
     country?: string;
   };
   notes?: string;
-  tags: string[];
+  tags?: string[];
   paymentTerms: number; // days
   status: "active" | "inactive";
   totalInvoiced: number;
@@ -120,6 +121,8 @@ export interface IInvoice extends BaseDocument {
   paymentTerms: number;
   paidAt?: Date;
   paidAmount: number;
+  status?: ["draft", "sent", "viewed", "paid", "overdue"];
+
   paymentMethod?: string;
   emailSentAt?: Date;
   viewedAt?: Date;
@@ -131,7 +134,7 @@ export interface IInvoice extends BaseDocument {
     endDate?: Date;
   };
 }
-export interface InvoiceCalculations {
+export interface IInvoiceCalculations {
   subtotal: number;
   discountAmount: number;
   taxAmount: number;
@@ -140,8 +143,8 @@ export interface InvoiceCalculations {
 
 // In your types file, create a type for the populated document it is for pdfId route
 export type PopulatedInvoice = IInvoice & {
-  companyId: CompanyInfo;
-  clientId: CompanyInfo;
+  companyId: ICompany;
+  clientId: IClient;
   _id: string;
   __v: number;
 };
@@ -218,23 +221,23 @@ interface InvoiceItem {
 }
 export interface InvoicePreviewProps {
   invoiceData: InvoiceFormData | null;
-  selectedClient: ClientInfo;
-  selectedCompany: CompanyInfo;
-  clientData: ClientInfo[];
-  companyData: CompanyInfo[];
-  calculations: InvoiceCalculations;
+  selectedClient: IClient;
+  selectedCompany: ICompany;
+  clientData: IClient[];
+  companyData: ICompany[];
+  calculations: IInvoiceCalculations;
   onBack: () => void;
   onSubmit: () => void;
   onExportPDF: () => void;
 }
 export interface InvoicePdfProps {
   invoiceData: InvoiceFormData | null;
-  selectedClient: ClientInfo;
-  selectedCompany: CompanyInfo;
-  calculations: InvoiceCalculations;
+  selectedClient: IClient;
+  selectedCompany: ICompany;
+  calculations: IInvoiceCalculations;
   template: Partial<ITemplate>;
   templates?: Partial<ITemplate[]>;
 }
 export type ClientsResponse = {
-  clients: ClientInfo[];
+  clients: IClient[];
 };
