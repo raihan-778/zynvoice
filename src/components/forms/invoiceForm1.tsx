@@ -4,7 +4,7 @@ import { InvoiceFormData } from "@/lib/validations/validation";
 import { InvoiceApiResponse } from "@/types/apiResponse";
 
 import { useInvoiceFormStore } from "@/stors/invoiceFormStore";
-import { Building2, Search, User } from "lucide-react";
+import { Building2, Calculator, Search, User } from "lucide-react";
 import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { InvoicePreview } from "./InvoicePreview";
@@ -467,8 +467,382 @@ export default function InvoiceForm() {
               </div>
             </div>
 
-            {/* Continue with the rest of your form JSX... */}
-            {/* I'll provide the rest in the next response to stay within limits */}
+            <div className="bg-purple-50 p-6 rounded-xl border border-purple-200">
+              <div className="flex items-center gap-3 mb-4">
+                <RefreshCw className="w-5 h-5 text-purple-600" />
+                <h3 className="text-lg font-semibold text-gray-900">
+                  Recurring Invoice
+                </h3>
+              </div>
+
+              <div className="space-y-4">
+                <div className="flex items-center">
+                  <input
+                    type="checkbox"
+                    checked={formData.recurring?.isRecurring || false}
+                    onChange={(e) =>
+                      handleFieldChange(
+                        "recurring.isRecurring",
+                        e.target.checked
+                      )
+                    }
+                    className="h-4 w-4 text-purple-600 focus:ring-purple-500 border-gray-300 rounded"
+                  />
+                  <label className="ml-2 block text-sm text-gray-900">
+                    Make this a recurring invoice
+                  </label>
+                </div>
+
+                {formData.recurring?.isRecurring && (
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Frequency
+                      </label>
+                      <select
+                        value={formData.recurring?.frequency || "monthly"}
+                        onChange={(e) =>
+                          handleFieldChange(
+                            "recurring.frequency",
+                            e.target.value
+                          )
+                        }
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                      >
+                        {frequencyOptions.map((option) => (
+                          <option key={option.value} value={option.value}>
+                            {option.label}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Next Invoice Date
+                      </label>
+                      <input
+                        type="date"
+                        value={formData.recurring?.nextDate || ""}
+                        onChange={(e) =>
+                          handleFieldChange(
+                            "recurring.nextDate",
+                            e.target.value
+                          )
+                        }
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        End Date (Optional)
+                      </label>
+                      <input
+                        type="date"
+                        value={formData.recurring?.endDate || ""}
+                        onChange={(e) =>
+                          handleFieldChange("recurring.endDate", e.target.value)
+                        }
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                      />
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Items List */}
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <FileText className="w-6 h-6 text-indigo-600" />
+                  <h2 className="text-xl font-semibold text-gray-900">
+                    Item List
+                  </h2>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleAddItem}
+                  className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
+                >
+                  <Plus className="w-4 h-4" />
+                  Add Item
+                </button>
+              </div>
+
+              <div className="border border-gray-200 rounded-xl overflow-hidden bg-white">
+                <div className="bg-gray-50 px-6 py-4 grid grid-cols-12 gap-4 text-sm font-medium text-gray-700 border-b border-gray-200">
+                  <div className="col-span-5">Description</div>
+                  <div className="col-span-2 text-center">Quantity</div>
+                  <div className="col-span-2 text-center">Rate</div>
+                  <div className="col-span-2 text-center">Amount</div>
+                  <div className="col-span-1"></div>
+                </div>
+
+                {formData.items?.map((item, index) => (
+                  <div
+                    key={index}
+                    className="px-6 py-4 grid grid-cols-12 gap-4 border-b border-gray-100 last:border-b-0"
+                  >
+                    <div className="col-span-5">
+                      <textarea
+                        value={item.description || ""}
+                        onChange={(e) =>
+                          handleItemChange(index, "description", e.target.value)
+                        }
+                        placeholder="Describe your service or product..."
+                        rows={2}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent resize-none"
+                      />
+                      {formErrors[`items.${index}.description`] && (
+                        <p className="text-red-500 text-xs mt-1">
+                          Description is required
+                        </p>
+                      )}
+                    </div>
+                    <div className="col-span-2">
+                      <input
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        value={item.quantity || ""}
+                        onChange={(e) =>
+                          handleItemChange(
+                            index,
+                            "quantity",
+                            parseFloat(e.target.value) || 0
+                          )
+                        }
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-center"
+                      />
+                    </div>
+                    <div className="col-span-2">
+                      <div className="flex">
+                        <span className="inline-flex items-center px-3 text-sm text-gray-500 bg-gray-50 border border-r-0 border-gray-300 rounded-l-lg">
+                          {selectedCurrency?.symbol || "$"}
+                        </span>
+                        <input
+                          type="number"
+                          step="0.01"
+                          min="0"
+                          value={item.rate || ""}
+                          onChange={(e) =>
+                            handleItemChange(
+                              index,
+                              "rate",
+                              parseFloat(e.target.value) || 0
+                            )
+                          }
+                          className="flex-1 px-3 py-2 border border-gray-300 rounded-r-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-center"
+                        />
+                      </div>
+                    </div>
+                    <div className="col-span-2">
+                      <div className="flex items-center justify-center h-10 px-3 bg-gray-50 border border-gray-300 rounded-lg text-gray-700 font-medium">
+                        {selectedCurrency?.symbol || "$"}
+                        {item.amount?.toFixed(2) || "0.00"}
+                      </div>
+                    </div>
+                    <div className="col-span-1 flex justify-center">
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveItem(index)}
+                        disabled={formData.items.length === 1}
+                        className="p-2 text-red-600 hover:bg-red-50 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Calculations & Settings */}
+            <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
+              <div className="space-y-6">
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                    Tax & Discount Settings
+                  </h3>
+
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Tax Rate (%)
+                      </label>
+                      <input
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        max="100"
+                        value={formData.taxRate || ""}
+                        onChange={(e) =>
+                          handleFieldChange(
+                            "taxRate",
+                            parseFloat(e.target.value) || 0
+                          )
+                        }
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-3 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Discount Type
+                        </label>
+                        <select
+                          value={formData.discountType || "percentage"}
+                          onChange={(e) =>
+                            handleFieldChange("discountType", e.target.value)
+                          }
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        >
+                          <option value="percentage">Percentage</option>
+                          <option value="fixed">Fixed Amount</option>
+                        </select>
+                      </div>
+
+                      <div className="col-span-2">
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Discount Value
+                        </label>
+                        <div className="flex">
+                          <span className="inline-flex items-center px-3 text-sm text-gray-500 bg-gray-50 border border-r-0 border-gray-300 rounded-l-lg">
+                            {formData.discountType === "percentage"
+                              ? "%"
+                              : selectedCurrency?.symbol || "$"}
+                          </span>
+                          <input
+                            type="number"
+                            step="0.01"
+                            min="0"
+                            value={formData.discountValue || ""}
+                            onChange={(e) =>
+                              handleFieldChange(
+                                "discountValue",
+                                parseFloat(e.target.value) || 0
+                              )
+                            }
+                            className="flex-1 px-3 py-2 border border-gray-300 rounded-r-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Notes & Terms */}
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Notes
+                    </label>
+                    <textarea
+                      value={formData.notes || ""}
+                      onChange={(e) =>
+                        handleFieldChange("notes", e.target.value)
+                      }
+                      placeholder="Add any additional notes or special instructions..."
+                      rows={4}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Terms & Conditions
+                    </label>
+                    <textarea
+                      value={formData.terms || ""}
+                      onChange={(e) =>
+                        handleFieldChange("terms", e.target.value)
+                      }
+                      placeholder="Add payment terms, conditions, or other legal information..."
+                      rows={4}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Invoice Summary */}
+              <div className="bg-gray-50 p-6 rounded-xl">
+                <div className="flex items-center gap-3 mb-6">
+                  <Calculator className="w-6 h-6 text-green-600" />
+                  <h3 className="text-xl font-semibold text-gray-900">
+                    Invoice Summary
+                  </h3>
+                </div>
+
+                <div className="space-y-4">
+                  <div className="flex justify-between py-2 border-b border-gray-200">
+                    <span className="text-gray-600">Subtotal:</span>
+                    <span className="font-medium">
+                      {selectedCurrency?.symbol || "$"}
+                      {calculations.subtotal?.toFixed(2) || "0.00"}
+                    </span>
+                  </div>
+
+                  {(calculations.discountAmount || 0) > 0 && (
+                    <div className="flex justify-between py-2 border-b border-gray-200 text-red-600">
+                      <span>
+                        Discount (
+                        {formData.discountType === "percentage"
+                          ? `${formData.discountValue}%`
+                          : "Fixed"}
+                        ):
+                      </span>
+                      <span className="font-medium">
+                        -{selectedCurrency?.symbol || "$"}
+                        {calculations.discountAmount?.toFixed(2) || "0.00"}
+                      </span>
+                    </div>
+                  )}
+
+                  {(calculations.taxAmount || 0) > 0 && (
+                    <div className="flex justify-between py-2 border-b border-gray-200">
+                      <span className="text-gray-600">
+                        Tax ({formData.taxRate}%):
+                      </span>
+                      <span className="font-medium">
+                        {selectedCurrency?.symbol || "$"}
+                        {calculations.taxAmount?.toFixed(2) || "0.00"}
+                      </span>
+                    </div>
+                  )}
+
+                  <div className="flex justify-between py-4 border-t-2 border-gray-300">
+                    <span className="text-xl font-semibold text-gray-900">
+                      Total:
+                    </span>
+                    <span className="text-2xl font-bold text-green-600">
+                      {selectedCurrency?.symbol || "$"}
+                      {calculations.total?.toFixed(2) || "0.00"}
+                    </span>
+                  </div>
+
+                  {selectedClient && (
+                    <div className="mt-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
+                      <h4 className="font-medium text-gray-900 mb-2">
+                        Payment Information
+                      </h4>
+                      <p className="text-sm text-gray-600">
+                        Payment Terms: {formData.paymentTerms} days
+                      </p>
+                      <p className="text-sm text-gray-600">
+                        Due Date:{" "}
+                        {formData.dueDate
+                          ? new Date(formData.dueDate).toLocaleDateString()
+                          : "Not set"}
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
           </form>
         )}
       </div>
