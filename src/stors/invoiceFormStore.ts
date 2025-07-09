@@ -2,29 +2,15 @@ import {
   ClientInfo,
   CompanyInfo,
   InvoiceFormData,
+  InvoiceItem,
 } from "@/lib/validations/validation";
 import {
-  InvoiceCalculations,
+  IInvoiceCalculations,
   InvoicePdfProps,
   ITemplate,
 } from "@/types/database";
 import { create } from "zustand";
 import { devtools } from "zustand/middleware";
-
-// Types for our store
-interface InvoiceItem {
-  description: string;
-  quantity: number;
-  rate: number;
-  amount: number;
-}
-
-interface RecurringSettings {
-  isRecurring: boolean;
-  frequency: "weekly" | "monthly" | "quarterly" | "yearly";
-  nextDate?: string;
-  endDate?: string;
-}
 
 interface FormErrors {
   [key: string]: string;
@@ -48,7 +34,7 @@ interface InvoiceStoreState {
   selectedCompany: any | null;
 
   // Calculations
-  calculations: InvoiceCalculations;
+  calculations: IInvoiceCalculations;
 
   // Error handling
   formErrors: FormErrors;
@@ -116,7 +102,7 @@ interface InvoiceStoreActions {
   getFormData: () => InvoiceFormData;
 }
 
-type InvoiceStore = InvoiceStoreState & InvoiceStoreActions;
+type InvoiceFormStore = InvoiceStoreState & InvoiceStoreActions;
 
 // Default form data
 const defaultFormData: InvoiceFormData = {
@@ -189,7 +175,7 @@ const setNestedValue = (obj: any, path: string, value: any) => {
   current[keys[keys.length - 1]] = value;
 };
 
-export const useInvoiceFormStore = create<InvoiceStore>()(
+export const useInvoiceFormStore = create<InvoiceFormStore>()(
   devtools(
     (set, get) => ({
       // Initial state
@@ -300,17 +286,34 @@ export const useInvoiceFormStore = create<InvoiceStore>()(
           get().calculateAmounts();
         }
       },
-      addItem: () => {
-        set((state) => ({
-          formData: {
-            ...state?.formData,
-            items: [
-              ...state?.formData?.items,
-              { description: "", quantity: 1, rate: 0, amount: 0 },
-            ],
-          },
-        }));
+      addItem: (item) => {
+        set(
+          (state) => ({
+            formData: {
+              ...state?.formData,
+              items: [
+                ...state?.formData?.items,
+                item,
+                // { description: "", quantity: 1, rate: 0, amount: 0 },
+              ],
+            },
+          }),
+          false,
+          "addItem"
+        );
+        get().calculateAmounts();
       },
+      // addItem: () => {
+      //   set((state) => ({
+      //     formData: {
+      //       ...state?.formData,
+      //       items: [
+      //         ...state?.formData?.items,
+      //         { description: "", quantity: 1, rate: 0, amount: 0 },
+      //       ],
+      //     },
+      //   }));
+      // },
 
       removeItem: (index) => {
         const { formData } = get();

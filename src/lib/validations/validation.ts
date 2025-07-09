@@ -115,7 +115,7 @@ const dueDateSchema = dateString;
 // });
 
 // Recurring settings schema
-const recurringSchema = z
+const RecurringSchema = z
   .object({
     isRecurring: z.boolean(),
     frequency: z.enum(["weekly", "monthly", "quarterly", "yearly"]),
@@ -180,6 +180,7 @@ export const InvoiceFormDataSchema = z.object({
 
   status: z
     .enum(["draft", "sent", "viewed", "paid", "overdue", "cancelled"])
+    .optional()
     .default("draft"),
 
   notes: z.string().optional(),
@@ -207,7 +208,7 @@ export const InvoiceFormDataSchema = z.object({
 
   templateId: z.string().optional(),
 
-  recurring: recurringSchema.default({
+  recurring: RecurringSchema.default({
     isRecurring: false,
     frequency: "monthly",
     nextDate: "",
@@ -220,7 +221,7 @@ export type CompanyInfo = z.infer<typeof CompanyInfoSchema>;
 export type ClientInfo = z.infer<typeof ClientInfoSchema>;
 export type InvoiceItem = z.infer<typeof InvoiceItemSchema>;
 export type InvoiceFormData = z.infer<typeof InvoiceFormDataSchema>;
-
+export type InvoiceRecurring = z.infer<typeof RecurringSchema>;
 // Validation function
 export function validateInvoiceData(data: unknown): InvoiceFormData {
   return InvoiceFormDataSchema.parse(data);
@@ -282,7 +283,7 @@ export const calculateInvoiceTotal = (items: InvoiceItem[]): number => {
   return Number(
     items
       .reduce((total, item) => {
-        return total + calculateItemTotal(item.quantity, item.rate);
+        return total + calculateItemTotal(item?.quantity, item?.rate);
       }, 0)
       .toFixed(2)
   );
@@ -350,7 +351,7 @@ export const validators = {
   },
 
   recurring: (settings: unknown) => {
-    return recurringSchema.safeParse(settings);
+    return RecurringSchema.safeParse(settings);
   },
 };
 

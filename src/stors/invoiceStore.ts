@@ -6,11 +6,7 @@ import {
   InvoiceItem,
 } from "@/lib/validations/validation";
 import { ErrorResponse } from "@/types/apiResponse";
-import {
-  IInvoiceCalculations,
-  IInvoiceFormErrors,
-  ITemplate,
-} from "@/types/database";
+import { IInvoiceCalculations, ITemplate } from "@/types/database";
 import { create } from "zustand";
 import { devtools } from "zustand/middleware";
 
@@ -68,7 +64,7 @@ interface InvoiceStore {
 
   // UI State
   isGenerating: boolean;
-  validationErrors: IInvoiceFormErrors;
+  validationErrors: unknown;
   error: string | null;
   isLoading: boolean;
   previewMode: boolean;
@@ -94,7 +90,7 @@ interface InvoiceStore {
   setInvoiceData: (data: Partial<InvoiceFormData>) => void;
   setSelectedCompany: (company: CompanyInfo | null) => void;
   setSelectedClient: (client: ClientInfo | null) => void;
-  setCalculations: (calculations: InvoiceCalculations) => void;
+  setCalculations: (calculations: IInvoiceCalculations) => void;
   setTemplate: (template: ITemplate) => void;
   setCompanies: (companies: CompanyInfo[]) => void;
   setClients: (clients: ClientInfo[]) => void;
@@ -124,14 +120,14 @@ interface InvoiceStore {
   // UI Actions
   setIsGenerating: (isGenerating: boolean) => void;
   setError: (error: string | null) => void;
-  setvalidationErrors: (formValidationError: IInvoiceFormErrors) => void;
+  setvalidationErrors: (formValidationError: InvoiceFormData) => void;
 
   // Computed getters
   getInvoicePDFProps: () => {
     invoiceData: InvoiceFormData;
     selectedCompany: CompanyInfo;
     selectedClient: ClientInfo;
-    calculations: InvoiceCalculations;
+    calculations: IInvoiceCalculations;
     template: ITemplate;
   } | null;
 
@@ -323,7 +319,7 @@ export const useInvoiceStore = create<InvoiceStore>()(
         set({ isGenerating }, false, "setIsGenerating"),
 
       setError: (error) => set({ error }, false, "setError"),
-      setvalidationErrors: (validationErrors: IInvoiceFormErrors) =>
+      setvalidationErrors: (validationErrors: InvoiceFormData) =>
         set({ validationErrors }, false, "setFormValidationError"),
       // Computed getters
       getInvoicePDFProps: () => {
