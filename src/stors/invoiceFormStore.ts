@@ -1,3 +1,4 @@
+import { ItemError } from "./../types/database";
 import {
   ClientInfo,
   CompanyInfo,
@@ -5,16 +6,13 @@ import {
   InvoiceItem,
 } from "@/lib/validations/validation";
 import {
+  FormErrors,
   IInvoiceCalculations,
   InvoicePdfProps,
   ITemplate,
 } from "@/types/database";
 import { create } from "zustand";
 import { devtools } from "zustand/middleware";
-
-interface FormErrors {
-  [key: string]: string;
-}
 
 interface InvoiceStoreState {
   // Form Data
@@ -487,110 +485,85 @@ export const useInvoiceFormStore = create<InvoiceFormStore>()(
         get().updateFormField("invoiceNumber", invoiceNumber);
       },
       // Validation
-      // validateForm: () => {
-      //   const { formData } = get();
-      //   const errors = {};
-
-      //   // Required fields validation
-      //   if (!formData.invoiceNumber) {
-      //     errors.invoiceNumber = "Invoice number is required";
-      //   }
-
-      //   if (!formData.invoiceDate) {
-      //     errors.invoiceDate = "Invoice date is required";
-      //   }
-
-      //   if (!formData.dueDate) {
-      //     errors.dueDate = "Due date is required";
-      //   }
-
-      //   if (!formData.clientId) {
-      //     errors.clientId = "Client selection is required";
-      //   }
-
-      //   // Items validation
-      //   if (!formData.items || formData.items.length === 0) {
-      //     errors.items = "At least one item is required";
-      //   } else {
-      //     const itemErrors = [];
-      //     formData.items.forEach((item, index) => {
-      //       const itemError = {};
-
-      //       if (!item.description) {
-      //         itemError.description = "Description is required";
-      //       }
-
-      //       if (!item.quantity || item.quantity <= 0) {
-      //         itemError.quantity = "Quantity must be greater than 0";
-      //       }
-
-      //       if (item.rate === undefined || item.rate < 0) {
-      //         itemError.rate = "Rate cannot be negative";
-      //       }
-
-      //       if (Object.keys(itemError).length > 0) {
-      //         itemErrors[index] = itemError;
-      //       }
-      //     });
-
-      //     if (itemErrors.length > 0) {
-      //       errors.items = itemErrors;
-      //     }
-      //   }
-
-      //   // Recurring validation
-      //   if (formData.recurring?.isRecurring) {
-      //     if (!formData.recurring.frequency) {
-      //       errors.recurringFrequency =
-      //         "Frequency is required for recurring invoices";
-      //     }
-
-      //     if (!formData.recurring.nextDate) {
-      //       errors.recurringNextDate =
-      //         "Next invoice date is required for recurring invoices";
-      //     }
-      //   }
-
-      //   set({ validationErrors: errors });
-      //   return Object.keys(errors).length === 0;
-      // },
       validateForm: () => {
-        const { formData, selectedClient, selectedCompany } = get();
+        const { formData } = get();
         const errors: FormErrors = {};
 
-        // Required field validation
-        if (!formData.companyId)
+        // Required fields validation
+        if (!formData.companyId) {
           errors.companyId = "Company selection is required";
-        if (!formData.clientId)
+        }
+
+        if (!formData.clientId) {
           errors.clientId = "Client selection is required";
-        if (!formData.invoiceNumber)
+        }
+
+        if (!formData.invoiceNumber) {
           errors.invoiceNumber = "Invoice number is required";
-        if (!formData.invoiceDate)
+        }
+
+        if (!formData.invoiceDate) {
           errors.invoiceDate = "Invoice date is required";
-        if (!formData.dueDate) errors.dueDate = "Due date is required";
+        }
+
+        if (!formData.dueDate) {
+          errors.dueDate = "Due date is required";
+        }
 
         // Items validation
-        formData?.items?.forEach((item, index) => {
-          if (!item.description) {
-            errors[`items.${index}.description`] = "Description is required";
-          }
-          if (!item.quantity || item.quantity <= 0) {
-            errors[`items.${index}.quantity`] =
-              "Quantity must be greater than 0";
-          }
-          if (item.rate < 0) {
-            errors[`items.${index}.rate`] = "Rate cannot be negative";
-          }
-        });
+        if (!formData.items || formData.items.length === 0) {
+          errors.items = "At least one item is required";
+        } else {
+          const itemErrors: Record<string, any>[] = [];
+          let hasItemErrors = false;
 
-        set({ formErrors: errors });
+          formData.items.forEach((item, index) => {
+            const itemError = {};
+
+            if (!item.description) {
+              itemError.description = "Description is required";
+            }
+
+            if (!item.quantity || item.quantity <= 0) {
+              itemError.quantity = "Quantity must be greater than 0";
+            }
+
+            if (item.rate === undefined || item.rate < 0) {
+              itemError.rate = "Rate cannot be negative";
+            }
+
+            if (Object.keys(itemError).length > 0) {
+              itemErrors[index] = itemError;
+              hasItemErrors = true;
+            }
+          });
+
+          if (hasItemErrors) {
+            errors.items = itemErrors;
+          }
+        }
+        // Recurring validation
+        if (formData.recurring?.isRecurring) {
+          if (!formData.recurring.frequency) {
+            errors.recurringFrequency =
+              "Frequency is required for recurring invoices";
+          }
+
+          if (!formData.recurring.nextDate) {
+            errors.recurringNextDate =
+              "Next invoice date is required for recurring invoices";
+          }
+        }
+
+        // Update the store with validation errors
+        set({ validationErrors: errors });
         return Object.keys(errors).length === 0;
       },
 
       // Clear validation errors
-      // clearValidationErrors: () => {
-      //   set({ validationErrors: {} });
-      // },
+      clearValidationErrors: () => {
+        set({ validationErrors: {} });
+      },
 
       resetForm: () => {
         set({

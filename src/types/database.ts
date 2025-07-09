@@ -1,4 +1,3 @@
-
 // types/database.ts
 
 import { InvoiceFormData } from "@/lib/validations/validation";
@@ -241,3 +240,25 @@ export interface InvoicePdfProps {
 export type ClientsResponse = {
   clients: IClient[];
 };
+
+export interface FormErrors {
+  companyId?: string;
+  clientId?: string;
+  invoiceNumber?: string;
+  invoiceDate?: string;
+  dueDate?: string;
+  items?: IInvoiceItem[] | string;
+  recurringFrequency?: string;
+  recurringNextDate?: string;
+  [key: string]: any; // for dynamic item errors like `items.0.description`
+}
+
+// Then use it:
+export interface ItemError {
+  id?: string;
+  description: string;
+  quantity: number;
+  rate: number;
+  amount: number;
+  taxRate?: number;
+}
