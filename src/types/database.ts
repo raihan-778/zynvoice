@@ -257,8 +257,8 @@ export interface FormErrors {
 export interface ItemError {
   id?: string;
   description: string;
-  quantity: number;
-  rate: number;
-  amount: number;
-  taxRate?: number;
+  quantity: string;
+  rate: string;
+  amount: string;
+  taxRate?: string;
 }

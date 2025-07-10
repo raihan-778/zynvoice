@@ -1,4 +1,3 @@
-import { ItemError } from "./../types/database";
 import {
   ClientInfo,
   CompanyInfo,
@@ -13,6 +12,7 @@ import {
 } from "@/types/database";
 import { create } from "zustand";
 import { devtools } from "zustand/middleware";
+import { ItemError } from "./../types/database";
 
 interface InvoiceStoreState {
   // Form Data
@@ -38,6 +38,7 @@ interface InvoiceStoreState {
   formErrors: FormErrors;
   apiErrors: Record<string, string>;
   generalError: string | null;
+  validationErrors: Record<string, any>;
 
   // API data
   companies: CompanyInfo[];
@@ -89,7 +90,6 @@ interface InvoiceStoreActions {
   // Utility functions
   generateInvoiceNumber: () => void;
   resetForm: () => void;
-  validateForm: () => boolean;
 
   calculateDueDate: (field: number) => void;
 
@@ -98,6 +98,13 @@ interface InvoiceStoreActions {
 
   // Form submission
   getFormData: () => InvoiceFormData;
+
+  //Error Validation
+
+  // ... your existing methods
+
+  clearValidationErrors: () => void;
+  validateForm: () => boolean;
 }
 
 type InvoiceFormStore = InvoiceStoreState & InvoiceStoreActions;
@@ -484,10 +491,10 @@ export const useInvoiceFormStore = create<InvoiceFormStore>()(
         const invoiceNumber = `INV-${timestamp}-${randomSuffix}`;
         get().updateFormField("invoiceNumber", invoiceNumber);
       },
-      // Validation
+      // Fixed Validation
       validateForm: () => {
         const { formData } = get();
-        const errors: FormErrors = {};
+        const errors: Record<string, any> = {};
 
         // Required fields validation
         if (!formData.companyId) {
@@ -514,11 +521,17 @@ export const useInvoiceFormStore = create<InvoiceFormStore>()(
         if (!formData.items || formData.items.length === 0) {
           errors.items = "At least one item is required";
         } else {
-          const itemErrors: Record<string, any>[] = [];
+          const itemErrors: ItemError[] = [];
           let hasItemErrors = false;
 
           formData.items.forEach((item, index) => {
-            const itemError = {};
+            const itemError: ItemError = {
+              description: "",
+              amount: "",
+              quantity: "",
+              rate: "",
+              taxRate: "",
+            };
 
             if (!item.description) {
               itemError.description = "Description is required";
@@ -542,6 +555,7 @@ export const useInvoiceFormStore = create<InvoiceFormStore>()(
             errors.items = itemErrors;
           }
         }
+
         // Recurring validation
         if (formData.recurring?.isRecurring) {
           if (!formData.recurring.frequency) {
