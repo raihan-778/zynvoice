@@ -116,7 +116,8 @@ const defaultFormData: InvoiceFormData = {
   invoiceNumber: `INV-${Date.now()}`,
   invoiceDate: new Date().toISOString(),
   dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
-  items: [{ description: "", quantity: 1, rate: 0, amount: 0 }],
+  items: [],
+  // { description: "", quantity: 1, rate: 0, amount: 0 }
   taxRate: 0,
   discountType: "percentage",
   discountValue: 0,
@@ -297,9 +298,8 @@ export const useInvoiceFormStore = create<InvoiceFormStore>()(
             formData: {
               ...state?.formData,
               items: [
-                ...state?.formData?.items,
+                ...(state?.formData?.items || []), // Provide fallback empty array
                 item,
-                // { description: "", quantity: 1, rate: 0, amount: 0 },
               ],
             },
           }),
@@ -663,6 +663,6 @@ export const useInvoiceSelectors = () => {
     isFormReady:
       store.formData.companyId &&
       store.formData.clientId &&
-      store?.formData?.items.length > 0,
+      (store.formData.items?.length ?? 0) > 0,
   };
 };
