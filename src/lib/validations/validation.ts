@@ -281,11 +281,12 @@ export const calculateItemTotal = (quantity: number, rate: number): number => {
 
 export const calculateInvoiceTotal = (items: InvoiceItem[]): number => {
   return Number(
-    items
-      .reduce((total, item) => {
-        return total + calculateItemTotal(item?.quantity, item?.rate);
-      }, 0)
-      .toFixed(2)
+    items &&
+      items
+        .reduce((total, item) => {
+          return total + calculateItemTotal(item?.quantity, item?.rate);
+        }, 0)
+        .toFixed(2)
   );
 };
 

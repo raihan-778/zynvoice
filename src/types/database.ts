@@ -177,8 +177,8 @@ export interface IAuditLog extends BaseDocument {
   resourceType: "invoice" | "client" | "company" | "template" | "user";
   resourceId: Types.ObjectId;
   details: {
-    changes?: Record<string, any>;
-    metadata?: Record<string, any>;
+    changes?: Record<string, unknown>;
+    metadata?: Record<string, unknown>;
   };
   ipAddress: string;
   userAgent: string;
@@ -247,10 +247,10 @@ export interface FormErrors {
   invoiceNumber?: string;
   invoiceDate?: string;
   dueDate?: string;
-  items?: IInvoiceItem[] | string;
+  items?: ItemError | string;
   recurringFrequency?: string;
   recurringNextDate?: string;
-  [key: string]: any; // for dynamic item errors like `items.0.description`
+  [key: string]: unknown; // for dynamic item errors like `items.0.description`
 }
 
 // Then use it:
