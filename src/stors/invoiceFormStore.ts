@@ -7,9 +7,11 @@ import {
 import {
   FormErrors,
   IInvoiceCalculations,
+  IInvoiceItem,
   InvoicePdfProps,
   ITemplate,
 } from "@/types/database";
+import { AnyObject } from "mongoose";
 import { create } from "zustand";
 import { devtools } from "zustand/middleware";
 import { ItemError } from "./../types/database";
@@ -28,8 +30,8 @@ interface InvoiceStoreState {
   invoiceNumber: string;
 
   // Selected entities
-  selectedClient: any | null;
-  selectedCompany: any | null;
+  selectedClient: ClientInfo | null;
+  selectedCompany: ClientInfo | null;
 
   // Calculations
   calculations: IInvoiceCalculations;
@@ -52,7 +54,7 @@ interface InvoiceStoreState {
 interface InvoiceStoreActions {
   // Form field updates
   updateFormField: (field: keyof InvoiceFormData, value: any) => void;
-  updateNestedField: (path: string, value: any) => void;
+  updateNestedField: (path: string, value: AnyObject) => void;
 
   // Item management
   addItem: () => void;
@@ -62,7 +64,7 @@ interface InvoiceStoreActions {
   // Client/Company management
   setSelectedClient: (client: ClientInfo) => void;
   setSelectedClientSafe: (client: ClientInfo) => void;
-  setSelectedCompany: (company: CompanyInfo) => void;
+  setSelectedCompany: (company: CompanyInfo | undefined) => void;
   setClientSearch: (search: string) => void;
   setShowClientDropdown: (show: boolean) => void;
 
@@ -116,7 +118,7 @@ const defaultFormData: InvoiceFormData = {
   invoiceNumber: `INV-${Date.now()}`,
   invoiceDate: new Date().toISOString(),
   dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
-  items: [{ description: "", quantity: 1, rate: 0, amount: 0 }],
+  items: [],
   taxRate: 0,
   discountType: "percentage",
   discountValue: 0,
@@ -165,7 +167,7 @@ const defaultTemplate: Partial<ITemplate> = {
 };
 
 // Helper function to set nested values
-const setNestedValue = (obj: any, path: string, value: any) => {
+const setNestedValue = (obj: AnyObject, path: string, value: unknown) => {
   const keys = path.split(".");
   let current = obj;
 
@@ -275,7 +277,8 @@ export const useInvoiceFormStore = create<InvoiceFormStore>()(
         // Handle company selection
         if (field === "companyId") {
           const company = get().companies.find((c) => c._id === value);
-          get().setSelectedCompany(company || null);
+
+          get().setSelectedCompany(company);
         }
       },
 
@@ -291,16 +294,12 @@ export const useInvoiceFormStore = create<InvoiceFormStore>()(
           get().calculateAmounts();
         }
       },
-      addItem: (item) => {
+      addItem: (item: IInvoiceItem) => {
         set(
           (state) => ({
             formData: {
               ...state?.formData,
-              items: [
-                ...state?.formData?.items,
-                item,
-                // { description: "", quantity: 1, rate: 0, amount: 0 },
-              ],
+              items: [...(state?.formData?.items || []), item],
             },
           }),
           false,
@@ -346,16 +345,30 @@ export const useInvoiceFormStore = create<InvoiceFormStore>()(
       },
 
       // Helper function to calculate due date safely
-      calculateDueDate: (paymentTerms) => {
-        // Only calculate if we're on the client side
-        if (typeof window === "undefined") return "";
+      // calculateDueDate: (paymentTerms) => {
+      //   // Only calculate if we're on the client side
+      //   if (typeof window === "undefined") return "";
 
-        const dueDate = new Date(
-          Date.now() + paymentTerms * 24 * 60 * 60 * 1000
-        );
-        return dueDate.toISOString().split("T")[0];
+      //   const dueDate = new Date(
+      //     Date.now() + paymentTerms * 24 * 60 * 60 * 1000
+      //   );
+      //   return dueDate.toISOString().split("T")[0];
+      // },
+
+      // Function to update due date (call this from useEffect in component)
+      // Single helper function - improved version
+      updateDueDate: (paymentTerms: unknown) => {
+        // Ensure paymentTerms is a valid number
+        const terms = Number(paymentTerms);
+        if (isNaN(terms) || terms <= 0) {
+          get().updateFormField("dueDate", "");
+          return;
+        }
+
+        const dueDate = new Date(Date.now() + terms * 24 * 60 * 60 * 1000);
+        const dueDateString = dueDate.toISOString().split("T")[0];
+        get().updateFormField("dueDate", dueDateString);
       },
-
       // Alternative approach: Set client without calculating due date immediately
       setSelectedClientSafe: (client) => {
         set({ selectedClient: client });
@@ -370,15 +383,6 @@ export const useInvoiceFormStore = create<InvoiceFormStore>()(
           get().setClientSearch(client.name);
           get().setShowClientDropdown(false);
         }
-      },
-
-      // Function to update due date (call this from useEffect in component)
-      updateDueDate: (paymentTerms) => {
-        const dueDate = new Date(
-          Date.now() + paymentTerms * 24 * 60 * 60 * 1000
-        );
-        const dueDateString = dueDate.toISOString().split("T")[0];
-        get().updateFormField("dueDate", dueDateString);
       },
 
       setSelectedCompany: (company) => {
@@ -494,7 +498,7 @@ export const useInvoiceFormStore = create<InvoiceFormStore>()(
       // Fixed Validation
       validateForm: () => {
         const { formData } = get();
-        const errors: Record<string, any> = {};
+        const errors: Record<string, unknown> = {};
 
         // Required fields validation
         if (!formData.companyId) {
@@ -663,6 +667,6 @@ export const useInvoiceSelectors = () => {
     isFormReady:
       store.formData.companyId &&
       store.formData.clientId &&
-      store?.formData?.items.length > 0,
+      (store.formData.items?.length ?? 0) > 0,
   };
 };
