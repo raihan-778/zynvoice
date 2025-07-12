@@ -119,10 +119,6 @@ const defaultFormData: InvoiceFormData = {
   invoiceDate: new Date().toISOString(),
   dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
   items: [],
-<<<<<<< HEAD
-  // { description: "", quantity: 1, rate: 0, amount: 0 }
-=======
->>>>>>> fbc2a6e119446e4e3c58ed942d62e7b74b96ae80
   taxRate: 0,
   discountType: "percentage",
   discountValue: 0,
