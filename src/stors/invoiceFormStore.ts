@@ -31,7 +31,7 @@ interface InvoiceStoreState {
 
   // Selected entities
   selectedClient: ClientInfo | null;
-  selectedCompany: ClientInfo | null;
+  selectedCompany: CompanyInfo | null;
 
   // Calculations
   calculations: IInvoiceCalculations;

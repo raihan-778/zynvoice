@@ -38,10 +38,15 @@ export interface IUser extends BaseDocument {
 export interface ICompany extends BaseDocument {
   userId?: Types.ObjectId;
   name: string;
+  email?: string;
   logo?: string;
-  email: string;
+
   phone?: string;
   website?: string;
+  status?: "active" | "inactive";
+
+  paymentTerms?: number;
+  company?: string;
   address: {
     street: string;
     city: string;

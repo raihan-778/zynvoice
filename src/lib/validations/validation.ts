@@ -8,12 +8,14 @@ export const CompanyInfoSchema = z.object({
   name: z.string().min(1, "Company name is required"),
   logo: z.string().optional(),
   address: z.string().optional(),
+  isDefa
   contact: z
     .object({
       phone: z.string().optional(),
       email: z.string().email().optional(),
     })
     .optional(),
+    
 });
 
 // Client Information Schema
@@ -279,7 +281,7 @@ export const calculateItemTotal = (quantity: number, rate: number): number => {
   return Number(((quantity || 0) * (rate || 0)).toFixed(2));
 };
 
-export const calculateInvoiceTotal = (items: InvoiceItem[]): number => {
+export const calculateInvoiceTotal = (items: InvoiceItem): number => {
   return Number(
     items &&
       items
