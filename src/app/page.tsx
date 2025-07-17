@@ -1,21 +1,12 @@
 "use client";
 
 import MainLayout from "@/components/layout/Main-Layout";
-import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Download, FileText, Mail, Zap } from "lucide-react";
-import Link from "next/link";
+import Home from "./(marketting)/page";
 
 export default function HomePage() {
   return (
     <MainLayout>
-      <div className="text-center">
+      {/* <div className="text-center">
         <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-4">
           Professional Invoice Generator
         </h1>
@@ -82,7 +73,8 @@ export default function HomePage() {
             </CardContent>
           </Card>
         </div>
-      </div>
+      </div> */}
+      <Home />
     </MainLayout>
   );
 }

@@ -1,6 +1,15 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 
+@layer utilities {
+  .perspective {
+    perspective: 1000px;
+  }
+  .transform-style-preserve-3d {
+    transform-style: preserve-3d;
+  }
+}
+
 /* @font-face {
   font-family: "MyFont";
   src: url("/fonts/my-font-cyrillic.woff2") format("woff2");
