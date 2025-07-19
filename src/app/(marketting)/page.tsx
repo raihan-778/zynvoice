@@ -1,40 +1,28 @@
-// src/app/(marketing)/page.tsx
+// src/app/(marketing)/page.tsx  <-- ONLY this file was edited
 "use client";
 
-import { useState, useRef, useEffect } from "react";
-import {
-  motion,
-  useInView,
-  useScroll,
-  useTransform,
-  useSpring,
-} from "framer-motion";
-import {
-  ArrowRight,
-  BarChart3,
-  CheckCircle,
-  ChevronDown,
-  Download,
-  Mail,
-  Palette,
-  ShieldCheck,
-  Sparkles,
-  Star,
-  Users,
-  Zap,
-} from "lucide-react";
-import Link from "next/link";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import {
   Accordion,
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
+import { motion, useInView, useScroll, useTransform } from "framer-motion";
+import {
+  ArrowRight,
+  CheckCircle,
+  Download,
+  Mail,
+  Palette,
+  ShieldCheck,
+} from "lucide-react";
+import Link from "next/link";
+import { useEffect, useRef, useState } from "react";
 
 /* ---------- HERO ---------- */
 const Hero = () => {
@@ -49,19 +37,19 @@ const Hero = () => {
   return (
     <section
       ref={ref}
-      className="relative flex h-[90vh] items-center justify-center overflow-hidden"
+      className="relative flex h-[90vh] items-center justify-center overflow-hidden bg-slate-950"
     >
-      {/* Animated mesh gradient */}
+      {/* Animated mesh gradient — dark only */}
       <motion.div
         style={{ y, opacity }}
-        className="absolute inset-0 bg-[radial-gradient(ellipse_80%_50%_at_50%_-20%,rgba(120,119,198,0.3),rgba(255,255,255,0))] dark:bg-[radial-gradient(ellipse_80%_50%_at_50%_-20%,rgba(120,119,198,0.5),rgba(25,25,25,0))]"
+        className="absolute inset-0 bg-[radial-gradient(ellipse_80%_50%_at_50%_-20%,rgba(120,119,198,0.5),rgba(25,25,25,0))]"
       />
       <div className="container z-10 mx-auto px-4 text-center">
         <motion.h1
           initial={{ opacity: 0, y: 40 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8 }}
-          className="text-5xl font-extrabold tracking-tight sm:text-6xl md:text-7xl"
+          className="text-5xl font-extrabold tracking-tight text-slate-100 sm:text-6xl md:text-7xl"
         >
           InvoiceGen{" "}
           <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-indigo-500 to-purple-600">
@@ -72,7 +60,7 @@ const Hero = () => {
           initial={{ opacity: 0, y: 40 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, delay: 0.2 }}
-          className="mt-6 max-w-2xl mx-auto text-lg text-slate-600 dark:text-slate-300"
+          className="mt-6 max-w-2xl mx-auto text-lg text-slate-300"
         >
           From start-ups to Fortune 500s: create, export, and deliver invoices
           that close deals faster.
@@ -84,8 +72,8 @@ const Hero = () => {
           className="mt-10"
         >
           <Button
-            size="xl"
-            className="rounded-full px-10 py-4 text-lg font-semibold"
+            size="lg"
+            className="rounded-full bg-cyan-500 px-10 py-4 text-lg font-semibold text-slate-950 hover:bg-cyan-400"
             asChild
           >
             <Link href="/invoices/new" className="flex items-center gap-2">
@@ -126,7 +114,7 @@ const StatsTicker = () => {
   ];
 
   return (
-    <section ref={ref} className="bg-slate-900/5 dark:bg-slate-100/5 py-16">
+    <section ref={ref} className="bg-slate-900 py-16">
       <div className="container mx-auto flex justify-around gap-8 px-4 text-center">
         {stats.map((s, i) => (
           <div key={i}>
@@ -134,9 +122,7 @@ const StatsTicker = () => {
               {s.value}
               {s.suffix}
             </p>
-            <p className="text-sm text-slate-600 dark:text-slate-400">
-              {s.label}
-            </p>
+            <p className="text-sm text-slate-400">{s.label}</p>
           </div>
         ))}
       </div>
@@ -170,12 +156,12 @@ const FeatureCards = () => {
   ];
 
   return (
-    <section className="container mx-auto px-4 py-24">
+    <section className="container mx-auto px-4 py-24 bg-slate-950">
       <motion.h2
         initial={{ opacity: 0 }}
         whileInView={{ opacity: 1 }}
         viewport={{ once: true }}
-        className="text-3xl font-bold text-center mb-16"
+        className="text-3xl font-bold text-center mb-16 text-slate-100"
       >
         Built for <span className="text-cyan-400">scale & beauty</span>
       </motion.h2>
@@ -194,9 +180,9 @@ const FeatureCards = () => {
             <Card className="rounded-2xl border-slate-800 bg-slate-900/50 backdrop-blur-md shadow-xl shadow-purple-900/30 hover:shadow-cyan-500/40 transition-shadow">
               <CardHeader>
                 <div className="mb-3 inline-flex h-14 w-14 items-center justify-center rounded-xl bg-gradient-to-br from-cyan-400 to-purple-600">
-                  <Icon className="h-7 w-7 text-slate-900" />
+                  <Icon className="h-7 w-7 text-slate-950" />
                 </div>
-                <CardTitle>{title}</CardTitle>
+                <CardTitle className="text-slate-100">{title}</CardTitle>
               </CardHeader>
               <CardContent>
                 <p className="text-sm text-slate-300">{desc}</p>
@@ -238,8 +224,8 @@ const Pricing = () => {
   ];
 
   return (
-    <section className="container mx-auto px-4 py-24">
-      <h2 className="text-3xl font-bold text-center mb-12">
+    <section className="container mx-auto px-4 py-24 bg-slate-950">
+      <h2 className="text-3xl font-bold text-center mb-12 text-slate-100">
         Transparent Pricing
       </h2>
       <div className="grid gap-8 md:grid-cols-3">
@@ -264,7 +250,9 @@ const Pricing = () => {
                 </Badge>
               )}
               <CardHeader>
-                <CardTitle className="text-2xl">{p.name}</CardTitle>
+                <CardTitle className="text-2xl text-slate-100">
+                  {p.name}
+                </CardTitle>
                 <p className="text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-purple-600">
                   {p.price}
                 </p>
@@ -275,7 +263,7 @@ const Pricing = () => {
                   {p.features.map((f) => (
                     <li key={f} className="flex items-center gap-2 text-sm">
                       <CheckCircle className="h-4 w-4 text-green-400" />
-                      {f}
+                      <span className="text-slate-300">{f}</span>
                     </li>
                   ))}
                 </ul>
@@ -312,13 +300,15 @@ const FAQ = () => {
   ];
 
   return (
-    <section className="container mx-auto px-4 py-24">
-      <h2 className="text-3xl font-bold text-center mb-12">FAQ</h2>
+    <section className="container mx-auto px-4 py-24 bg-slate-950">
+      <h2 className="text-3xl font-bold text-center mb-12 text-slate-100">
+        FAQ
+      </h2>
       <Accordion type="single" collapsible className="max-w-2xl mx-auto">
         {faqs.map(({ q, a }, i) => (
           <AccordionItem key={i} value={q}>
-            <AccordionTrigger>{q}</AccordionTrigger>
-            <AccordionContent>{a}</AccordionContent>
+            <AccordionTrigger className="text-slate-200">{q}</AccordionTrigger>
+            <AccordionContent className="text-slate-300">{a}</AccordionContent>
           </AccordionItem>
         ))}
       </Accordion>
@@ -326,68 +316,10 @@ const FAQ = () => {
   );
 };
 
-/* ---------- FOOTER ---------- */
-const Footer = () => (
-  <footer className="border-t border-slate-800 bg-slate-950/50">
-    <div className="container mx-auto px-4 py-12">
-      <div className="grid gap-8 md:grid-cols-4">
-        <div>
-          <h3 className="font-bold text-lg">InvoiceGen</h3>
-          <p className="mt-2 text-sm text-slate-400">
-            The last invoice tool you’ll ever need.
-          </p>
-        </div>
-        <div>
-          <h4 className="font-semibold mb-2">Product</h4>
-          <ul className="space-y-1 text-sm text-slate-400">
-            <li>
-              <Link href="/features">Features</Link>
-            </li>
-            <li>
-              <Link href="/pricing">Pricing</Link>
-            </li>
-            <li>
-              <Link href="/templates">Templates</Link>
-            </li>
-          </ul>
-        </div>
-        <div>
-          <h4 className="font-semibold mb-2">Company</h4>
-          <ul className="space-y-1 text-sm text-slate-400">
-            <li>
-              <Link href="/about">About</Link>
-            </li>
-            <li>
-              <Link href="/careers">Careers</Link>
-            </li>
-            <li>
-              <Link href="/contact">Contact</Link>
-            </li>
-          </ul>
-        </div>
-        <div>
-          <h4 className="font-semibold mb-2">Legal</h4>
-          <ul className="space-y-1 text-sm text-slate-400">
-            <li>
-              <Link href="/privacy">Privacy</Link>
-            </li>
-            <li>
-              <Link href="/terms">Terms</Link>
-            </li>
-          </ul>
-        </div>
-      </div>
-      <Separator className="my-8" />
-      <div className="flex justify-between text-sm text-slate-500">
-        <p>© {new Date().getFullYear()} InvoiceGen Inc.</p>
-        <p>Made with ❤️ & Next.js 15</p>
-      </div>
-    </div>
-  </footer>
-);
+
 
 /* ---------- FINAL EXPORT ---------- */
-export default function HomePage() {
+export default function Home() {
   return (
     <>
       <Hero />
@@ -395,7 +327,7 @@ export default function HomePage() {
       <FeatureCards />
       <Pricing />
       <FAQ />
-      <Footer />
+  
     </>
   );
 }
