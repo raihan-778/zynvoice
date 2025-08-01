@@ -6,7 +6,11 @@ import {
   InvoiceItem,
 } from "@/lib/validations/validation";
 import { ErrorResponse } from "@/types/apiResponse";
-import { IInvoiceCalculations, ITemplate } from "@/types/database";
+import {
+  IInvoiceCalculations,
+  IInvoiceItem,
+  ITemplate,
+} from "@/types/database";
 import { create } from "zustand";
 import { devtools } from "zustand/middleware";
 
@@ -243,12 +247,12 @@ export const useInvoiceStore = create<InvoiceStore>()(
       setTemplates: (templates) => set({ templates }, false, "setTemplates"),
 
       // Invoice Items
-      addItem: (item) => {
+      addItem: (item: IInvoiceItem) => {
         set(
           (state) => ({
             invoiceData: {
               ...state?.invoiceData,
-              items: [...state?.invoiceData?.items, item],
+              items: [...(state?.invoiceData?.items || []), item],
             },
           }),
           false,

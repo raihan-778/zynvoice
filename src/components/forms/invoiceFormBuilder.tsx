@@ -49,20 +49,18 @@ export const InvoiceFormBuilder: React.FC = () => {
         const companyData = await companiesResponse.json();
         const companies = await companyData.data.companies;
 
-        console.log(companies);
+        // console.log(companies);
         setCompanies(companies);
-        console.log(companies);
+        // console.log(companies);
 
         // Load clients
         const clientsResponse = await fetch("/api/clients/get-client");
         const data = await clientsResponse.json();
-        console.log(data);
+        // console.log(data);
         const clientsData = await data.data;
         setClients(clientsData);
 
-        console.log("clients Data", clients);
-
-        console.log("Companies:", companies, "Clients:", clients);
+        // console.log("Companies:", companies, "Clients:", clients);
       } catch (error) {
         console.error("Error loading initial data:", error);
         setError("Failed to load initial data");

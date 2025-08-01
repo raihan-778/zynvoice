@@ -62,7 +62,7 @@ export interface ICompany extends BaseDocument {
     routingNumber?: string;
     swift?: string;
   };
-  branding: {
+  branding?: {
     primaryColor: string;
     secondaryColor: string;
     fontFamily: string;

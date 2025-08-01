@@ -8,7 +8,7 @@ import { Separator } from "../ui/separator";
 export default function Footer() {
   return (
     <motion.footer
-      className="bg-gray-50 border-t border-gray-200 px-4 py-6 lg:px-6"
+      className="bg-slate-950 border-t border-gray-700 px-4 py-6 lg:px-6"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ delay: 0.3 }}
@@ -63,7 +63,7 @@ export default function Footer() {
         </div>
         <Separator className="my-8 border-slate-800" />
         <div className="flex justify-between text-sm text-slate-500">
-          <p>© {new Date().getFullYear()} InvoiceGen Inc.</p>
+          <p>© {new Date().getFullYear()} Zynvoice</p>
           <p>Made with ❤️ & Next.js 15</p>
         </div>
       </div>
