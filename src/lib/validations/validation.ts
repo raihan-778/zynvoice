@@ -1,5 +1,6 @@
 // 📁 src/lib/validations/validation.ts
 
+import { Types } from "mongoose";
 import { z } from "zod";
 
 // Company Information Schema
@@ -14,7 +15,6 @@ export const CompanyInfoSchema = z.object({
       email: z.string().email().optional(),
     })
     .optional(),
-    
 });
 
 // Client Information Schema
@@ -216,6 +216,45 @@ export const InvoiceFormDataSchema = z.object({
     endDate: "",
   }),
 });
+
+// Zod schema that mirrors ITemplate
+
+export const TemplateSchema = z.object({
+  userId: z.instanceof(Types.ObjectId).optional(),
+  name: z.string().optional().or(z.literal("defult")),
+  description: z.string().optional(),
+  layout: z.enum(["modern", "classic", "minimal"]).optional(),
+
+  // required fields
+  primaryColor: z.string(),
+  secondaryColor: z.string(),
+  fontFamily: z.string(),
+  fontSize: z.number().min(1),
+
+  logoPosition: z.enum(["left", "center", "right"]).optional(),
+
+  // boolean flags
+  showLogo: z.boolean(),
+  showDates: z.boolean(),
+  showNotes: z.boolean(),
+  showTerms: z.boolean(),
+  showCompanyAddress: z.boolean(),
+  showClientAddress: z.boolean(),
+  showInvoiceNumber: z.boolean(),
+  showPaymentTerms: z.boolean(),
+
+  // meta flags
+  isDefault: z.boolean().optional(),
+  isPublic: z.boolean().optional(),
+
+  // BaseDocument fields (if you still need them, make them optional)
+  _id: z.instanceof(Types.ObjectId).optional(),
+  createdAt: z.date().optional(),
+  updatedAt: z.date().optional(),
+});
+
+// Inferred TypeScript type identical to your interface
+export type PDFTemplate = z.infer<typeof TemplateSchema>;
 
 // TypeScript types
 export type CompanyInfo = z.infer<typeof CompanyInfoSchema>;

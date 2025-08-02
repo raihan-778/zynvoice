@@ -155,7 +155,7 @@ export type PopulatedInvoice = IInvoice & {
 
 export interface ITemplate extends BaseDocument {
   userId?: Types.ObjectId;
-  name: string;
+  name?: string | "defult";
   description?: string;
   layout?: "modern" | "classic" | "minimal";
   primaryColor: string;
@@ -239,8 +239,8 @@ export interface InvoicePdfProps {
   selectedClient: IClient;
   selectedCompany: ICompany;
   calculations: IInvoiceCalculations;
-  template: Partial<ITemplate>;
-  templates?: Partial<ITemplate[]>;
+  template?: ITemplate;
+  templates?: ITemplate[];
 }
 export type ClientsResponse = {
   clients: IClient[];
