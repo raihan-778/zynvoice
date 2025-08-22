@@ -6,7 +6,12 @@ import {
   InvoiceItem,
 } from "@/lib/validations/validation";
 import { ErrorResponse } from "@/types/apiResponse";
-import { IInvoiceCalculations, ITemplate } from "@/types/database";
+import {
+  IInvoiceCalculations,
+  IInvoiceItem,
+  ITemplate,
+} from "@/types/database";
+import { Types } from "mongoose";
 import { create } from "zustand";
 import { devtools } from "zustand/middleware";
 
@@ -137,7 +142,7 @@ interface InvoiceStore {
 }
 
 // Default values
-const defaultTemplate: Partial<ITemplate> = {
+const defaultPDFTemplate = {
   name: "Default",
   primaryColor: "#2563eb",
   secondaryColor: "#64748b",
@@ -153,9 +158,22 @@ const defaultTemplate: Partial<ITemplate> = {
   showTerms: true,
   createdAt: new Date(),
   updatedAt: new Date(),
-};
 
-const defaultInvoiceData: Partial<InvoiceFormData> = {
+  userId: undefined, // optional in interface
+  // satisfies string | "defult"
+  description: "Clean default layout",
+  layout: "modern",
+
+  logoPosition: "left",
+
+  // BaseDocument fields
+  isDefault: true,
+  isPublic: false,
+
+  _id: new Types.ObjectId(),
+} as unknown as ITemplate;
+
+const defaultInvoiceData: InvoiceFormData = {
   invoiceNumber: "",
   invoiceDate: new Date().toISOString().split("T")[0],
   dueDate: "",
@@ -168,6 +186,7 @@ const defaultInvoiceData: Partial<InvoiceFormData> = {
   discountType: "percentage",
   discountValue: 0,
   discountAmount: 0,
+  paidAmount: 0,
   total: 0,
   notes: "",
   terms: "",
@@ -201,11 +220,10 @@ export const useInvoiceStore = create<InvoiceStore>()(
       dueDate: null,
       selectedClient: null,
       calculations: defaultCalculations,
-      template: defaultTemplate,
+      template: defaultPDFTemplate,
       companies: [],
       clients: [],
-      templates: [defaultTemplate],
-
+      templates: [defaultInvoiceData],
       // UI State
       isGenerating: false,
       error: null,
@@ -243,12 +261,12 @@ export const useInvoiceStore = create<InvoiceStore>()(
       setTemplates: (templates) => set({ templates }, false, "setTemplates"),
 
       // Invoice Items
-      addItem: (item) => {
+      addItem: (item: IInvoiceItem) => {
         set(
           (state) => ({
             invoiceData: {
               ...state?.invoiceData,
-              items: [...state?.invoiceData?.items, item],
+              items: [...(state?.invoiceData?.items || []), item],
             },
           }),
           false,
@@ -346,7 +364,7 @@ export const useInvoiceStore = create<InvoiceStore>()(
             selectedCompany: null,
             selectedClient: null,
             calculations: defaultCalculations,
-            template: defaultTemplate,
+            template: defaultPDFTemplate,
             isGenerating: false,
             error: null,
           },

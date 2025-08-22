@@ -265,6 +265,10 @@ export const InvoicePDF: React.FC<InvoicePdfProps> = ({
     showPaymentTerms: true,
     showNotes: true,
     showTerms: true,
+    layout: "modern",
+    logoPosition: "left",
+    isDefault: true,
+    isPublic: false,
   };
 
   const activeTemplate = template || defaultTemplate;
@@ -309,7 +313,7 @@ export const InvoicePDF: React.FC<InvoicePdfProps> = ({
         <View style={styles.header}>
           {template.showLogo ? (
             <View style={styles.logo}>
-              <Text style={styles.logoText}>{template.name.charAt(0)}</Text>
+              <Text style={styles.logoText}>{template?.name?.charAt(0)}</Text>
             </View>
           ) : null}
 
@@ -337,14 +341,12 @@ export const InvoicePDF: React.FC<InvoicePdfProps> = ({
             <View style={styles.addressBlock}>
               <Text style={styles.addressTitle}>From:</Text>
               <Text style={styles.companyName}>{selectedCompany.name}</Text>
-              <Text style={styles.addressText}>{selectedCompany?.address}</Text>
+              <Text style={styles.addressText}>
+                {selectedCompany?.address.country}
+              </Text>
 
-              <Text style={styles.addressText}>
-                {selectedCompany?.contact?.email}
-              </Text>
-              <Text style={styles.addressText}>
-                {selectedCompany?.contact?.phone}
-              </Text>
+              <Text style={styles.addressText}>{selectedCompany?.email}</Text>
+              <Text style={styles.addressText}>{selectedCompany?.phone}</Text>
             </View>
           )}
 
@@ -411,7 +413,7 @@ export const InvoicePDF: React.FC<InvoicePdfProps> = ({
             </Text>
           </View>
 
-          {invoiceData?.items.map((item, index) => (
+          {invoiceData?.items?.map((item, index) => (
             <View key={index} style={styles.tableRow}>
               <Text style={[styles.tableCell, styles.descriptionCell]}>
                 {item.description}
@@ -439,7 +441,7 @@ export const InvoicePDF: React.FC<InvoicePdfProps> = ({
               </Text>
             </View>
 
-            {invoiceData.discountValue > 0 && (
+            {invoiceData && invoiceData?.discountValue > 0 && (
               <View style={styles.totalsRow}>
                 <Text style={[styles.totalsLabel, { color: "#10b981" }]}>
                   Discount ({invoiceData.discountValue}%):
@@ -452,7 +454,7 @@ export const InvoicePDF: React.FC<InvoicePdfProps> = ({
 
             <View style={styles.totalsRow}>
               <Text style={styles.totalsLabel}>
-                Tax ({invoiceData.taxRate}%):
+                Tax ({invoiceData?.taxRate}%):
               </Text>
               <Text style={styles.totalsValue}>
                 {formatCurrency(calculations.taxAmount)}
