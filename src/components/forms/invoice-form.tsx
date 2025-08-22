@@ -8,7 +8,7 @@ import {
   ITemplate,
 } from "@/types/database";
 
-import { useInvoiceStore } from "@/stors/invoiceStore";
+import { useInvoiceStore } from "@/stores/invoiceStore";
 import { InvoicePDFProps } from "@/types/pdf";
 import { pdf } from "@react-pdf/renderer";
 import {

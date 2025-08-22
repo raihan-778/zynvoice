@@ -3,7 +3,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { useInvoiceStore } from "@/stors/invoiceStore";
+import { useInvoiceStore } from "@/stores/invoiceStore";
 import { pdf } from "@react-pdf/renderer";
 import {
   Copy,

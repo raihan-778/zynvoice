@@ -14,7 +14,7 @@ import {
 import { AnyObject } from "mongoose";
 import { create } from "zustand";
 import { devtools } from "zustand/middleware";
-import { ItemError } from "./../types/database";
+import { ItemError } from "../types/database";
 
 interface InvoiceStoreState {
   // Form Data

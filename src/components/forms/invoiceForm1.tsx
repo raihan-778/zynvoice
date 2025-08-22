@@ -3,7 +3,7 @@
 import { ClientInfo, InvoiceFormData } from "@/lib/validations/validation";
 import { InvoiceApiResponse } from "@/types/apiResponse";
 
-import { useInvoiceFormStore } from "@/stors/invoiceFormStore";
+import { useInvoiceFormStore } from "@/stores/invoiceFormStore";
 import {
   Building2,
   Calculator,

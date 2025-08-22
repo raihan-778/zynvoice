@@ -1,7 +1,7 @@
 // components/InvoiceFormBuilder.tsx
 import React, { useCallback, useEffect } from "react";
 
-import { EmailState, useInvoiceStore } from "@/stors/invoiceStore";
+import { EmailState, useInvoiceStore } from "@/stores/invoiceStore";
 import { pdf } from "@react-pdf/renderer";
 import { RefreshCw } from "lucide-react";
 import { InvoicePDF } from "../pdf/InvoicePDFTemplate";
